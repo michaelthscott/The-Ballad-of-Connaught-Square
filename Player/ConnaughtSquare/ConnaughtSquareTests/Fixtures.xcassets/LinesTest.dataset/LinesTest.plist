@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<array>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>I liked him, he was.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>I liked him, he was.</string>
+			<key>tags</key>
+			<array>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Pronoun</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>He is isn&apos;t he, he&apos;s over thirty.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>He is isn&apos;t he, he&apos;s over thirty.</string>
+			<key>tags</key>
+			<array>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Verb</string>
+				<string>Adverb</string>
+				<string>Pronoun</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Preposition</string>
+				<string>Number</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>I feel like I&apos;m radioactive anyway.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>I feel like I&apos;m radioactive anyway.</string>
+			<key>tags</key>
+			<array>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Preposition</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Adjective</string>
+				<string>Noun</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>I can&apos;t do it to you.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>I can&apos;t do it to you.</string>
+			<key>tags</key>
+			<array>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Adverb</string>
+				<string>Verb</string>
+				<string>Pronoun</string>
+				<string>Preposition</string>
+				<string>Pronoun</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>It was probably the first, because I dipped on the first.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>It was probably the first, because I dipped on the first.</string>
+			<key>tags</key>
+			<array>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Adverb</string>
+				<string>Determiner</string>
+				<string>Adjective</string>
+				<string>Preposition</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Preposition</string>
+				<string>Determiner</string>
+				<string>Adjective</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>Is it five series seven?</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>Is it five series seven?</string>
+			<key>tags</key>
+			<array>
+				<string>Verb</string>
+				<string>Pronoun</string>
+				<string>Number</string>
+				<string>Noun</string>
+				<string>Number</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>See this coming.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>See this coming.</string>
+			<key>tags</key>
+			<array>
+				<string>Verb</string>
+				<string>Determiner</string>
+				<string>Verb</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>If you were.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>If you were.</string>
+			<key>tags</key>
+			<array>
+				<string>Preposition</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>Ok, why&apos;s that?</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>Ok, why&apos;s that?</string>
+			<key>tags</key>
+			<array>
+				<string>Interjection</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+				<string>Determiner</string>
+			</array>
+		</dict>
+		<dict>
+			<key>parts</key>
+			<array>
+				<dict>
+					<key>speaker</key>
+					<integer>0</integer>
+					<key>string</key>
+					<string>Yeah, we do.</string>
+				</dict>
+			</array>
+			<key>string</key>
+			<string>Yeah, we do.</string>
+			<key>tags</key>
+			<array>
+				<string>Interjection</string>
+				<string>Pronoun</string>
+				<string>Verb</string>
+			</array>
+		</dict>
+	</array>
+</plist>

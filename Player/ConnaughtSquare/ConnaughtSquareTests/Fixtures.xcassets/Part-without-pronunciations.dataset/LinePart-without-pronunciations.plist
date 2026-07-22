@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   LinePart.plist
+   The Ballad of Connaught Square
+
+   Created by Michael Scott on 21/07/2018.
+   Copyright (c) 2018 Michael Scott. All rights reserved.
+-->
+<plist version="1.0">
+    <dict>
+        <key>speaker</key>
+        <integer>0</integer>
+        <key>string</key>
+        <string>Keeping records.</string>
+    </dict>
+</plist>

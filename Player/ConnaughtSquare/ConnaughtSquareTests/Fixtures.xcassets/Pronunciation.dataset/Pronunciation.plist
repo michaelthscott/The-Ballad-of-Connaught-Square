@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>phonemes</key>
+	<array>
+		<dict>
+			<key>sound</key>
+			<string>IH</string>
+			<key>stress</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>N</string>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>K</string>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>W</string>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>AY</string>
+			<key>stress</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>ER</string>
+			<key>stress</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>IY</string>
+			<key>stress</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>sound</key>
+			<string>Z</string>
+		</dict>
+	</array>
+</dict>
+</plist>
