@@ -14,4 +14,4 @@ While sipping with his ear.
 
 And the words that fall\
 Are gathered all\
-To be re-presented here. 
+To be presented here. 
