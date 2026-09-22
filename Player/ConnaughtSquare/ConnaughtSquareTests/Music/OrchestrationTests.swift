@@ -24,7 +24,7 @@ struct OrchestrationTests {
     }
 
     @Test func testPlay() async throws {
-        orchestration.play(duration: .seconds(10))
+        await orchestration.play(duration: .seconds(10))
     }
     
 }

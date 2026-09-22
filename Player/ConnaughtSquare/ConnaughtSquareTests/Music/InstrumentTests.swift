@@ -24,12 +24,14 @@ final class InstrumentTests {
         #expect(Instrument(name: .bassoon).name == .bassoon)
     }
     
-    @Test func testSoundBank() {
-        #expect(Instrument(name: .electricPiano1).play(notes: tune.notes, duration: .seconds(1)).count == 1)
+    @Test func testSoundBank() async {
+        let played = await Instrument(name: .electricPiano1).play(notes: tune.notes, duration: .seconds(1))
+        #expect(played.count == 1)
     }
 	
-    @Test func testPlayed() {
-        #expect(Instrument(name: .marimba).play(notes: tune.notes, duration: tune.totalDuration * 2).count == tune.notes.elements.count * 2)
+    @Test func testPlayed() async {
+        let played = await Instrument(name: .marimba).play(notes: tune.notes, duration: tune.totalDuration * 2)
+        #expect(played.count == tune.notes.elements.count * 2)
     }
         
 }

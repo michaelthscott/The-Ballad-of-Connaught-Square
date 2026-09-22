@@ -18,9 +18,12 @@ struct Assignment: Sendable {
 	}
 	
 	/// Play the notes on the instruments for the specified duration.
-	/// - Parameter duration: The length of time to play the notes.
-	func play(duration: Duration) -> [Note] {
-        instrument.play(notes: notes, duration: duration)
+	/// - Parameters:
+	///   - duration: The length of time to play the notes.
+	///   - soundBank: The sound bank to play on.
+	/// - Returns: The notes played.
+	func play(duration: Duration, on soundBank: SoundBank = .shared) async -> [Note] {
+        await instrument.play(notes: notes, duration: duration, on: soundBank)
 	}
 }
 

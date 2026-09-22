@@ -7,6 +7,7 @@
 
 import Testing
 import NaturalLanguage
+import SwiftUI
 @testable import ConnaughtSquare
 
 final class LinguisticTagOrderTests {

@@ -7,8 +7,12 @@
 
 import Foundation
 
-struct EventsSequence: Sequence, IteratorProtocol {
-    typealias Element = [Event]
+/// Produces the batches of events that make up a performance, one batch per part of the ballad.
+///
+/// This is main-actor isolated because it reads the ballad and the speakers, so it can't conform
+/// to `IteratorProtocol`; the performance drives it by calling `next()` directly.
+@MainActor
+struct EventsSequence {
     let performance: Performance
     var balladCursorSequence: BalladCursorSequence
     

@@ -7,44 +7,34 @@
 
 import AVFoundation
 
-/*
- TODO: Do we need to load the sound bank for each instrument?
- TODO: Is soundBankLoaded sufficient to prevent it being loaded multiple times?
- TODO: Do we need an AVAudioEngine for each instrument?
- TODO: Apple says that the sound bank should not be loaded on a real-time thread.
-*/
-
 /// An instrument which can play notes.
+///
+/// An instrument is just a name: the sampler preset it refers to is loaded by the sound bank
+/// when its notes are played, so creating an instrument has no audio side effects.
 struct Instrument: Sendable {
     let name: InstrumentName
-    
-    init(name: InstrumentName) {
-        self.name = name
-        do {
-            try SoundBank.shared.loadInstrument(name)
-        } catch {
-            print(error.localizedDescription)
-        }
-    }
-    
+
     /// Plays the note.
-    /// - Parameter note: A note.
-	func play(note: Note) {
-        SoundBank.shared.play(note: note)
-	}
-    
+    /// - Parameters:
+    ///   - note: A note.
+    ///   - soundBank: The sound bank to play on.
+    func play(note: Note, on soundBank: SoundBank = .shared) async {
+        await soundBank.play(note: note)
+    }
+
     /// Plays the notes for the specified time.
     /// - Parameters:
     ///   - notes: A sequence of notes.
     ///   - duration: A length of time.
-    func play(notes: Cycle<Note>, duration: Duration) -> [Note] {
-        var played: [Note] = []
+    ///   - soundBank: The sound bank to play on.
+    /// - Returns: The notes played.
+    func play(notes: Cycle<Note>, duration: Duration, on soundBank: SoundBank = .shared) async -> [Note] {
         do {
-            played = try SoundBank.shared.play(notes: notes, duration: duration)
+            return try await soundBank.play(notes: notes, duration: duration, instrument: name)
         } catch {
             print(error.localizedDescription)
+            return []
         }
-        return played
     }
 }
 

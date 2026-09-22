@@ -18,12 +18,21 @@ struct Orchestration: Sendable {
 	}
 	
 	/// Play the instrumentation for the specified duration.
-	/// - Parameter duration: The length of time to play.
-	func play(duration: Duration) {
-        //TODO: How can we collect and return the notes played?
-        DispatchQueue.concurrentPerform(iterations: assignments.count) { index in
-            let played = assignments[index].play(duration: duration)
-            print("\(assignments[index].instrument.name): \(played)")
+	///
+	/// The assignments play concurrently, each in its own child task, so cancelling the
+	/// surrounding task stops all of them.
+	/// - Parameters:
+	///   - duration: The length of time to play.
+	///   - soundBank: The sound bank to play on.
+	func play(duration: Duration, on soundBank: SoundBank = .shared) async {
+        //TODO: How can we collect and return the notes played? A task group can now return them.
+        await withDiscardingTaskGroup { group in
+            for assignment in assignments {
+                group.addTask {
+                    let played = await assignment.play(duration: duration, on: soundBank)
+                    print("\(assignment.instrument.name): \(played)")
+                }
+            }
         }
 	}
 }
