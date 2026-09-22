@@ -53,6 +53,11 @@
 			path = ConnaughtSquareUITests;
 			sourceTree = "<group>";
 		};
+		DA5BCE3530628D720085B678 /* Previews */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Previews;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +90,7 @@
 			children = (
 				DA3CD0C73010FC6C0028491C /* Documentation.docc */,
 				DA3CD0C53010FC5A0028491C /* TestPlan.xctestplan */,
+				DA5BCE3530628D720085B678 /* Previews */,
 				DA3CCEC23010F5120028491C /* ConnaughtSquare */,
 				DA3CCED03010F5130028491C /* ConnaughtSquareTests */,
 				DA3CCEDA3010F5130028491C /* ConnaughtSquareUITests */,
@@ -119,6 +125,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DA3CCEC23010F5120028491C /* ConnaughtSquare */,
+				DA5BCE3530628D720085B678 /* Previews */,
 			);
 			name = ConnaughtSquare;
 			packageProductDependencies = (
