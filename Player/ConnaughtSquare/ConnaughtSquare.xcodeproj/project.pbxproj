@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DA3CD0C63010FC5A0028491C /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = DA3CD0C53010FC5A0028491C /* TestPlan.xctestplan */; };
 		DA3CD0C83010FC6C0028491C /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = DA3CD0C73010FC6C0028491C /* Documentation.docc */; };
 		DA3CD0C93010FC6C0028491C /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = DA3CD0C73010FC6C0028491C /* Documentation.docc */; };
 /* End PBXBuildFile section */
@@ -230,7 +229,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DA3CD0C63010FC5A0028491C /* TestPlan.xctestplan in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,6 +389,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = "";
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -462,6 +461,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				EXCLUDED_SOURCE_FILE_NAMES = "*/Previews/Assets.xcassets";
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

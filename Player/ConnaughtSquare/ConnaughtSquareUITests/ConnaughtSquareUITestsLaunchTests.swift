@@ -9,9 +9,9 @@ import XCTest
 
 final class ConnaughtSquareUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
-        true
-    }
+    // Note: `runsForEachTargetApplicationUIConfiguration` is deliberately not overridden.
+    // On the My Mac destination it renders the dark configuration by changing the system
+    // appearance, and the run leaves it set to Dark rather than restoring it.
 
     override func setUpWithError() throws {
         continueAfterFailure = false

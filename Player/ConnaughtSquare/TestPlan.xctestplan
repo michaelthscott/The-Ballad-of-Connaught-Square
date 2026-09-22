@@ -12,7 +12,21 @@
     "testTimeoutsEnabled" : true
   },
   "testTargets" : [
-
+    {
+      "target" : {
+        "containerPath" : "container:ConnaughtSquare.xcodeproj",
+        "identifier" : "DA3CCECC3010F5130028491C",
+        "name" : "ConnaughtSquareTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "target" : {
+        "containerPath" : "container:ConnaughtSquare.xcodeproj",
+        "identifier" : "DA3CCED63010F5130028491C",
+        "name" : "ConnaughtSquareUITests"
+      }
+    }
   ],
   "version" : 1
 }
