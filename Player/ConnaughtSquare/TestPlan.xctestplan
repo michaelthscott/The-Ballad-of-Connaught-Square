@@ -9,6 +9,15 @@
     }
   ],
   "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:ConnaughtSquare.xcodeproj",
+          "identifier" : "DA3CCEBF3010F5120028491C",
+          "name" : "ConnaughtSquare"
+        }
+      ]
+    },
     "testTimeoutsEnabled" : true
   },
   "testTargets" : [
