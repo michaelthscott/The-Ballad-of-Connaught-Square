@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- `Note.off`, the note's release velocity, and the `off:` parameter of `Note.init`. It was generated for every note but never used, as `AVAudioUnitSampler.stopNote` takes no velocity.
+
 ### Changed
 
 - `NoteVelocity.gaussianRandom()` no longer creates a GameplayKit random source and distribution for every note. It now samples a normal distribution of the same shape directly from Swift's random number generator, and has a `gaussianRandom(using:)` variant that takes a generator. `NoteVelocity` no longer imports GameplayKit.

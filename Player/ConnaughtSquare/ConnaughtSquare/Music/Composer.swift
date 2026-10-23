@@ -159,7 +159,7 @@ struct Composer {
     /// - Returns: The assignment.
     func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
         let openingDuration = randomDurationVector.first ?? initialNote.duration
-        let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), off: NoteVelocity.gaussianRandom(), duration: openingDuration)
+        let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), duration: openingDuration)
         var previousNote = opening
         var notes: [Note] = [opening]
         var currentDuration: Duration = openingDuration.microseconds

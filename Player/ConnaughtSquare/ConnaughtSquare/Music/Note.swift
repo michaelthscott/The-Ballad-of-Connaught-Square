@@ -12,14 +12,13 @@ struct Note: Sendable {
     }
 
     let value: NoteValue
+    /// The velocity the note starts with. There's no release velocity, as the sampler doesn't take one when a note stops.
     let on: NoteVelocity
-    let off: NoteVelocity
     let duration: NoteDuration
-    
-    init(value: NoteValue, on: NoteVelocity = .mp, off: NoteVelocity = .mp, duration: NoteDuration) {
+
+    init(value: NoteValue, on: NoteVelocity = .mp, duration: NoteDuration) {
         self.value = value
         self.on = on
-        self.off = off
         self.duration = duration
     }
     
@@ -36,7 +35,7 @@ struct Note: Sendable {
         guard let nextNoteValue = NoteValue(rawValue: UInt8(nextValue)) else {
             fatalError("Undefined note value: \(nextValue)")
         }
-        return Note(value: nextNoteValue, on: NoteVelocity.gaussianRandom(), off: NoteVelocity.gaussianRandom(), duration: nextDuration)
+        return Note(value: nextNoteValue, on: NoteVelocity.gaussianRandom(), duration: nextDuration)
     }
 }
 

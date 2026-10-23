@@ -35,7 +35,7 @@ struct SoundBankTests {
 
     @Test func testPlayNote() async throws {
         try await soundBank.loadInstrument(.electricPiano1)
-        await soundBank.play(note: Note(value: .a2, on: .f, off: .f, duration: .crotchet), instrument: .electricPiano1)
+        await soundBank.play(note: Note(value: .a2, on: .f, duration: .crotchet), instrument: .electricPiano1)
     }
 
     @Test func testLoadInstrumentsSeparately() async throws {
