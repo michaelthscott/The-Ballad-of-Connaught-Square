@@ -82,7 +82,7 @@ import Accessibility
     
 	// TODO: Tags don't change therefore we don't need to repeatedly calculate this.
 	func countFor(tag: WeightedLinguisticTag) -> Int {
-		tagCounts[tagCounts.position(of: tag)].weight
+		tagCounts.weight(of: tag)
 	}
 	
     /// Checks whether the lines rhyme.

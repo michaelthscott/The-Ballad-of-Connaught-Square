@@ -84,14 +84,24 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
         elements.endIndex
     }
     
-    /// The weight of an element.
-    /// - Parameter member: The element.
-    /// - Returns: The associated weight.
+    /// The weight of an element. This doesn't change the set.
+    /// - Parameter element: The element.
+    /// - Returns: The associated weight, or zero if the set doesn't hold the element.
 	func weight(of element: Element) -> Int {
-        elements[position(of: element)].weight
+        existingPosition(of: element).map { elements[$0].weight } ?? 0
     }
-    
-    /// The index of a specified element.
+
+    /// The index of an element the set already holds. Unlike `position(of:)`, this doesn't change the set.
+    /// - Parameter element: The element.
+    /// - Returns: The index, or `nil` if the set doesn't hold the element.
+	func existingPosition(of element: Element) -> Int? {
+        elements.firstIndex(of: element)
+    }
+
+    /// The index of a specified element, adding an unweighted slot for it if the set doesn't hold it.
+    ///
+    /// Use this when assigning a weight. To look an element up without changing the set, use
+    /// `existingPosition(of:)`, `weight(of:)` or `contains(_:)`.
     /// - Parameter element: The element.
     /// - Returns: The index.
 	func position(of element: Element) -> Int {
@@ -203,7 +213,7 @@ extension WeightedSet: Hashable {
 // MARK: - SetAlgebra
 extension WeightedSet: SetAlgebra {
 	func contains(_ element: Element) -> Bool {
-        elements[position(of: element)].weight > 0
+        weight(of: element) > 0
     }
 
 	func union(_ other: WeightedSet) -> WeightedSet {
@@ -275,10 +285,12 @@ extension WeightedSet: SetAlgebra {
     }
     
 	func subtracting(_ other: WeightedSet) -> WeightedSet {
-        let copy = self
+        // WeightedSet is a class, so copy the elements rather than the reference to avoid changing this set.
+        let copy = WeightedSet()
+        copy.elements = elements
         for element in other.elements {
-            let subtracted = copy.elements[copy.position(of: element)].weight - element.weight
-            copy.elements[copy.position(of: element)].weight = subtracted > 0 ? subtracted : 0
+            guard let index = copy.existingPosition(of: element) else { continue }
+            copy.elements[index].weight = Swift.max(copy.elements[index].weight - element.weight, 0)
         }
         return copy
     }

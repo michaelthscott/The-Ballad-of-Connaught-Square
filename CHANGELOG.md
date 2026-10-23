@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Looking an element up in a `WeightedSet` no longer changes the set. `weight(of:)`, `contains(_:)` and the set operations that use them previously added a zero-weight entry for any element the set didn't hold. A new `existingPosition(of:)` returns `nil` instead. `position(of:)` still adds an entry when needed, for use when assigning a weight. `Line.countFor(tag:)` and `LinguisticTagOrder.weight(of:)` now use `weight(of:)`.
+- `WeightedSet.subtracting(_:)` no longer changes the set it's called on. Because `WeightedSet` is a class, its "copy" was the same set.
+
 - `Vector` now hashes its elements alone, consistent with its equality, which ignores weight. Its synthesized hash previously included the weight, so equal vectors with different weights could hash differently and be duplicated in a `Set` or `Dictionary`.
 
 - `Vector`'s `<` is now a strict ordering. Vectors of the same length previously compared as less if any element was less, so `[1, 2] < [2, 1]` and `[2, 1] < [1, 2]` were both true. This made sorting unreliable and could make equal `WeightedSet`s compare as unequal or hash differently. Shorter vectors still come first; vectors of the same length are now compared element by element.

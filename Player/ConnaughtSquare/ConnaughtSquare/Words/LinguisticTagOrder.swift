@@ -33,7 +33,7 @@ import SwiftUI
     /// - Parameter tag: The tag.
     /// - Returns: The weight of the tag.
     func weight(of tag: WeightedLinguisticTag) -> Int {
-        ordering[ordering.position(of: tag)].weight
+        ordering.weight(of: tag)
     }
 
     var count: Int {

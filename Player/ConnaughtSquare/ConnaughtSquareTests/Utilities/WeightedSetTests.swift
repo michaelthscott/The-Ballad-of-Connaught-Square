@@ -472,6 +472,32 @@ struct WeightedSetTests {
         let subtracting = x.subtracting(y)
         #expect(subtracting == expected)
     }
+
+    @Test func testSubtractingLeavesTheSetUnchanged() {
+        let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+        let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
+        _ = x.subtracting(y)
+        #expect(x.elements.count == 3)
+        #expect(x.weight(of: .B) == 2)
+        #expect(x.weight(of: .C) == 3)
+    }
+
+    @Test func testLookupsLeaveTheSetUnchanged() {
+        let set = C3B2A1
+        #expect(set.existingPosition(of: .D()) == nil)
+        #expect(set.weight(of: .D) == 0)
+        #expect(set.contains(.D()) == false)
+        #expect(set.elements.count == 3)
+    }
+
+    @Test func testSetOperationsLeaveTheOperandsUnchanged() {
+        let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+        let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
+        _ = x.intersection(y)
+        _ = x.symmetricDifference(y)
+        #expect(x.elements.count == 3)
+        #expect(y.elements.count == 3)
+    }
 	
     @Test func testMove() {
 		var x: WeightedSet<WeightedABCD>
