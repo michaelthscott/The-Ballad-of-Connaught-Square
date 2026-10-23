@@ -20,6 +20,16 @@ struct ComposerTests {
         #expect(composer.initialNote <= composer.ceilingNote)
     }
 
+    @Test func testAssignmentsOpenOnTheInitialNote() throws {
+        let orchestration = composer.composeOrchestration("Test",
+                                                          instruments: [Instrument(name: .violin), Instrument(name: .viola), Instrument(name: .cello)],
+                                                          duration: .seconds(10))
+        for assignment in orchestration.assignments {
+            let first = try #require(assignment.notes.elements.first)
+            #expect(first.value == composer.initialNote.value)
+        }
+    }
+
     @Test func testRangeSpansAllTunes() {
         let low = Tune("Low", [Note(value: .d2, duration: .crotchet), Note(value: .g2, duration: .crotchet), Note(value: .g2, duration: .crotchet)])
         let high = Tune("High", [Note(value: .g2, duration: .crotchet), Note(value: .b3, duration: .crotchet), Note(value: .g2, duration: .crotchet)])

@@ -151,14 +151,18 @@ struct Composer {
 	}
     
     /// Composes an assignment for the specified instrument and duration.
+    ///
+    /// The assignment opens on the pitch of the initial note, so every instrument begins in unison, then moves by intervals drawn from the tunes.
     /// - Parameters:
     ///   - instrument: An instrument.
     ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned.
     /// - Returns: The assignment.
     func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
-        var previousNote = initialNote
-        var notes: [Note] = []
-        var currentDuration: Duration = .microseconds(0)
+        let openingDuration = randomDurationVector.first ?? initialNote.duration
+        let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), off: NoteVelocity.gaussianRandom(), duration: openingDuration)
+        var previousNote = opening
+        var notes: [Note] = [opening]
+        var currentDuration: Duration = openingDuration.microseconds
         while currentDuration < duration {
             for (interval, noteDuration) in zip(randomIntervalVector, randomDurationVector) {
                 let note = previousNote.nextNote(interval: interval, duration: noteDuration, ceiling: ceilingNote, floor: floorNote)

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Each instrument's part now opens on the pitch of `Composer.initialNote`, so all the instruments begin in unison on the tunes' most frequent pitch. Previously the starting note was only the point the first interval was measured from, and was rarely heard.
+
 - `Composer` works out `initialNote`, `ceilingNote` and `floorNote` once when it's created, rather than for every note it composes. A composer whose tunes give an invalid range now fails when it's created rather than when it first composes.
 
 ### Added
