@@ -83,6 +83,19 @@ struct Composer {
         self.vectorWidth = vectorWidth
         durations = Self.nonEmptyDurationSets(from: tunes, with: vectorWidth)
         intervals = Self.nonEmptyIntervalSets(from: tunes, with: vectorWidth)
+        // These are fixed by the tunes, so work them out once rather than for every note composed.
+        guard let initial = tunes.map(\.mostFrequentNote).max() else {
+            fatalError("Failed to find inital note")
+        }
+        guard let ceiling = tunes.map(\.highestNote).max(), initial <= ceiling else {
+            fatalError("Failed to find highest note")
+        }
+        guard let floor = tunes.map(\.lowestNote).min(), floor <= initial else {
+            fatalError("Failed to find lowest note")
+        }
+        initialNote = initial
+        ceilingNote = ceiling
+        floorNote = floor
     }
     
     // TODO: An alternative approach might be to cycle through the durations and intervals and their vectors rather than randomly choosing them.
@@ -111,28 +124,15 @@ struct Composer {
     
 	// TODO: floor <= initial <= ceiling
 
-	var initialNote: Note {
-		guard let initial = tunes.compactMap({ $0.mostFrequentNote }).max(by: { lhs, rhs in lhs < rhs }) else {
-			fatalError("Failed to find inital note")
-		}
-		return initial
-	}
-	
-	var ceilingNote: Note {
-		guard let ceiling = tunes.compactMap({ $0.highestNote }).max(by: { lhs, rhs in lhs < rhs }), initialNote <= ceiling else {
-			fatalError("Failed to find highest note")
-		}
-		return ceiling
-	}
-	
+	/// The note each assignment starts from: the highest of the tunes' most frequent notes.
+	let initialNote: Note
+
+	/// The highest note across all the tunes.
+	let ceilingNote: Note
+
 	/// The lowest note across all the tunes, so that the range spans every tune as the ceiling does.
-	var floorNote: Note {
-		guard let floor = tunes.compactMap({ $0.lowestNote }).min(by: { lhs, rhs in lhs < rhs }), floor <= initialNote else {
-			fatalError("Failed to find lowest note")
-		}
-		return floor
-	}
-	
+	let floorNote: Note
+
 	// TODO: Variations for multiple instruments. Permutations of combinations of union, intersection and symmetric difference.
     
     /// Composes an orchestration for the specified instruments and duration.

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `Composer` works out `initialNote`, `ceilingNote` and `floorNote` once when it's created, rather than for every note it composes. A composer whose tunes give an invalid range now fails when it's created rather than when it first composes.
+
 ### Added
 
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
