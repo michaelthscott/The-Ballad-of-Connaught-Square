@@ -11,6 +11,7 @@ import AVFoundation
 enum SoundBankError: Error {
     case failedToFindSoundBank
     case failedToLoadSoundBank
+    case failedToConnectNodes
     case failedToStartEngine
 }
 
@@ -72,8 +73,12 @@ actor SoundBank {
         reverb.wetDryMix = 100.0
         engine.attach(mixer)
         engine.attach(reverb)
-        engine.connect(mixer, to: reverb, format: nil)
-        engine.connect(reverb, to: engine.outputNode, format: nil)
+        do {
+            try engine.connectNode(mixer, to: reverb, format: nil)
+            try engine.connectNode(reverb, to: engine.outputNode, format: nil)
+        } catch {
+            throw SoundBankError.failedToConnectNodes
+        }
         self.engine = engine
         self.mixer = mixer
         self.reverb = reverb
@@ -87,7 +92,12 @@ actor SoundBank {
         let sampler = AVAudioUnitSampler()
         engine.attach(sampler)
         // Mixer input buses can be connected while the engine is running, so instruments can be added mid-performance.
-        engine.connect(sampler, to: mixer, fromBus: 0, toBus: mixer.nextAvailableInputBus, format: nil)
+        do {
+            try engine.connectNode(sampler, to: mixer, fromBus: 0, toBus: mixer.nextAvailableInputBus, format: nil)
+        } catch {
+            engine.detach(sampler)
+            throw SoundBankError.failedToConnectNodes
+        }
         let bankMSB = UInt8(kAUSampler_DefaultMelodicBankMSB)
         let bankLSB = UInt8(kAUSampler_DefaultBankLSB)
         let presetID = UInt8(name.rawValue)
