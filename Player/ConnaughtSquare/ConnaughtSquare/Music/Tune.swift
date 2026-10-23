@@ -14,8 +14,8 @@ typealias NoteDurationVectors = WeightedSet<NoteDurationVector>
 typealias NoteIntervalVectors = WeightedSet<NoteIntervalVector>
 
 /// A tune.
-final class Tune {
-    nonisolated(unsafe) static let theSashMyFatherWore = Tune("The Sash My Father Wore",
+struct Tune: Sendable {
+    static let theSashMyFatherWore = Tune("The Sash My Father Wore",
 										  [Note(value: .d3, duration: .quaver),
                                           Note(value: .c3, duration: .quaver),
                                           Note(value: .b2, duration: .crotchet),
@@ -50,7 +50,7 @@ final class Tune {
                                           Note(value: .a2, duration: .crotchet),
                                           Note(value: .g2, duration: .dottedMinim)])
     
-    nonisolated(unsafe) static let theBritishGrenadiers = Tune("The British Grenadiers",
+    static let theBritishGrenadiers = Tune("The British Grenadiers",
 										   [Note(value: .d2, duration: .crotchet),
                                            Note(value: .g2, duration: .crotchet),
                                            Note(value: .d2, duration: .crotchet),
