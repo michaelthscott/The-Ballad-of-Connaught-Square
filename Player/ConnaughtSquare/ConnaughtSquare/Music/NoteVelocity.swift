@@ -6,9 +6,6 @@
 //
  
 import Foundation
-import GameplayKit
-
-
 
 /// Note velocities in in standard musical terminology.
 enum NoteVelocity: UInt8, CaseIterable {
@@ -25,14 +22,38 @@ enum NoteVelocity: UInt8, CaseIterable {
 }
 
 extension NoteVelocity {
-    static func gaussianRandom() -> NoteVelocity {
-        let generator = GKGaussianDistribution(randomSource: GKRandomSource(), lowestValue: 0, highestValue: 9)
-        let index = generator.nextInt()
-        return allCases[index]
+    /// Selects a velocity from a normal distribution centred on the middle velocities, so moderate dynamics are the most likely and the extremes rare.
+    ///
+    /// The distribution is over the indices of `allCases`, with a mean halfway between the first and last and a standard deviation of a sixth of the range,
+    /// as GameplayKit's `GKGaussianDistribution` uses. Samples that fall outside the range are drawn again.
+    /// - Parameter generator: The random number generator to use.
+    /// - Returns: The velocity.
+    static func gaussianRandom<T: RandomNumberGenerator>(using generator: inout T) -> NoteVelocity {
+        let highest = Double(allCases.count - 1)
+        let mean = highest / 2
+        let deviation = highest / 6
+        while true {
+            // The Box–Muller transform turns two uniform samples into a standard normal sample.
+            // The first sample must be positive so that its logarithm is defined.
+            let u1 = Double.random(in: Double.leastNonzeroMagnitude...1, using: &generator)
+            let u2 = Double.random(in: 0..<1, using: &generator)
+            let z = (-2 * log(u1)).squareRoot() * cos(2 * Double.pi * u2)
+            let index = (mean + z * deviation).rounded()
+            if (0...highest).contains(index) {
+                return allCases[Int(index)]
+            }
+        }
     }
-    
+
+    /// Selects a velocity from a normal distribution centred on the middle velocities, using the system's random number generator.
+    /// - Returns: The velocity.
+    static func gaussianRandom() -> NoteVelocity {
+        var generator = SystemRandomNumberGenerator()
+        return gaussianRandom(using: &generator)
+    }
+
     static func random<T: RandomNumberGenerator>(using generator: inout T) -> NoteVelocity {
-        guard let random = allCases.randomElement() else {
+        guard let random = allCases.randomElement(using: &generator) else {
             return .mp
         }
         return random

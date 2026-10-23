@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `NoteVelocity.gaussianRandom()` no longer creates a GameplayKit random source and distribution for every note. It now samples a normal distribution of the same shape directly from Swift's random number generator, and has a `gaussianRandom(using:)` variant that takes a generator. `NoteVelocity` no longer imports GameplayKit.
+
 - Each instrument's part now opens on the pitch of `Composer.initialNote`, so all the instruments begin in unison on the tunes' most frequent pitch. Previously the starting note was only the point the first interval was measured from, and was rarely heard.
 
 - `Composer` works out `initialNote`, `ceilingNote` and `floorNote` once when it's created, rather than for every note it composes. A composer whose tunes give an invalid range now fails when it's created rather than when it first composes.
@@ -17,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
 
 ### Fixed
+
+- `NoteVelocity.random(using:)` now uses the generator it's given. It previously ignored it.
 
 - `LinguisticTagOrder.index(of:)` no longer adds a tag the ordering doesn't hold. It now returns `nil` for such a tag. `areOrdered(_:_:)` places tags missing from the ordering after all the others, as before.
 
