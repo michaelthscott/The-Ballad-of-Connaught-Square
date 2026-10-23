@@ -39,6 +39,35 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
     var weightedElements: [Element] {
         elements.filter { $0.weight > 0 }
     }
+
+	/// Selects an element at random, with a probability proportional to its weight.
+	///
+	/// Elements with a weight of zero or less are never selected.
+	/// - Parameter generator: The random number generator to use.
+	/// - Returns: The element, or `nil` if no element has a positive weight.
+	func weightedRandomElement<T: RandomNumberGenerator>(using generator: inout T) -> Element? {
+		let candidates = weightedElements
+		let totalWeight = candidates.reduce(0) { $0 + $1.weight }
+		guard totalWeight > 0 else { return nil }
+		// Pick a point in the total weight, then find the element whose share of the total contains it.
+		var remaining = Int.random(in: 0..<totalWeight, using: &generator)
+		for candidate in candidates {
+			if remaining < candidate.weight {
+				return candidate
+			}
+			remaining -= candidate.weight
+		}
+		return nil
+	}
+
+	/// Selects an element at random, with a probability proportional to its weight.
+	///
+	/// Elements with a weight of zero or less are never selected.
+	/// - Returns: The element, or `nil` if no element has a positive weight.
+	func weightedRandomElement() -> Element? {
+		var generator = SystemRandomNumberGenerator()
+		return weightedRandomElement(using: &generator)
+	}
 	
 	/// Whether the set is empty.
     var isEmpty: Bool {

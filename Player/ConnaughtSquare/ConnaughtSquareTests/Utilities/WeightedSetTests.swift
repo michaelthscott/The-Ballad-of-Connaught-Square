@@ -541,4 +541,45 @@ struct WeightedSetTests {
         #expect(set[0] == .D && set[0].weight == 0)
 	}
 
+    @Test func testWeightedRandomElementIsProportionalToWeight() throws {
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let set = C3B2A1D0
+        var counts: [ABCD: Int] = [:]
+        let draws = 6000
+        for _ in 0..<draws {
+            let element = try #require(set.weightedRandomElement(using: &generator))
+            counts[element.rawValue, default: 0] += 1
+        }
+        // Expected shares are 1/6, 2/6 and 3/6; D has no weight so is never chosen.
+        #expect(counts[.D] == nil)
+        #expect((800...1200).contains(counts[.A] ?? 0))
+        #expect((1800...2200).contains(counts[.B] ?? 0))
+        #expect((2800...3200).contains(counts[.C] ?? 0))
+    }
+
+    @Test func testWeightedRandomElementWithoutWeights() {
+        var generator = SeededRandomNumberGenerator(seed: 42)
+        let empty = WeightedSet<WeightedABCD>()
+        let unweighted: WeightedSet<WeightedABCD> = [.A(0), .B(0)]
+        #expect(empty.weightedRandomElement(using: &generator) == nil)
+        #expect(unweighted.weightedRandomElement(using: &generator) == nil)
+    }
+
+}
+
+/// A deterministic random number generator (SplitMix64) so that tests of random selection are repeatable.
+struct SeededRandomNumberGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E3779B97F4A7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
+        z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
+        return z ^ (z >> 31)
+    }
 }

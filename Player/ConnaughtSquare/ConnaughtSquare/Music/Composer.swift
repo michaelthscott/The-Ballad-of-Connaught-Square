@@ -21,7 +21,7 @@ struct Composer {
         var array: [NoteDurationVectors] = []
         for operation in SetOperation.allCases {
             let set = durations(from: tunes, using: operation, with: vectorWidth)
-            if !set.isEmpty {
+            if !set.weightedElements.isEmpty {
                 array.append(set)
             }
         }
@@ -32,7 +32,7 @@ struct Composer {
         var array: [NoteIntervalVectors] = []
         for operation in SetOperation.allCases {
             let set = intervals(from: tunes, using: operation, with: vectorWidth)
-            if !set.isEmpty {
+            if !set.weightedElements.isEmpty {
                 array.append(set)
             }
         }
@@ -90,16 +90,20 @@ struct Composer {
     // nextIntervalVector
 
     /// Selects a random note duration vector.
+    ///
+    /// A set is chosen uniformly, then a vector is chosen from it in proportion to its weight, so vectors that occur more often in the tunes are more likely.
     var randomDurationVector: NoteDurationVector {
-        guard let randomDurations = durations.randomElement(), let durationVector = randomDurations.randomElement() else {
+        guard let randomDurations = durations.randomElement(), let durationVector = randomDurations.weightedRandomElement() else {
             fatalError("Failed to get random duration vector")
         }
         return durationVector
     }
-    
+
     /// Selects a random note interval vector.
+    ///
+    /// A set is chosen uniformly, then a vector is chosen from it in proportion to its weight, so vectors that occur more often in the tunes are more likely.
     var randomIntervalVector: NoteIntervalVector {
-        guard let randomIntervals = intervals.randomElement(), let intervalVector = randomIntervals.randomElement() else {
+        guard let randomIntervals = intervals.randomElement(), let intervalVector = randomIntervals.weightedRandomElement() else {
             fatalError("Failed to get random interval vector")
         }
         return intervalVector
