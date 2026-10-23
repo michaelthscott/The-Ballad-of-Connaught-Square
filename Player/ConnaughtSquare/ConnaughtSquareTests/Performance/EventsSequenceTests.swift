@@ -11,13 +11,19 @@ import Testing
 @MainActor
 struct EventsSequenceTests {
 
+    /// A line tagged as starting with a determiner. The tag is given rather than found by
+    /// `LinguisticTagger`, as the lexical class model isn't available on every run destination.
+    func makeLine(parts: [Part]) -> Line {
+        Line(parts: parts, string: parts.map { $0.string }.joined(separator: " "), tags: [.determiner])
+    }
+
     /// A ballad of one canto, one stanza, two lines and three parts.
     /// Both lines start with a determiner so that they are gathered into a canto.
     func makeBallad(partsInFirstLine: Int = 2) -> Ballad {
-        let firstLine = Line(parts: (0..<partsInFirstLine).map {
+        let firstLine = makeLine(parts: (0..<partsInFirstLine).map {
             Part(speaker: $0, string: "The cat sat on mat number \($0).")
         })
-        let secondLine = Line(parts: [Part(speaker: 0, string: "The dog barked loudly.")])
+        let secondLine = makeLine(parts: [Part(speaker: 0, string: "The dog barked loudly.")])
         return Ballad(lines: [firstLine, secondLine],
                       tags: LinguisticTagOrder(tags: [.determiner(weight: 1)]))
     }
