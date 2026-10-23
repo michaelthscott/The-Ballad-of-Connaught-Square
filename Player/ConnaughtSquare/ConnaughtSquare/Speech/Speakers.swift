@@ -54,5 +54,10 @@ enum CurrentSpeaker {
             return firstSpeaker
         }
     }
+
+    /// Starts the turns again, so that the next speaker is the second speaker.
+    func resetTurns() {
+        currentSpeaker = .first
+    }
 }
 

@@ -57,6 +57,7 @@ import Foundation
         switch state {
         case .stopped:
             ballad.isRecited = false
+            speakers.resetTurns()
             spokenPartCount = 0
             soundBank.pauseGate.resume()
             state = .playing

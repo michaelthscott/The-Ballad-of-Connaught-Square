@@ -51,6 +51,14 @@ struct SpeakersTests {
         #expect(speakers.nextSpeaker == speakers.firstSpeaker)
     }
 
+    /// Resetting the turns starts them again with the second speaker.
+    @Test func testResetTurns() {
+        _ = speakers.nextSpeaker
+        speakers.resetTurns()
+        #expect(speakers.nextSpeaker == speakers.secondSpeaker)
+        #expect(speakers.nextSpeaker == speakers.firstSpeaker)
+    }
+
     @Test func testMaxSelectedSpeakersMatchesTheSelection() {
         #expect(speakers.selectedSpeakers.count == Speakers.maxSelectedSpeakers)
     }
