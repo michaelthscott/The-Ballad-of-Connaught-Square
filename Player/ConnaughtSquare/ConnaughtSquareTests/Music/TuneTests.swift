@@ -40,8 +40,15 @@ final class TuneTests {
         #expect(tune.lowestNote.value == NoteValue.b2)
     }
     
-    func testMostFrequentNoteNumber() {
+    @Test func testMostFrequentNoteNumber() {
         #expect(tune.mostFrequentNote.value == NoteValue.d3)
+    }
+
+    @Test func testMostFrequentNoteCountsPitchesAcrossDurations() {
+        let tune = Tune("Test", [Note(value: .d3, duration: .quaver),
+                                 Note(value: .b2, duration: .quaver),
+                                 Note(value: .b2, duration: .crotchet)])
+        #expect(tune.mostFrequentNote.value == NoteValue.b2)
     }
     
     @Test func testNoteIntervalVectors() {

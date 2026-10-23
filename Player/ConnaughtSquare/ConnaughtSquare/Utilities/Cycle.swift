@@ -50,12 +50,17 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
 	}
     
     /// Computes the most frequent element.
+    ///
+    /// When several elements are equally frequent, the greatest of them is returned so that the result is deterministic.
 	var mostFrequent: Element {
 		var frequencies: [Element: Int] = [:]
 		for element in elements {
 			frequencies[element, default: 0] += 1
 		}
-        guard let element = frequencies.keys.sorted().last else {
+        let mostFrequent = frequencies.max { lhs, rhs in
+            lhs.value != rhs.value ? lhs.value < rhs.value : lhs.key < rhs.key
+        }
+        guard let element = mostFrequent?.key else {
             fatalError("Failed to find the most frequent element")
         }
         return element

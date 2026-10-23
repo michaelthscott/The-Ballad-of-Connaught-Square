@@ -37,4 +37,13 @@ final class CycleTests {
         #expect(copy.currentIndex == cycle.elements.index(after: cycle.elements.startIndex))
 	}
 
+    @Test func testMostFrequent() {
+        let cycle: Cycle<String> = ["A", "B", "B", "C"]
+        #expect(cycle.mostFrequent == "B")
+    }
+
+    @Test func testMostFrequentTieIsGreatest() {
+        #expect(cycle.mostFrequent == "C")
+    }
+
 }

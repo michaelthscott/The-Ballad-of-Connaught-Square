@@ -139,9 +139,15 @@ final class Tune {
     }
 
     /// The most frequently used note in the tune.
+    ///
+    /// Notes are counted by pitch alone, ignoring their durations and velocities. The first note in the tune with the most frequent pitch is returned.
     /// - Returns: The note.
 	var mostFrequentNote: Note {
-		notes.mostFrequent
+        let value = Cycle<NoteValue>(elements: notes.elements.map(\.value)).mostFrequent
+        guard let note = notes.elements.first(where: { $0.value == value }) else {
+            fatalError("Failed to find the most frequent note")
+        }
+        return note
     }
     
 	/// The  intervals between the notes used in the tune.
