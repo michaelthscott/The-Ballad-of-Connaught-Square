@@ -19,6 +19,14 @@ struct ComposerTests {
         #expect(composer.floorNote <= composer.initialNote)
         #expect(composer.initialNote <= composer.ceilingNote)
     }
+
+    @Test func testRangeSpansAllTunes() {
+        let low = Tune("Low", [Note(value: .d2, duration: .crotchet), Note(value: .g2, duration: .crotchet), Note(value: .g2, duration: .crotchet)])
+        let high = Tune("High", [Note(value: .g2, duration: .crotchet), Note(value: .b3, duration: .crotchet), Note(value: .g2, duration: .crotchet)])
+        let composer = Composer(tunes: [low, high], vectorWidth: 1)
+        #expect(composer.floorNote.value == .d2)
+        #expect(composer.ceilingNote.value == .b3)
+    }
     
     @Test func testDurations() async throws {
         #expect(composer.durations.count <= Composer.SetOperation.allCases.count)

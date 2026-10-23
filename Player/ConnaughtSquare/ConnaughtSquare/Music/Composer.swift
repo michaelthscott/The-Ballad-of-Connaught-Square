@@ -125,8 +125,9 @@ struct Composer {
 		return ceiling
 	}
 	
+	/// The lowest note across all the tunes, so that the range spans every tune as the ceiling does.
 	var floorNote: Note {
-		guard let floor = tunes.compactMap({ $0.lowestNote }).max(by: { lhs, rhs in lhs < rhs }), floor <= initialNote else {
+		guard let floor = tunes.compactMap({ $0.lowestNote }).min(by: { lhs, rhs in lhs < rhs }), floor <= initialNote else {
 			fatalError("Failed to find lowest note")
 		}
 		return floor
