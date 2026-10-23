@@ -40,6 +40,12 @@ final class SpeechSynthesizer {
 
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
+                // A task cancelled before speech begins has already run its cancellation handler,
+                // whose stop would find nothing to stop, so it mustn't start speaking at all.
+                guard !Task.isCancelled else {
+                    continuation.resume()
+                    return
+                }
                 coordinator.begin(continuation, for: utterance)
                 synthesizer.speak(utterance)
             }

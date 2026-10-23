@@ -10,7 +10,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `Note.off`, the note's release velocity, and the `off:` parameter of `Note.init`. It was generated for every note but never used, as `AVAudioUnitSampler.stopNote` takes no velocity.
 
+- The `Recitable` protocol, which nothing used. Its `isRecited` setter changed copies of the elements rather than the elements themselves.
+
 ### Changed
+
+- `Speakers.nextSpeaker` is now the `takeTurn()` method, as reading it passed the turn to the other speaker.
+
+- `Speaker` is now a struct rather than a class, and `Speakers.availableSpeakers` is a constant.
 
 - `Tune` is now a `Sendable` struct rather than a class, so the built-in tunes no longer need `nonisolated(unsafe)`.
 
@@ -45,6 +51,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The performance now stops once it has recited every part. It previously started the ballad over and never finished. `BalladCursorSequence` stays finished after the last part, when its `cursor` and `currentPart`, now optional, are `nil`, and `EventsSequence.next()` returns `nil`.
 
 - A ballad with no parts no longer crashes `BalladCursorSequence`, and a performance of it stops straight away. Cantos, stanzas and lines without any parts are skipped.
+
+- The app no longer crashes at launch when no British English voice is installed. `Speakers` falls back to the default voice for the user's language.
+
+- A performance stopped just before a part was due to be spoken no longer speaks it. `SpeechSynthesizer.speak(_:in:)` returns straight away if its task is already cancelled.
+
+- Speakers are ordered by name and then by identifier, so different voices with the same name have a consistent order. They were previously neither equal nor ordered.
 
 - `NoteVelocity.random(using:)` now uses the generator it's given. It previously ignored it.
 

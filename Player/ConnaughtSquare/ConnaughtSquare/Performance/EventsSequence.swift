@@ -40,7 +40,7 @@ struct EventsSequence {
         } else if balladCursorSequence.remainingParts > 0 {
             events.append(.silence(duration: .seconds(1)))
         }
-        events.append(.speak(part: part, speaker: performance.speakers.nextSpeaker))
+        events.append(.speak(part: part, speaker: performance.speakers.takeTurn()))
         _ = balladCursorSequence.next()
         return events
     }

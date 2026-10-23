@@ -44,19 +44,19 @@ struct SpeakersTests {
     }
 
     /// The speakers take turns, starting with the second speaker.
-    @Test func testNextSpeakerAlternates() {
-        #expect(speakers.nextSpeaker == speakers.secondSpeaker)
-        #expect(speakers.nextSpeaker == speakers.firstSpeaker)
-        #expect(speakers.nextSpeaker == speakers.secondSpeaker)
-        #expect(speakers.nextSpeaker == speakers.firstSpeaker)
+    @Test func testTakeTurnAlternates() {
+        #expect(speakers.takeTurn() == speakers.secondSpeaker)
+        #expect(speakers.takeTurn() == speakers.firstSpeaker)
+        #expect(speakers.takeTurn() == speakers.secondSpeaker)
+        #expect(speakers.takeTurn() == speakers.firstSpeaker)
     }
 
     /// Resetting the turns starts them again with the second speaker.
     @Test func testResetTurns() {
-        _ = speakers.nextSpeaker
+        _ = speakers.takeTurn()
         speakers.resetTurns()
-        #expect(speakers.nextSpeaker == speakers.secondSpeaker)
-        #expect(speakers.nextSpeaker == speakers.firstSpeaker)
+        #expect(speakers.takeTurn() == speakers.secondSpeaker)
+        #expect(speakers.takeTurn() == speakers.firstSpeaker)
     }
 
     @Test func testMaxSelectedSpeakersMatchesTheSelection() {

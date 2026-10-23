@@ -8,13 +8,13 @@
 import Foundation
 import AVFoundation
 
-final class Speaker {
+struct Speaker {
     let voice: AVSpeechSynthesisVoice
 
     init(voice: AVSpeechSynthesisVoice) {
         self.voice = voice
     }
-    
+
     var name: String {
         voice.name
     }
@@ -35,8 +35,10 @@ extension Speaker: Equatable {
 }
 
 extension Speaker: Comparable {
+    /// Speakers are ordered by name, and by identifier when different voices share a name, so that
+    /// the ordering agrees with equality.
     static func < (lhs: Speaker, rhs: Speaker) -> Bool {
-        lhs.name < rhs.name
+        (lhs.name, lhs.id) < (rhs.name, rhs.id)
     }
 }
 

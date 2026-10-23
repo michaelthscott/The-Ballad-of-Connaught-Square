@@ -87,10 +87,10 @@ struct PerformanceTests {
     /// A performance stopped after an odd number of parts still starts the next one with the second speaker.
     @Test func testPlayResetsSpeakerTurns() async throws {
         let performance = try makePerformance()
-        _ = performance.speakers.nextSpeaker
+        _ = performance.speakers.takeTurn()
         performance.play()
         performance.stop()
-        #expect(performance.speakers.nextSpeaker == performance.speakers.secondSpeaker)
+        #expect(performance.speakers.takeTurn() == performance.speakers.secondSpeaker)
     }
 
 }

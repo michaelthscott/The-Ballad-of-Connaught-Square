@@ -18,16 +18,20 @@ enum CurrentSpeaker {
     static let maxSelectedSpeakers: Int = 2
     static let language = "en-GB"
 
-    var availableSpeakers: [Speaker]
+    let availableSpeakers: [Speaker]
     var firstSpeaker: Speaker
     var secondSpeaker: Speaker
     private var currentSpeaker: CurrentSpeaker = .first
-    
+
     init() {
-        let availableSpeakers = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == Self.language }.compactMap { Speaker(voice: $0) }.sorted()
-        
+        var availableSpeakers = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == Self.language }.map { Speaker(voice: $0) }.sorted()
+        // Without a British English voice, fall back to the default voice for the user's language.
+        if availableSpeakers.isEmpty, let voice = AVSpeechSynthesisVoice(language: nil) {
+            availableSpeakers = [Speaker(voice: voice)]
+        }
+
         switch availableSpeakers.count {
-        case 0: 
+        case 0:
             fatalError("No available voices")
         case 1:
             firstSpeaker = availableSpeakers[0]
@@ -36,21 +40,23 @@ enum CurrentSpeaker {
             firstSpeaker = availableSpeakers[0]
             secondSpeaker = availableSpeakers[1]
         }
-		
-		self.availableSpeakers = availableSpeakers
+
+        self.availableSpeakers = availableSpeakers
     }
-    
+
     var selectedSpeakers: [Speaker] {
         [firstSpeaker, secondSpeaker]
     }
 
-    var nextSpeaker: Speaker {
+    /// Returns the speaker whose turn it is, and passes the turn to the other speaker.
+    /// The turns start with the second speaker.
+    func takeTurn() -> Speaker {
         switch currentSpeaker {
         case .first:
-            defer { currentSpeaker = .second }
+            currentSpeaker = .second
             return secondSpeaker
         case .second:
-            defer { currentSpeaker = .first }
+            currentSpeaker = .first
             return firstSpeaker
         }
     }
