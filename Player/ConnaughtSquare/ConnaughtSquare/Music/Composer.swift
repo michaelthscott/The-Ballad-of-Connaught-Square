@@ -160,11 +160,11 @@ struct Composer {
         var notes: [Note] = []
         var currentDuration: Duration = .microseconds(0)
         while currentDuration < duration {
-            for (interval, duration) in zip(randomIntervalVector, randomDurationVector) {
-                let note = previousNote.nextNote(interval: interval, duration: duration, ceiling: ceilingNote, floor: floorNote)
+            for (interval, noteDuration) in zip(randomIntervalVector, randomDurationVector) {
+                let note = previousNote.nextNote(interval: interval, duration: noteDuration, ceiling: ceilingNote, floor: floorNote)
                 notes.append(note)
                 previousNote = note
-                currentDuration += duration.microseconds
+                currentDuration += noteDuration.microseconds
             }
         }
         precondition(notes.count > 0, "No notes assigned to \(instrument)")
