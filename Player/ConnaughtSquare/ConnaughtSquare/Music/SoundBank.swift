@@ -14,10 +14,14 @@ enum SoundBankError: Error {
     case failedToStartEngine
 }
 
-/// The audio engine and sampler used to play notes.
+/// The audio engine and samplers used to play notes.
+///
+/// Each instrument has its own sampler, so instruments played at the same time each sound with
+/// their own preset, and stopping a note on one instrument doesn't stop the same pitch on another.
+/// The samplers are mixed together and played through a shared reverb.
 ///
 /// The engine and its nodes are isolated to this actor, so assignments played at the same time
-/// are serialised on the sampler rather than racing on it. Because the actor is `Sendable`,
+/// are serialised on the samplers rather than racing on them. Because the actor is `Sendable`,
 /// `shared` no longer needs to be `nonisolated(unsafe)`.
 actor SoundBank {
     static let shared: SoundBank = {
@@ -33,8 +37,15 @@ actor SoundBank {
     let url: URL
 
     private let engine: AVAudioEngine
-    private let sampler: AVAudioUnitSampler
+    private let mixer: AVAudioMixerNode
     private let reverb: AVAudioUnitReverb
+    /// The sampler for each instrument that has been loaded.
+    private var samplers: [InstrumentName: AVAudioUnitSampler] = [:]
+
+    /// The instruments that have been loaded.
+    var loadedInstruments: Set<InstrumentName> {
+        Set(samplers.keys)
+    }
 
     /// Creates a sound bank from a SoundFont in the main bundle.
     ///
@@ -48,32 +59,40 @@ actor SoundBank {
         self.url = url
 
         // Build the graph locally, then adopt it, so the initialiser never touches isolated state.
+        // The samplers are connected to the mixer as their instruments are loaded.
         let engine = AVAudioEngine()
-        let sampler = AVAudioUnitSampler()
+        let mixer = AVAudioMixerNode()
         let reverb = AVAudioUnitReverb()
         reverb.loadFactoryPreset(.smallRoom)
         reverb.wetDryMix = 100.0
-        engine.attach(sampler)
+        engine.attach(mixer)
         engine.attach(reverb)
-        engine.connect(sampler, to: reverb, format: nil)
+        engine.connect(mixer, to: reverb, format: nil)
         engine.connect(reverb, to: engine.outputNode, format: nil)
         self.engine = engine
-        self.sampler = sampler
+        self.mixer = mixer
         self.reverb = reverb
     }
 
-    /// Loads the instrument's preset into the sampler.
+    /// Loads the instrument's preset into a sampler of its own.
     ///
-    /// - Note: There is a single sampler, so the most recently loaded preset is the one that sounds.
+    /// Does nothing if the instrument has already been loaded.
     func loadInstrument(_ name: InstrumentName) throws {
+        guard samplers[name] == nil else { return }
+        let sampler = AVAudioUnitSampler()
+        engine.attach(sampler)
+        // Mixer input buses can be connected while the engine is running, so instruments can be added mid-performance.
+        engine.connect(sampler, to: mixer, fromBus: 0, toBus: mixer.nextAvailableInputBus, format: nil)
         let bankMSB = UInt8(kAUSampler_DefaultMelodicBankMSB)
         let bankLSB = UInt8(kAUSampler_DefaultBankLSB)
         let presetID = UInt8(name.rawValue)
         do {
             try sampler.loadSoundBankInstrument(at: url, program: presetID, bankMSB: bankMSB, bankLSB: bankLSB)
         } catch {
+            engine.detach(sampler)
             throw SoundBankError.failedToLoadSoundBank
         }
+        samplers[name] = sampler
     }
 
     func startEngine() throws {
@@ -92,27 +111,28 @@ actor SoundBank {
         }
     }
 
-    /// Starts the note sounding.
-    func startNote(_ note: Note) {
-        sampler.startNote(note.value.rawValue, withVelocity: note.on.rawValue, onChannel: 0)
+    /// Starts the note sounding on the instrument. Does nothing if the instrument hasn't been loaded.
+    func startNote(_ note: Note, instrument: InstrumentName) {
+        samplers[instrument]?.startNote(note.value.rawValue, withVelocity: note.on.rawValue, onChannel: 0)
     }
 
-    /// Stops the note sounding.
-    func stopNote(_ note: Note) {
-        sampler.stopNote(note.value.rawValue, onChannel: 0)
+    /// Stops the note sounding on the instrument. Does nothing if the instrument hasn't been loaded.
+    func stopNote(_ note: Note, instrument: InstrumentName) {
+        samplers[instrument]?.stopNote(note.value.rawValue, onChannel: 0)
     }
 }
 
 extension SoundBank {
-    /// Plays the note for the length of its duration.
+    /// Plays the note on the instrument for the length of its duration.
     ///
     /// This is `nonisolated` so that waiting out the note's duration doesn't block the actor,
     /// which lets notes from other instruments sound at the same time.
-    nonisolated func play(note: Note) async {
-        await startNote(note)
+    /// - Note: Nothing sounds unless the instrument has been loaded and the engine started.
+    nonisolated func play(note: Note, instrument: InstrumentName) async {
+        await startNote(note, instrument: instrument)
         // A cancelled sleep still falls through to `stopNote`, so a note is never left sounding.
         try? await Task.sleep(for: note.duration.duration)
-        await stopNote(note)
+        await stopNote(note, instrument: instrument)
     }
 
     /// Plays notes from the cycle until the specified duration has elapsed.
@@ -129,7 +149,7 @@ extension SoundBank {
         var played: [Note] = []
         while durationPlayed < duration, !Task.isCancelled {
             let note = notes.next()
-            await play(note: note)
+            await play(note: note, instrument: instrument)
             durationPlayed += note.duration.duration
             played.append(note)
         }

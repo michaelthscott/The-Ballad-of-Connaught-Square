@@ -35,7 +35,27 @@ struct SoundBankTests {
 
     @Test func testPlayNote() async throws {
         try await soundBank.loadInstrument(.electricPiano1)
-        await soundBank.play(note: Note(value: .a2, on: .f, off: .f, duration: .crotchet))
+        await soundBank.play(note: Note(value: .a2, on: .f, off: .f, duration: .crotchet), instrument: .electricPiano1)
+    }
+
+    @Test func testLoadInstrumentsSeparately() async throws {
+        try await soundBank.loadInstrument(.violin)
+        try await soundBank.loadInstrument(.cello)
+        try await soundBank.loadInstrument(.violin)
+        // Other tests share the sound bank, so it may hold further instruments.
+        #expect(await soundBank.loadedInstruments.isSuperset(of: [.violin, .cello]))
+    }
+
+    @Test func testPlayInstrumentsConcurrently() async throws {
+        // Both instruments play the same pitch at the same time, so neither should cut the other short.
+        let cycle = Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .a2, duration: .crotchet)])
+        let total = NoteDuration.quaver.duration + NoteDuration.crotchet.duration
+        async let violin = soundBank.play(notes: cycle, duration: total, instrument: .violin)
+        async let cello = soundBank.play(notes: cycle, duration: total, instrument: .cello)
+        let played = try await (violin, cello)
+        #expect(played.0.count == 2)
+        #expect(played.1.count == 2)
+        #expect(await soundBank.loadedInstruments.isSuperset(of: [.violin, .cello]))
     }
     
     @Test func testPlayNotes() async throws {

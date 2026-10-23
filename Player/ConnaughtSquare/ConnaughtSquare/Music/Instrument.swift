@@ -19,7 +19,7 @@ struct Instrument: Sendable {
     ///   - note: A note.
     ///   - soundBank: The sound bank to play on.
     func play(note: Note, on soundBank: SoundBank = .shared) async {
-        await soundBank.play(note: note)
+        await soundBank.play(note: note, instrument: name)
     }
 
     /// Plays the notes for the specified time.
