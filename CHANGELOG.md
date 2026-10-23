@@ -38,6 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A performance that finished just after being stopped and restarted could mark the new performance as finished.
 
+- Stopping and quickly restarting the performance could cut its first line short, as the stopped line's cancellation ended the new line's wait. The stopped performance was also left waiting forever for its last line to finish.
+
 - `NoteVelocity.random(using:)` now uses the generator it's given. It previously ignored it.
 
 - `LinguisticTagOrder.index(of:)` no longer adds a tag the ordering doesn't hold. It now returns `nil` for such a tag. `areOrdered(_:_:)` places tags missing from the ordering after all the others, as before.

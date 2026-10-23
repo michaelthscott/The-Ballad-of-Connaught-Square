@@ -40,7 +40,7 @@ final class SpeechSynthesizer {
 
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                coordinator.begin(continuation)
+                coordinator.begin(continuation, for: utterance)
                 synthesizer.speak(utterance)
             }
         } onCancel: {
@@ -74,33 +74,43 @@ final class SpeechSynthesizer {
 
 // MARK: - AVSpeechSynthesizerDelegate
 
-/// Resumes the pending continuation when an utterance ends.
+/// Resumes the pending continuation when its utterance ends.
 ///
 /// The synthesizer's callbacks aren't guaranteed to arrive on the main actor, so the
 /// continuation is guarded by a lock rather than by actor isolation.
 private final class Coordinator: NSObject, AVSpeechSynthesizerDelegate, @unchecked Sendable {
     private let lock = NSLock()
-    private var continuation: CheckedContinuation<Void, Never>?
+    private var pending: (utterance: AVSpeechUtterance, continuation: CheckedContinuation<Void, Never>)?
 
-    func begin(_ continuation: CheckedContinuation<Void, Never>) {
-        lock.withLock { self.continuation = continuation }
+    /// Waits for the utterance to end before resuming the continuation.
+    ///
+    /// Any utterance still pending has been superseded, so its continuation is resumed now rather
+    /// than leaked; the callback that eventually arrives for it is then ignored.
+    func begin(_ continuation: CheckedContinuation<Void, Never>, for utterance: AVSpeechUtterance) {
+        let superseded = lock.withLock {
+            defer { pending = (utterance, continuation) }
+            return pending?.continuation
+        }
+        superseded?.resume()
     }
 
-    /// Resumes the pending continuation, if any. Resuming at most once is what makes it safe
-    /// to receive both `didFinish` and `didCancel` for the same utterance.
-    private func finish() {
-        let pending = lock.withLock {
-            defer { continuation = nil }
-            return continuation
+    /// Resumes the pending continuation if it belongs to the utterance. Matching the utterance stops
+    /// a late callback for a stopped utterance from ending the one that replaced it, and resuming at
+    /// most once makes it safe to receive both `didFinish` and `didCancel` for the same utterance.
+    private func finish(_ utterance: AVSpeechUtterance) {
+        let matched = lock.withLock { () -> CheckedContinuation<Void, Never>? in
+            guard let pending, pending.utterance === utterance else { return nil }
+            self.pending = nil
+            return pending.continuation
         }
-        pending?.resume()
+        matched?.resume()
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        finish()
+        finish(utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        finish()
+        finish(utterance)
     }
 }
