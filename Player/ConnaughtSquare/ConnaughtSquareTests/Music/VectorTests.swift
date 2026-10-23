@@ -30,6 +30,14 @@ struct VectorTests {
         #expect(!(ab < Vector<Int>([1, 2], weight: 5)))
     }
 
+    @Test func testHashIgnoresWeight() {
+        let light = Vector<Int>([1, 2], weight: 1)
+        let heavy = Vector<Int>([1, 2], weight: 5)
+        #expect(light == heavy)
+        #expect(light.hashValue == heavy.hashValue)
+        #expect(Set([light, heavy]).count == 1)
+    }
+
     @Test func testWeightedSetEqualityIgnoresInsertionOrder() {
         let vectors = [Vector<Int>([1, 2], weight: 1), Vector<Int>([2, 1], weight: 1), Vector<Int>([1, 3], weight: 1)]
         let forwards = WeightedSet<Vector<Int>>(vectors)

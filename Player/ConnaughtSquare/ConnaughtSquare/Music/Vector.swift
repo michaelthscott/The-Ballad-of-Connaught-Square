@@ -33,7 +33,10 @@ extension Vector: Comparable {
 }
 
 extension Vector: Hashable {
-	
+	/// Hashes the elements alone, so that vectors which are equal, whatever their weights, hash the same.
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(elements)
+	}
 }
 
 extension Vector: Codable {
