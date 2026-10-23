@@ -22,11 +22,11 @@ import SwiftUI
         ordering.sort()
     }
     
-    /// The position of the tag in the ordering.
+    /// The position of the tag in the ordering. This doesn't change the ordering.
     /// - Parameter tag: The specified tag.
-    /// - Returns: The position of the tag.
-    func index(of tag: WeightedLinguisticTag) -> Int {
-        ordering.position(of: tag)
+    /// - Returns: The position of the tag, or `nil` if the ordering doesn't hold it.
+    func index(of tag: WeightedLinguisticTag) -> Int? {
+        ordering.existingPosition(of: tag)
     }
 
     /// The number of words that map to the tag.
@@ -121,7 +121,10 @@ extension LinguisticTagOrder {
     ///   - rhs: Right-hand tag.
     /// - Returns: Whether the tags are ordered.
     func areOrdered(_ lhs: LinguisticTag, _ rhs: LinguisticTag) -> Bool {
-		index(of: WeightedLinguisticTag(rawValue: lhs)) < index(of: WeightedLinguisticTag(rawValue: rhs))
+		// Tags missing from the ordering come after all the others.
+		let lhsIndex = index(of: WeightedLinguisticTag(rawValue: lhs)) ?? Int.max
+		let rhsIndex = index(of: WeightedLinguisticTag(rawValue: rhs)) ?? Int.max
+		return lhsIndex < rhsIndex
     }
     
     /// Compares two arrays of linguistic tags.
@@ -160,12 +163,15 @@ extension LinguisticTagOrder {
         case .ascending:
             let tags = Array(tagsOrderedByWeight().reversed())
             for position in tags.indices {
-                ordering.move(fromOffsets: IndexSet([index(of: tags[position])]), toOffset: position)
+                // The tags come from the ordering itself, so each one is found.
+                guard let index = index(of: tags[position]) else { continue }
+                ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
             }
         case .descending:
             let tags = tagsOrderedByWeight()
             for position in tags.indices {
-                ordering.move(fromOffsets: IndexSet([index(of: tags[position])]), toOffset: position)
+                guard let index = index(of: tags[position]) else { continue }
+                ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
             }
         case .invert:
             ordering.reverse()

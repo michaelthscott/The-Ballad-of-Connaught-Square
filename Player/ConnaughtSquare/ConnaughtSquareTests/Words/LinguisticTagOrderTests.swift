@@ -32,7 +32,14 @@ final class LinguisticTagOrderTests {
         // TODO: This used to be index == 0 because the tags were rearranged to be in weight decending order.
         #expect(tags.index(of: .noun()) == 0)
     }
-    
+
+    @Test func testIndexOfAMissingTagLeavesTheOrderingUnchanged() {
+        let order = LinguisticTagOrder(tags: [.noun(weight: 2)])
+        #expect(order.index(of: .verb()) == nil)
+        #expect(order.weight(of: .verb()) == 0)
+        #expect(order.count == 1)
+    }
+
     @Test func testWeightOf() {
         #expect(tags.weight(of: .noun()) == 2)
     }
