@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- `Vector`'s `<` is now a strict ordering. Vectors of the same length previously compared as less if any element was less, so `[1, 2] < [2, 1]` and `[2, 1] < [1, 2]` were both true. This made sorting unreliable and could make equal `WeightedSet`s compare as unequal or hash differently. Shorter vectors still come first; vectors of the same length are now compared element by element.
+
 - `MIDIEvent.on` and `MIDIEvent.off` had their status bytes swapped. Note On is now `0x90` and Note Off `0x80`.
 
 - `Composer.floorNote` is now the lowest note across all the tunes, matching `ceilingNote`, which is the highest. It previously took the highest of the tunes' lowest notes, narrowing the range when the tunes' lowest notes differ.

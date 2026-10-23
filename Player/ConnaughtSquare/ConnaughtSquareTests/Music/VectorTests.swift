@@ -19,6 +19,24 @@ struct VectorTests {
         #expect(Vector<String>(["A", "C"]) > Vector<String>(["A", "B"]))
         #expect(Vector<String>(["B", "C"]) > Vector<String>(["A", "B"]))
 	}
+
+    @Test func testComparableIsAStrictOrder() {
+        let ab = Vector<Int>([1, 2])
+        let ba = Vector<Int>([2, 1])
+        // Each element is less in one position, but only the first differing position counts.
+        #expect(ab < ba)
+        #expect(!(ba < ab))
+        #expect(!(ab < ab))
+        #expect(!(ab < Vector<Int>([1, 2], weight: 5)))
+    }
+
+    @Test func testWeightedSetEqualityIgnoresInsertionOrder() {
+        let vectors = [Vector<Int>([1, 2], weight: 1), Vector<Int>([2, 1], weight: 1), Vector<Int>([1, 3], weight: 1)]
+        let forwards = WeightedSet<Vector<Int>>(vectors)
+        let backwards = WeightedSet<Vector<Int>>(vectors.reversed())
+        #expect(forwards == backwards)
+        #expect(forwards.hashValue == backwards.hashValue)
+    }
 	
     @Test func testSequence() {
 		let empty: Vector<String> = []

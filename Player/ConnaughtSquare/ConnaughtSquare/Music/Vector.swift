@@ -18,16 +18,13 @@ struct Vector<Element: Codable & Equatable & Comparable & Hashable>: Weighted {
 }
 
 extension Vector: Comparable {
+    /// Shorter vectors come first; vectors of the same length are compared element by element.
+    /// Weights are ignored, as they are in equality.
     static func < (lhs: Vector<Element>, rhs: Vector<Element>) -> Bool {
 		guard lhs.elements.count == rhs.elements.count else {
 			return lhs.elements.count < rhs.elements.count
 		}
-		for index in lhs.elements.indices {
-			if lhs.elements[index] < rhs.elements[index] {
-				return true
-			}
-		}
-		return false
+		return lhs.elements.lexicographicallyPrecedes(rhs.elements)
     }
     
     static func == (lhs: Vector<Element>, rhs: Vector<Element>) -> Bool {
