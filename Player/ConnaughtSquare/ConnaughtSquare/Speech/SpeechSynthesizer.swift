@@ -48,10 +48,26 @@ final class SpeechSynthesizer {
         }
     }
 
-    /// Stops any speech in progress at the next word boundary.
+    /// Stops any speech in progress at the next word boundary, or immediately if speech is paused.
     func stop() {
         if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .word)
+            synthesizer.stopSpeaking(at: synthesizer.isPaused ? .immediate : .word)
+        }
+    }
+
+    /// Pauses any speech in progress at the next word boundary.
+    ///
+    /// A paused utterance hasn't finished, so `speak(_:in:)` keeps waiting until it is resumed or stopped.
+    func pause() {
+        if synthesizer.isSpeaking {
+            synthesizer.pauseSpeaking(at: .word)
+        }
+    }
+
+    /// Continues speech from where it was paused.
+    func resume() {
+        if synthesizer.isPaused {
+            synthesizer.continueSpeaking()
         }
     }
 }

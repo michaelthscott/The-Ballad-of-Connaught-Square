@@ -12,16 +12,28 @@ import Foundation
 /// The performance runs as a single cancellable task on the main actor. Each batch of events
 /// recites its parts on the main actor while its accompaniment plays in a child task off it,
 /// and the batch finishes when both are done.
+///
+/// Pausing closes the sound bank's pause gate, which halts the accompaniment at its next note and
+/// the recitation at its next part, and pauses the voice and the audio engine in place.
 @MainActor @Observable final class Performance {
+    enum PlaybackState {
+        case stopped
+        case playing
+        case paused
+    }
+
     var spokenPartCount: Int = 0
 	let ballad: Ballad
 	let speakers: Speakers
     let composer: Composer
-	var isFinished = false
+    private(set) var state: PlaybackState = .stopped
 
     private let speech = SpeechSynthesizer()
     private let soundBank: SoundBank
     private var performanceTask: Task<Void, Never>?
+    /// The most recent change to the audio engine. Each change waits for the previous one, so the
+    /// engine is paused, resumed and stopped in the order they were requested.
+    private var engineControlTask: Task<Void, Never>?
 
     init(composer: Composer = Composer(),
          ballad: Ballad = Ballad(),
@@ -39,33 +51,77 @@ import Foundation
                                       duration: duration)
     }
     	
-    /// Starts performing the ballad from the beginning. Does nothing if a performance is already running.
-	func perform() {
-        guard performanceTask == nil else { return }
-        isFinished = false
-        performanceTask = Task { [weak self] in
-            await self?.run()
+    /// Starts performing the ballad from the beginning, or resumes a paused performance.
+    /// Does nothing if the performance is already playing.
+	func play() {
+        switch state {
+        case .stopped:
+            ballad.isRecited = false
+            spokenPartCount = 0
+            soundBank.pauseGate.resume()
+            state = .playing
+            performanceTask = Task { [weak self] in
+                await self?.run()
+            }
+        case .paused:
+            resume()
+        case .playing:
+            break
         }
 	}
-	
+
+    /// Pauses the performance in place. Does nothing unless the performance is playing.
+    func pause() {
+        guard state == .playing else { return }
+        soundBank.pauseGate.pause()
+        speech.pause()
+        controlEngine { await $0.pauseEngine() }
+        state = .paused
+    }
+
+    /// Resumes a paused performance from where it was paused. Does nothing unless the performance is paused.
+    func resume() {
+        guard state == .paused else { return }
+        controlEngine { try? await $0.resumeEngine() }
+        speech.resume()
+        soundBank.pauseGate.resume()
+        state = .playing
+    }
+
     /// Stops the performance, silencing the voices and the accompaniment.
     func stop() {
         performanceTask?.cancel()
         performanceTask = nil
+        // Release anything waiting at the gate so that it can see it has been cancelled.
+        soundBank.pauseGate.resume()
         speech.stop()
+        controlEngine { await $0.stopEngine() }
+        state = .stopped
+    }
+
+    /// Changes the audio engine after any earlier change has been made.
+    private func controlEngine(_ change: @escaping @Sendable (SoundBank) async -> Void) {
+        let previous = engineControlTask
         let soundBank = soundBank
-        Task { await soundBank.stopEngine() }
-        isFinished = true
+        engineControlTask = Task {
+            await previous?.value
+            await change(soundBank)
+        }
     }
 
     private func run() async {
         var events = EventsSequence(performance: self)
         while !Task.isCancelled, let batch = events.next() {
+            await soundBank.pauseGate.wait()
+            guard !Task.isCancelled else { break }
             await perform(batch)
         }
-        await soundBank.stopEngine()
+        // A cancelled performance was stopped, and `stop()` has already tidied up — possibly
+        // before a new performance started, which this mustn't disturb.
+        guard !Task.isCancelled else { return }
         performanceTask = nil
-        isFinished = true
+        controlEngine { await $0.stopEngine() }
+        state = .stopped
     }
 
     /// Performs one batch of events, returning when both the accompaniment and the recitation have finished.
@@ -89,6 +145,8 @@ import Foundation
         let soundBank = soundBank
         async let played: Void = Self.play(accompaniment, on: soundBank)
         for (part, speaker) in recitation {
+            await soundBank.pauseGate.wait()
+            guard !Task.isCancelled else { break }
             await recite(part, as: speaker)
         }
         await played
@@ -111,7 +169,7 @@ import Foundation
             case .play(let orchestration, let duration):
                 await orchestration.play(duration: duration, on: soundBank)
             case .silence(let duration):
-                try? await Task.sleep(for: duration)
+                try? await soundBank.pauseGate.sleep(for: duration)
             }
         }
     }

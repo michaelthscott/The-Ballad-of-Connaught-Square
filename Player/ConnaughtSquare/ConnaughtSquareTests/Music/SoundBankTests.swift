@@ -65,4 +65,13 @@ struct SoundBankTests {
         #expect(played.count == 3)
     }
 
+    @Test func testPauseAndResumeEngine() async throws {
+        // A sound bank of its own, so pausing it doesn't pause other tests' notes.
+        let soundBank = try SoundBank()
+        try await soundBank.startEngine()
+        await soundBank.pauseEngine()
+        try await soundBank.resumeEngine()
+        await soundBank.stopEngine()
+    }
+
 }

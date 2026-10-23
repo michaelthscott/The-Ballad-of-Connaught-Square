@@ -27,4 +27,50 @@ struct PerformanceTests {
         #expect(orchestration.assignments.count == 3)
     }
 
+    /// A performance on a sound bank of its own, so pausing it doesn't pause other tests' notes.
+    private func makePerformance() throws -> Performance {
+        Performance(composer: Composer(), ballad: Ballad(), speakers: Speakers(), soundBank: try SoundBank())
+    }
+
+    @Test func testInitialState() async throws {
+        let performance = try makePerformance()
+        #expect(performance.state == .stopped)
+    }
+
+    @Test func testPlayPauseResumeStop() async throws {
+        let performance = try makePerformance()
+        performance.play()
+        #expect(performance.state == .playing)
+        performance.pause()
+        #expect(performance.state == .paused)
+        performance.play()
+        #expect(performance.state == .playing)
+        performance.stop()
+        #expect(performance.state == .stopped)
+    }
+
+    @Test func testStopWhilePaused() async throws {
+        let performance = try makePerformance()
+        performance.play()
+        performance.pause()
+        performance.stop()
+        #expect(performance.state == .stopped)
+    }
+
+    @Test func testPauseAndResumeWhileStopped() async throws {
+        let performance = try makePerformance()
+        performance.pause()
+        #expect(performance.state == .stopped)
+        performance.resume()
+        #expect(performance.state == .stopped)
+    }
+
+    @Test func testPlayClearsRecitedParts() async throws {
+        let performance = try makePerformance()
+        performance.ballad.isRecited = true
+        performance.play()
+        performance.stop()
+        #expect(performance.ballad.isRecited == false)
+    }
+
 }

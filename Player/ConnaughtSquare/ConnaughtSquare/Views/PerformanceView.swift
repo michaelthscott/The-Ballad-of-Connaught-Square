@@ -8,31 +8,12 @@
 import SwiftUI
 
 struct PerformanceView: View {
-    static private let buttonTitles = (start: "Perform Ballad", stop: "Stop Performance")
-    static private let buttonImageNames = (start: "play", stop: "stop")
     @Environment(Ballad.self) var ballad
     @Environment(Speakers.self) var speakers
     @Environment(Performance.self) var performance
 
     @Namespace private var scrollPosition
-    @State private var buttonTitle = Self.buttonTitles.start
-    @State private var buttonImageName = Self.buttonImageNames.start
-    @State private var isPerforming: Bool = false
-    
-    private func buttonAction() {
-        if !isPerforming {
-            performance.perform()
-            buttonTitle = Self.buttonTitles.stop
-            buttonImageName = Self.buttonImageNames.stop
-            isPerforming = true
-        } else {
-            performance.stop()
-            buttonTitle = Self.buttonTitles.start
-            buttonImageName = Self.buttonImageNames.start
-            isPerforming = false
-        }
-    }
-    
+
     var body: some View {
         VStack {
             Text(ballad.title)
@@ -50,21 +31,25 @@ struct PerformanceView: View {
                      proxy.scrollTo(scrollPosition, anchor: .bottom)
                 }
             }
-            Button("Perform", systemImage: "play", action: buttonAction)
-                .labelStyle(.iconOnly)
-                .onChange(of: performance.isFinished) { oldValue, newValue in
-                    if oldValue == false, newValue == true {
-                        buttonTitle = Self.buttonTitles.start
-                        buttonImageName = Self.buttonImageNames.start
-                        isPerforming = false
+            HStack {
+                if performance.state == .playing {
+                    Button("Pause Performance", systemImage: "pause.fill") {
+                        performance.pause()
+                    }
+                } else {
+                    Button(performance.state == .paused ? "Resume Performance" : "Perform Ballad", systemImage: "play.fill") {
+                        performance.play()
                     }
                 }
+                Button("Stop Performance", systemImage: "stop.fill") {
+                    performance.stop()
+                }
+                .disabled(performance.state == .stopped)
+            }
+            .labelStyle(.iconOnly)
         }
         .onDisappear() {
             performance.stop()
-            buttonTitle = Self.buttonTitles.start
-            buttonImageName = Self.buttonImageNames.start
-            isPerforming = false
         }
         .padding()
     }

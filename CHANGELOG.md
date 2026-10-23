@@ -22,9 +22,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.
+
+- `PauseGate`, which tasks wait at while it's paused, and whose `sleep(for:)` doesn't count time spent paused. Notes and the silences between parts are timed with the sound bank's gate.
+
+- `PerformanceView` has a play/pause button and a stop button, which is disabled when the performance is stopped.
+
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
 
 ### Fixed
+
+- The performance button always showed the play icon, as the title and image it updated were never displayed.
+
+- Performing again after stopping now starts with no parts shown as recited.
+
+- A performance that finished just after being stopped and restarted could mark the new performance as finished.
 
 - `NoteVelocity.random(using:)` now uses the generator it's given. It previously ignored it.
 

@@ -35,12 +35,17 @@ actor SoundBank {
     let resource: String
     let suffix: String
     let url: URL
+    /// Notes wait at this gate before sounding, and time their lengths against it, so pausing it
+    /// holds a sounding note until it is resumed and stops further notes from starting.
+    nonisolated let pauseGate = PauseGate()
 
     private let engine: AVAudioEngine
     private let mixer: AVAudioMixerNode
     private let reverb: AVAudioUnitReverb
     /// The sampler for each instrument that has been loaded.
     private var samplers: [InstrumentName: AVAudioUnitSampler] = [:]
+    /// Whether the engine was running when it was paused, and so should be restarted on resume.
+    private var isEnginePaused = false
 
     /// The instruments that have been loaded.
     var loadedInstruments: Set<InstrumentName> {
@@ -105,10 +110,25 @@ actor SoundBank {
     }
 
     func stopEngine() {
+        isEnginePaused = false
         if engine.isRunning {
             //TODO: How long does it take the engine to stop?
             engine.stop()
         }
+    }
+
+    /// Silences the engine immediately, keeping its resources so it can resume quickly.
+    func pauseEngine() {
+        guard engine.isRunning else { return }
+        engine.pause()
+        isEnginePaused = true
+    }
+
+    /// Restarts the engine if it was running when it was paused.
+    func resumeEngine() throws {
+        guard isEnginePaused else { return }
+        isEnginePaused = false
+        try startEngine()
     }
 
     /// Starts the note sounding on the instrument. Does nothing if the instrument hasn't been loaded.
@@ -130,8 +150,9 @@ extension SoundBank {
     /// - Note: Nothing sounds unless the instrument has been loaded and the engine started.
     nonisolated func play(note: Note, instrument: InstrumentName) async {
         await startNote(note, instrument: instrument)
+        // Time paused doesn't count towards the note's length.
         // A cancelled sleep still falls through to `stopNote`, so a note is never left sounding.
-        try? await Task.sleep(for: note.duration.duration)
+        try? await pauseGate.sleep(for: note.duration.duration)
         await stopNote(note, instrument: instrument)
     }
 
@@ -148,6 +169,8 @@ extension SoundBank {
         var durationPlayed: Duration = .zero
         var played: [Note] = []
         while durationPlayed < duration, !Task.isCancelled {
+            await pauseGate.wait()
+            guard !Task.isCancelled else { break }
             let note = notes.next()
             await play(note: note, instrument: instrument)
             durationPlayed += note.duration.duration
