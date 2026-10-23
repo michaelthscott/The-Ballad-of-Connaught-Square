@@ -42,6 +42,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Performing again after stopping now always starts with the second speaker. The speakers' turns previously carried on from the last performance, so it could start with the first speaker. `Speakers` has a `resetTurns()` method, which `Performance.play()` calls.
 
+- The performance now stops once it has recited every part. It previously started the ballad over and never finished. `BalladCursorSequence` stays finished after the last part, when its `cursor` and `currentPart`, now optional, are `nil`, and `EventsSequence.next()` returns `nil`.
+
+- A ballad with no parts no longer crashes `BalladCursorSequence`, and a performance of it stops straight away. Cantos, stanzas and lines without any parts are skipped.
+
 - `NoteVelocity.random(using:)` now uses the generator it's given. It previously ignored it.
 
 - `LinguisticTagOrder.index(of:)` no longer adds a tag the ordering doesn't hold. It now returns `nil` for such a tag. `areOrdered(_:_:)` places tags missing from the ordering after all the others, as before.

@@ -73,6 +73,17 @@ struct PerformanceTests {
         #expect(performance.ballad.isRecited == false)
     }
 
+    /// A performance stops by itself once it has recited every part.
+    @Test func testPerformanceFinishes() async throws {
+        let performance = Performance(composer: Composer(), ballad: Ballad(lines: []), speakers: Speakers(), soundBank: try SoundBank())
+        performance.play()
+        #expect(performance.state == .playing)
+        for _ in 0..<100 where performance.state == .playing {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(performance.state == .stopped)
+    }
+
     /// A performance stopped after an odd number of parts still starts the next one with the second speaker.
     @Test func testPlayResetsSpeakerTurns() async throws {
         let performance = try makePerformance()

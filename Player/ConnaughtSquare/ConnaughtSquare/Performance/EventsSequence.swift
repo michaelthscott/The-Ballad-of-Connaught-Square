@@ -21,7 +21,9 @@ struct EventsSequence {
         balladCursorSequence = BalladCursorSequence(ballad: performance.ballad)
     }
 
+    /// The events for the next part of the ballad, or `nil` once every part has been recited.
     mutating func next() -> [Event]? {
+        guard let part = balladCursorSequence.currentPart else { return nil }
         var events: [Event] = []
         if balladCursorSequence.isStartOfBallad {
             events.append(.play(orchestration: performance.orchestration(duration: .seconds(13)), duration: .seconds(13)))
@@ -38,7 +40,7 @@ struct EventsSequence {
         } else if balladCursorSequence.remainingParts > 0 {
             events.append(.silence(duration: .seconds(1)))
         }
-        events.append(.speak(part: balladCursorSequence.currentPart, speaker: performance.speakers.nextSpeaker))
+        events.append(.speak(part: part, speaker: performance.speakers.nextSpeaker))
         _ = balladCursorSequence.next()
         return events
     }

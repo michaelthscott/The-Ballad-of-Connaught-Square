@@ -151,18 +151,21 @@ struct EventsSequenceTests {
         #expect(names == expected)
     }
 
-    /// Known issue: `next()` never returns `nil`. Once the last part has been recited the cursor
-    /// resets and the sequence starts the ballad over, so `Performance.run()` never finishes.
+    /// Once the last part has been recited the sequence finishes rather than starting the ballad over.
     @Test func testSequenceFinishesAfterTheLastPart() throws {
         let ballad = makeBallad()
         var sequence = EventsSequence(performance: Performance(ballad: ballad, speakers: Speakers()))
         for _ in 1...ballad.parts.count {
-            _ = sequence.next()
+            _ = try nextBatch(of: &sequence)
         }
-        withKnownIssue("The sequence restarts the ballad instead of finishing.") {
-            if let batch = sequence.next() {
-                Issue.record("Expected no further events but got \(batch.map { $0.description }).")
-            }
+        if let batch = sequence.next() {
+            Issue.record("Expected no further events but got \(batch.map { $0.description }).")
         }
+    }
+
+    /// A ballad with no parts has no events.
+    @Test func testEmptyBalladHasNoEvents() {
+        var sequence = EventsSequence(performance: Performance(ballad: Ballad(lines: []), speakers: Speakers()))
+        #expect(sequence.next() == nil)
     }
 }
