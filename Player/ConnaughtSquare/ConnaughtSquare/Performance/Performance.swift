@@ -23,8 +23,8 @@ import Foundation
     }
 
     var spokenPartCount: Int = 0
-	let ballad: Ballad
-	let speakers: Speakers
+    let ballad: Ballad
+    let speakers: Speakers
     let composer: Composer
     private(set) var state: PlaybackState = .stopped
 
@@ -39,21 +39,21 @@ import Foundation
          ballad: Ballad = Ballad(),
          speakers: Speakers = Speakers(),
          soundBank: SoundBank = .shared) {
-		self.ballad = ballad
+        self.ballad = ballad
         self.speakers = speakers
         self.composer = composer
         self.soundBank = soundBank
-	}
-	
+    }
+
     func orchestration(duration: Duration) -> Orchestration {
         composer.composeOrchestration("The Ballad of Connaught Square",
                                       instruments: [Instrument(name: .violin), Instrument(name: .viola), Instrument(name: .cello)],
                                       duration: duration)
     }
-    	
+
     /// Starts performing the ballad from the beginning, or resumes a paused performance.
     /// Does nothing if the performance is already playing.
-	func play() {
+    func play() {
         switch state {
         case .stopped:
             ballad.isRecited = false
@@ -69,7 +69,7 @@ import Foundation
         case .playing:
             break
         }
-	}
+    }
 
     /// Pauses the performance in place. Does nothing unless the performance is playing.
     func pause() {
