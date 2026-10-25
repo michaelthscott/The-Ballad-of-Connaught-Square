@@ -23,16 +23,20 @@ struct StringExtensionsTests {
         #expect("The cat sat on the mat.".wordCount == 6)
     }
 
-    /// An empty string separates into a single empty component, so it counts as one word.
-    @Test func testEmptyStringWordCount() {
-        #expect("".words == [""])
-        #expect("".wordCount == 1)
+    @Test func testEmptyStringHasNoWords() {
+        #expect("".words == [])
+        #expect("".wordCount == 0)
+        #expect("".speakingTime == .zero)
     }
 
-    /// Consecutive whitespace produces empty components, and those are counted too.
-    @Test func testRepeatedWhitespaceWordCount() {
-        #expect("  ".wordCount == 3)
-        #expect("The  cat".wordCount == 3)
+    @Test func testRepeatedWhitespaceSeparatesOnce() {
+        #expect("  ".wordCount == 0)
+        #expect("The  cat".words == ["The", "cat"])
+        #expect("  The cat  ".words == ["The", "cat"])
+    }
+
+    @Test func testNewlinesAndTabsSeparateWords() {
+        #expect("The\ncat\tsat".words == ["The", "cat", "sat"])
     }
 
     /// Speech is estimated at 183 words per minute, so 61 words take 20 seconds.

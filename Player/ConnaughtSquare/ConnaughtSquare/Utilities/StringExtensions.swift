@@ -8,8 +8,9 @@
 import Foundation
 
 extension String {
+	/// The words, separated by runs of whitespace or newlines. Punctuation stays attached to its word.
 	var words: [String] {
-		components(separatedBy: .whitespaces)
+		split(whereSeparator: \.isWhitespace).map(String.init)
 	}
 	
 	var wordCount: Int {
