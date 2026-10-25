@@ -138,7 +138,11 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     }
 
     /// Performs one batch of events, returning when both the accompaniment and the recitation have finished.
+    ///
+    /// Silences before any music are a gap before the recitation, so they finish before it begins.
+    /// Music, and any silence after it, plays under the recitation.
     private func perform(_ events: [Event]) async {
+        var gap: Duration = .zero
         var accompaniment: [Accompaniment] = []
         var recitation: [(part: Part, speaker: Speaker)] = []
         for event in events {
@@ -146,6 +150,8 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
             switch event {
             case .play(let orchestration, let duration):
                 accompaniment.append(.play(orchestration: orchestration, duration: duration))
+            case .silence(let duration) where accompaniment.isEmpty:
+                gap += duration
             case .silence(let duration):
                 accompaniment.append(.silence(duration: duration))
             case .speak(let part, let speaker):
@@ -153,9 +159,16 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
             }
         }
 
+        let soundBank = soundBank
+        // Time paused doesn't count towards the gap. A cancelled sleep throws, ending the batch.
+        do {
+            try await soundBank.pauseGate.sleep(for: gap)
+        } catch {
+            return
+        }
+
         // The accompaniment is `Sendable`, so it plays in a child task off the main actor while
         // the parts — which aren't — are recited on it.
-        let soundBank = soundBank
         async let played: Void = Self.play(accompaniment, on: soundBank)
         for (part, speaker) in recitation {
             await soundBank.pauseGate.wait()

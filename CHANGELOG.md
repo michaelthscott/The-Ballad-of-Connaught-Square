@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `Composer` works out `initialNote`, `ceilingNote` and `floorNote` once when it's created, rather than for every note it composes. A composer whose tunes give an invalid range now fails when it's created rather than when it first composes.
 
+- Each part after the first in a line now follows a second after the part before it. The second of silence previously ran alongside the speech, so there was no audible gap, and the last part of a line had none at all. Silences in a batch before any music now finish before the part is spoken; music, and the silence after it, still plays under the speech.
+
 - The performance's events and the notes each instrument played are now logged with `Logger` at the debug level rather than printed. A failure to restart the audio engine on resume is logged as an error rather than ignored.
 
 ### Added

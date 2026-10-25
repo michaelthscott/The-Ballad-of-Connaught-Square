@@ -93,12 +93,13 @@ struct EventsSequenceTests {
         #expect(silenceDuration(of: batch[1]) == .seconds(1))
     }
 
-    /// The last part of a line follows on without any accompaniment.
-    @Test func testLastPartOfALineHasNoAccompaniment() throws {
+    /// The last part of a line is separated from the part before it by a second of silence, like a middle part.
+    @Test func testLastPartOfALineIsPrecededBySilence() throws {
         let lastPart = "The cat sat on mat number 1."
         let batch = try #require(batch(reciting: lastPart, in: try batches(partsInFirstLine: 2)))
-        #expect(batch.count == 1)
-        #expect(spokenPart(of: batch[0])?.string == lastPart)
+        #expect(batch.count == 2)
+        #expect(silenceDuration(of: batch[0]) == .seconds(1))
+        #expect(spokenPart(of: batch[1])?.string == lastPart)
     }
 
     /// A part in the middle of a line is separated from the part before it by a second of silence.

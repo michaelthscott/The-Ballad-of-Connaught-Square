@@ -37,7 +37,8 @@ struct EventsSequence {
         } else if balladCursorSequence.isStartOfLine {
             events.append(.play(orchestration: performance.orchestration(duration: .seconds(5)), duration: .seconds(5)))
             events.append(.silence(duration: .seconds(1)))
-        } else if balladCursorSequence.remainingParts > 0 {
+        } else {
+            // A later part of a line follows a second after the part before it.
             events.append(.silence(duration: .seconds(1)))
         }
         events.append(.speak(part: part, speaker: performance.speakers.takeTurn()))
