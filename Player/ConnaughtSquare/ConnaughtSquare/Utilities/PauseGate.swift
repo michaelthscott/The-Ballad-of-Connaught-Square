@@ -14,7 +14,9 @@ import Synchronization
 /// and know that nothing will pass it until it is resumed.
 final class PauseGate: Sendable {
     private struct State {
-        var waiters: [CheckedContinuation<Void, Never>] = []
+        /// The tasks waiting at the gate, keyed so that a cancelled task can remove its own.
+        var waiters: [Int: CheckedContinuation<Void, Never>] = [:]
+        var nextWaiterID = 0
         /// When the current pause began, or `nil` if the gate is open.
         var pausedSince: ContinuousClock.Instant?
         /// The total length of every pause that has ended.
@@ -36,46 +38,59 @@ final class PauseGate: Sendable {
         state.withLock { $0.isPaused }
     }
 
+    // The clock is read under the lock so that racing calls to `pause()` and `resume()` can't
+    // record a pause that ends before it began.
+
     func pause() {
-        let now = clock.now
         state.withLock { state in
             if state.pausedSince == nil {
-                state.pausedSince = now
+                state.pausedSince = clock.now
             }
         }
     }
 
     /// Opens the gate, releasing every task waiting at it.
     func resume() {
-        let now = clock.now
         let waiters = state.withLock { state in
             if let pausedSince = state.pausedSince {
-                state.pausedTotal += now - pausedSince
+                state.pausedTotal += clock.now - pausedSince
                 state.pausedSince = nil
             }
-            defer { state.waiters = [] }
-            return state.waiters
+            defer { state.waiters = [:] }
+            return state.waiters.values
         }
         for waiter in waiters {
             waiter.resume()
         }
     }
 
-    /// Returns immediately if the gate is open, otherwise once it is resumed.
+    /// Returns immediately if the gate is open, otherwise once it is resumed or the task is cancelled.
+    ///
+    /// This doesn't throw when the task is cancelled, so callers should check for cancellation afterwards.
     func wait() async {
         guard isPaused else { return }
-        await withCheckedContinuation { continuation in
-            // The gate may have been resumed since the check above, so check again under the lock.
-            let isOpen = state.withLock { state in
-                if state.isPaused {
-                    state.waiters.append(continuation)
-                    return false
+        let id = state.withLock { state in
+            defer { state.nextWaiterID += 1 }
+            return state.nextWaiterID
+        }
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                // The gate may have been resumed since the check above, so check again under the lock.
+                // Checking for cancellation under the lock too means that either the task was already
+                // cancelled here, or the cancellation handler runs later and finds the waiter.
+                let isOpen = state.withLock { state in
+                    if state.isPaused && !Task.isCancelled {
+                        state.waiters[id] = continuation
+                        return false
+                    }
+                    return true
                 }
-                return true
+                if isOpen {
+                    continuation.resume()
+                }
             }
-            if isOpen {
-                continuation.resume()
-            }
+        } onCancel: {
+            state.withLock { $0.waiters.removeValue(forKey: id) }?.resume()
         }
     }
 

@@ -46,6 +46,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- A task waiting at a paused `PauseGate` now returns as soon as it's cancelled, rather than staying suspended until the gate is resumed. Pausing and resuming also read the clock under the gate's lock, so racing calls can no longer record a pause of negative length.
+
 - The performance button always showed the play icon, as the title and image it updated were never displayed.
 
 - Performing again after stopping now starts with no parts shown as recited.

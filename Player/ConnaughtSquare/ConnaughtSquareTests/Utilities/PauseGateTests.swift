@@ -28,6 +28,39 @@ struct PauseGateTests {
         #expect(gate.isPaused == false)
     }
 
+    @Test func testWaitReturnsWhenCancelled() async throws {
+        let gate = PauseGate()
+        gate.pause()
+        let waiting = Task { await gate.wait() }
+        try await Task.sleep(for: .milliseconds(50))
+        waiting.cancel()
+        await waiting.value
+        // Cancelling a waiter releases only that waiter, not the gate.
+        #expect(gate.isPaused)
+    }
+
+    @Test func testWaitReturnsWhenAlreadyCancelled() async throws {
+        let gate = PauseGate()
+        gate.pause()
+        let waiting = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await gate.wait()
+        }
+        await waiting.value
+        #expect(gate.isPaused)
+    }
+
+    @Test func testSleepThrowsWhenCancelledWhilePaused() async throws {
+        let gate = PauseGate()
+        gate.pause()
+        let sleeping = Task { try await gate.sleep(for: .seconds(10)) }
+        try await Task.sleep(for: .milliseconds(50))
+        sleeping.cancel()
+        await #expect(throws: CancellationError.self) {
+            try await sleeping.value
+        }
+    }
+
     @Test func testSleepWhenOpen() async throws {
         let gate = PauseGate()
         let elapsed = try await clock.measure {
