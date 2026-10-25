@@ -74,4 +74,16 @@ struct SoundBankTests {
         await soundBank.stopEngine()
     }
 
+    @Test func testStartEngineWhilePaused() async throws {
+        // An instrument that starts playing while the engine is paused mustn't unpause it.
+        let soundBank = try SoundBank()
+        try await soundBank.startEngine()
+        await soundBank.pauseEngine()
+        try await soundBank.startEngine()
+        #expect(await !soundBank.isEngineRunning)
+        try await soundBank.resumeEngine()
+        #expect(await soundBank.isEngineRunning)
+        await soundBank.stopEngine()
+    }
+
 }

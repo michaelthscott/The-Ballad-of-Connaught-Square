@@ -110,8 +110,14 @@ actor SoundBank {
         samplers[name] = sampler
     }
 
+    var isEngineRunning: Bool {
+        engine.isRunning
+    }
+
+    /// Starts the engine if it isn't running. Does nothing while the engine is paused, so an
+    /// instrument starting to play can't unpause it; only `resumeEngine()` does that.
     func startEngine() throws {
-        guard !engine.isRunning else { return }
+        guard !engine.isRunning, !isEnginePaused else { return }
         do {
             try engine.start()
         } catch {
