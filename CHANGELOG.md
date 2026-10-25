@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- The `Duration.seconds` extension, which only its tests used. It was easily confused with the static `Duration.seconds(_:)`.
+
 - `Note.off`, the note's release velocity, and the `off:` parameter of `Note.init`. It was generated for every note but never used, as `AVAudioUnitSampler.stopNote` takes no velocity.
 
 - The `Recitable` protocol, which nothing used. Its `isRecited` setter changed copies of the elements rather than the elements themselves.
