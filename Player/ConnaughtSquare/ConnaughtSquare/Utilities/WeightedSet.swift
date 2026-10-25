@@ -69,9 +69,11 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
 		return weightedRandomElement(using: &generator)
 	}
 	
-	/// Whether the set is empty.
+	/// Whether the set has no element with a positive weight, matching `contains(_:)`.
+	///
+	/// Zero-weight slots don't count, so a set can be empty while `count` is not zero.
     var isEmpty: Bool {
-        count == 0
+        !elements.contains { $0.weight > 0 }
     }
     
     /// The start index.
@@ -249,22 +251,35 @@ extension WeightedSet: SetAlgebra {
         return symmetricDifference
     }
     
+    /// Adds the new member's weight to the element's weight.
+    /// - Parameter newMember: The element, with the weight to add.
+    /// - Returns: Whether the set didn't contain the element before but does now, and the element as it is after the insertion.
     func insert(_ newMember: Element) -> (inserted: Bool, memberAfterInsert: Element) {
-        let inserted = !contains(newMember)
-        elements[position(of: newMember)].weight += newMember.weight
-        return (inserted, newMember)
-    }
-    
-    func remove(_ member: Element) -> Element? {
-        guard contains(member) else { return nil }
-        elements[position(of: member)].weight -= member.weight
-        return elements[position(of: member)]
-    }
-    
-    func update(with newMember: Element) -> Element? {
         let alreadyContains = contains(newMember)
-        elements[position(of: newMember)].weight += newMember.weight
-        return alreadyContains ? newMember : nil
+        let index = position(of: newMember)
+        elements[index].weight += newMember.weight
+        return (!alreadyContains && contains(newMember), elements[index])
+    }
+
+    /// Takes the member's weight away from the element's weight, stopping at zero.
+    /// A member with no positive weight, such as `Element(rawValue:)`, takes away all of the element's weight.
+    /// - Parameter member: The element, with the weight to take away.
+    /// - Returns: The element as it was before the removal, or `nil` if the set didn't contain it.
+    func remove(_ member: Element) -> Element? {
+        guard let index = existingPosition(of: member), elements[index].weight > 0 else { return nil }
+        let removed = elements[index]
+        let reduction = member.weight > 0 ? member.weight : removed.weight
+        elements[index].weight = Swift.max(removed.weight - reduction, 0)
+        return removed
+    }
+
+    /// Replaces the element's weight with the new member's weight.
+    /// - Parameter newMember: The element, with its new weight.
+    /// - Returns: The element as it was before the update, or `nil` if the set didn't contain it.
+    func update(with newMember: Element) -> Element? {
+        let previous = existingPosition(of: newMember).map { elements[$0] }
+        elements[position(of: newMember)].weight = newMember.weight
+        return previous.flatMap { $0.weight > 0 ? $0 : nil }
     }
     
 	func formUnion(_ other: WeightedSet) {

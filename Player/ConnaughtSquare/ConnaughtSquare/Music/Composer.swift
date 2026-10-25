@@ -21,7 +21,7 @@ struct Composer {
         var array: [NoteDurationVectors] = []
         for operation in SetOperation.allCases {
             let set = durations(from: tunes, using: operation, with: vectorWidth)
-            if !set.weightedElements.isEmpty {
+            if !set.isEmpty {
                 array.append(set)
             }
         }
@@ -32,7 +32,7 @@ struct Composer {
         var array: [NoteIntervalVectors] = []
         for operation in SetOperation.allCases {
             let set = intervals(from: tunes, using: operation, with: vectorWidth)
-            if !set.weightedElements.isEmpty {
+            if !set.isEmpty {
                 array.append(set)
             }
         }

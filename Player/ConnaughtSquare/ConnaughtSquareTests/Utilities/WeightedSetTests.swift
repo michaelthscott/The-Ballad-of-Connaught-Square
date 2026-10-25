@@ -361,32 +361,71 @@ struct WeightedSetTests {
         let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         var result = x.insert(.A(1))
         #expect(x.weight(of: .A) == 2)
-        #expect(result.0 == false)
-        #expect(result.1 == .A(1))
+        #expect(result.inserted == false)
+        // The member after the insertion carries the new total weight.
+        #expect(result.memberAfterInsert == .A && result.memberAfterInsert.weight == 2)
         result = x.insert(.D(1))
         #expect(x.weight(of: .D) == 1)
-        #expect(result.0 == true)
-        #expect(result.1 == .D(1))
+        #expect(result.inserted == true)
+        #expect(result.memberAfterInsert == .D && result.memberAfterInsert.weight == 1)
     }
-    
+
+    @Test func testInsertWithoutWeightIsNotAnInsertion() {
+        let x: WeightedSet<WeightedABCD> = [.A(1)]
+        let result = x.insert(.B(0))
+        #expect(result.inserted == false)
+        #expect(x.contains(rawValue: .B) == false)
+    }
+
     @Test func testUpdate() {
 		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
-        var updated = x.update(with: .A(1))
-        #expect(x.weight(of: .A) == 2)
-        #expect(updated == .A(2))
+        // Updating replaces the weight, and returns the element as it was.
+        var updated = x.update(with: .A(5))
+        #expect(x.weight(of: .A) == 5)
+        #expect(updated?.description == "A(1)")
         updated = x.update(with: .D(1))
         #expect(x.weight(of: .D) == 1)
         #expect(updated == nil)
     }
-    
+
     @Test func testRemove() {
 		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         var removed = x.remove(.A(1))
         #expect(x.contains(rawValue: .A) == false)
-        #expect(removed == .A(1))
+        // The removed member keeps the weight it had before the removal.
+        #expect(removed?.description == "A(1)")
         removed = x.remove(.D(1))
         #expect(x.contains(rawValue: .D) == false)
         #expect(removed == nil)
+        removed = x.remove(.C(1))
+        #expect(removed?.description == "C(3)")
+        #expect(x.weight(of: .C) == 2)
+    }
+
+    @Test func testRemoveStopsAtZero() {
+        let x: WeightedSet<WeightedABCD> = [.A(2)]
+        let removed = x.remove(.A(5))
+        #expect(removed?.description == "A(2)")
+        #expect(x.weight(of: .A) == 0)
+        #expect(x.contains(rawValue: .A) == false)
+        #expect(x.remove(.A(1)) == nil)
+    }
+
+    @Test func testRemoveWithoutWeightRemovesTheWholeWeight() {
+        let x: WeightedSet<WeightedABCD> = [.A(2), .B(3)]
+        let removed = x.remove(.B(0))
+        #expect(removed?.description == "B(3)")
+        #expect(x.contains(rawValue: .B) == false)
+        #expect(x.weight(of: .A) == 2)
+    }
+
+    @Test func testIsEmptyIgnoresZeroWeights() {
+        let x: WeightedSet<WeightedABCD> = [.A(1), .B(2)]
+        #expect(x.isEmpty == false)
+        #expect(x.subtracting(x).isEmpty)
+        let zeros: WeightedSet<WeightedABCD> = [.A(0), .B(0)]
+        #expect(zeros.isEmpty)
+        #expect(zeros.count == 2)
     }
     
     @Test func testFormUnion() {

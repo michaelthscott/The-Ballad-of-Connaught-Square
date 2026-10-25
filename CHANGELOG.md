@@ -54,6 +54,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Assigning a range of a `WeightedSet` no longer duplicates one element and loses another when an assigned element moves towards the end. The assigned elements now always end up exactly in the range. Moving tags in the app didn't go through this setter, so the tag order was unaffected.
 
+- `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing. It returns the element as it was before the removal, rather than the reduced element.
+
+- `WeightedSet.insert(_:)` now returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` now replaces the element's weight rather than adding to it, and returns the element as it was before, as `SetAlgebra` requires. Nothing in the app calls these.
+
+- `WeightedSet.isEmpty` no longer counts zero-weight slots, so it now agrees with `contains(_:)`: `x.subtracting(x).isEmpty` is `true`. `count` still includes those slots.
+
 - `String.words` no longer counts the empty strings between repeated spaces, or an empty string, as words, and now also separates words at newlines and tabs. An empty part's estimated speaking time is now zero.
 
 - A task waiting at a paused `PauseGate` now returns as soon as it's cancelled, rather than staying suspended until the gate is resumed. Pausing and resuming also read the clock under the gate's lock, so racing calls can no longer record a pause of negative length.
