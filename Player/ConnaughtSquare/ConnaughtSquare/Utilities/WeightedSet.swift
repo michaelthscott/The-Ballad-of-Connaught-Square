@@ -153,13 +153,12 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
 			elements[bounds]
 		}
 		set(newValue) {
-			for (position, value) in zip(bounds, newValue) {
-				let previousPosition = self.position(of: value)
-				if previousPosition != position {
-					elements.move(fromOffsets: [previousPosition], toOffset: position)
-				}
-				elements[position] = value
-			}
+			// Take the assigned elements out, then put them back as a block starting at the lower bound,
+			// so they end up exactly in the bounds whichever way each of them moves.
+			let values = Array(newValue)
+			var remaining = elements.filter { !values.contains($0) }
+			remaining.insert(contentsOf: values, at: Swift.min(bounds.lowerBound, remaining.count))
+			elements = remaining
 		}
 	}
 }

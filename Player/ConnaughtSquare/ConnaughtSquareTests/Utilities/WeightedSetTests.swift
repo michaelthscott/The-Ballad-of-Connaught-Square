@@ -188,16 +188,7 @@ struct WeightedSetTests {
 	}
 	
     @Test func testSubscriptPositionFailure() {
-		/*
-		 set[0] = B(2)
-		 WeightedSet([B(2), C(3), A(1), D(0)])
-		 set[1] = C(3)
-		 WeightedSet([B(2), C(3), A(1), D(0)])
-		 set[1] = D(0)
-		 WeightedSet([B(2), D(0), D(0), A(1)])
-		 set[3] = C(3)
-		 WeightedSet([B(2), D(0), D(0), C(3), A(1)])
-		 */
+		// This sequence once left D(0) in the set twice. It now keeps every element exactly once.
 		let set = C3B2A1D0
 		set[0] = .B(2)
 		set[1] = .C(3)
@@ -239,7 +230,19 @@ struct WeightedSetTests {
         #expect(set[1] == .B(2))
         #expect(set[2] == .C(3))
 	}
-	
+
+	/// Assigning a range an element that sits before it moves the element towards the end,
+	/// which used to land it one place short and overwrite another element.
+    @Test func testSubscriptBoundsMovingTowardsTheEnd() {
+		let set = C3B2A1
+		set[1..<2] = [.C(3)]
+        #expect(set.elements.map(\.description) == ["B(2)", "C(3)", "A(1)"])
+
+		let other = C3B2A1D0
+		other[2..<4] = [.C(3), .B(2)]
+        #expect(other.elements.map(\.description) == ["A(1)", "D(0)", "C(3)", "B(2)"])
+	}
+
 	// TODO: More tests.
     @Test func testCompareSubscriptPositionAndMove() {
 		let x = C3B2A1D0
