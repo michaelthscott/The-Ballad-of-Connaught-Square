@@ -28,9 +28,7 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
 	convenience init(_ elements: [Element]) {
 		self.init()
 		for element in elements {
-			// This will create an umweighted element if needed.
-			let index = position(of: element)
-			self.elements[index].weight += element.weight
+			addWeight(element.weight, to: element)
 		}
 		self.elements.sort()
 	}
@@ -90,31 +88,62 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
     /// - Parameter element: The element.
     /// - Returns: The associated weight, or zero if the set doesn't hold the element.
 	func weight(of element: Element) -> Int {
-        existingPosition(of: element).map { elements[$0].weight } ?? 0
+        elements.firstIndex(of: element).map { elements[$0].weight } ?? 0
     }
 
-    /// The index of an element the set already holds. Unlike `position(of:)`, this doesn't change the set.
-    /// - Parameter element: The element.
-    /// - Returns: The index, or `nil` if the set doesn't hold the element.
-	func existingPosition(of element: Element) -> Int? {
-        elements.firstIndex(of: element)
-    }
-
-    /// The index of a specified element, adding an unweighted slot for it if the set doesn't hold it.
-    ///
-    /// Use this when assigning a weight. To look an element up without changing the set, use
-    /// `existingPosition(of:)`, `weight(of:)` or `contains(_:)`.
-    /// - Parameter element: The element.
-    /// - Returns: The index.
-	func position(of element: Element) -> Int {
+    /// The index of an element, adding a zero-weight slot for it at the end if the set doesn't hold it.
+    /// To look an element up without changing the set, use `firstIndex(of:)`, `weight(of:)` or `contains(_:)`.
+    private func slot(for element: Element) -> Int {
         if let index = elements.firstIndex(of: element) {
             return index
         }
-		// This just creates an unweighted slot for the element.
 		var copy = element
 		copy.weight = 0
 		elements.append(copy)
-		return position(of: element)
+		return elements.endIndex - 1
+    }
+
+    /// Sets the weight of an element, adding the element to the end of the set if it doesn't hold it.
+    /// - Parameters:
+    ///   - weight: The new weight.
+    ///   - element: The element. Its own weight is ignored.
+    func setWeight(_ weight: Int, of element: Element) {
+        elements[slot(for: element)].weight = weight
+    }
+
+    /// Adds to the weight of an element, adding the element to the end of the set if it doesn't hold it.
+    /// - Parameters:
+    ///   - weight: The weight to add.
+    ///   - element: The element. Its own weight is ignored.
+    func addWeight(_ weight: Int, to element: Element) {
+        elements[slot(for: element)].weight += weight
+    }
+
+    // Rearranging the elements can't create duplicates, unlike assigning through the subscripts.
+
+    /// Moves the elements at the specified offsets to the specified destination offset.
+    func move(fromOffsets source: IndexSet, toOffset destination: Int) {
+        elements.move(fromOffsets: source, toOffset: destination)
+    }
+
+    /// Reverses the order of the elements.
+    func reverse() {
+        elements.reverse()
+    }
+
+    /// Shuffles the elements.
+    func shuffle() {
+        elements.shuffle()
+    }
+
+    /// Shuffles the elements, using the specified random number generator.
+    func shuffle<T: RandomNumberGenerator>(using generator: inout T) {
+        elements.shuffle(using: &generator)
+    }
+
+    /// Sorts the elements with the specified ordering.
+    func sort(by areInIncreasingOrder: (Element, Element) -> Bool) {
+        elements.sort(by: areInIncreasingOrder)
     }
 
 	/*
@@ -131,7 +160,7 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
             elements[position]
         }
 		set(newValue) {
-			let previousPosition = self.position(of: newValue)
+			let previousPosition = slot(for: newValue)
             if previousPosition != position {
 				var offset: Int
 				switch position {
@@ -215,7 +244,7 @@ extension WeightedSet: SetAlgebra {
 	func union(_ other: WeightedSet) -> WeightedSet {
         let union = WeightedSet(elements)
         for element in other.elements {
-			union[union.position(of: element)].weight += element.weight
+			union.addWeight(element.weight, to: element)
         }
         return union
     }
@@ -225,7 +254,7 @@ extension WeightedSet: SetAlgebra {
         for element in other.elements {
             if contains(element) && other.contains(element) {
 				let weight = weight(of: element) + other.weight(of: element)
-                intersection[intersection.position(of: element)].weight = weight
+                intersection.setWeight(weight, of: element)
             }
         }
         return intersection
@@ -235,12 +264,12 @@ extension WeightedSet: SetAlgebra {
         let symmetricDifference = WeightedSet()
         for element in elements {
             if !other.contains(element) {
-                symmetricDifference[symmetricDifference.position(of: element)].weight = element.weight
+                symmetricDifference.setWeight(element.weight, of: element)
             }
         }
         for element in other.elements {
             if !contains(element) {
-                symmetricDifference[symmetricDifference.position(of: element)].weight = element.weight
+                symmetricDifference.setWeight(element.weight, of: element)
             }
         }
         return symmetricDifference
@@ -251,7 +280,7 @@ extension WeightedSet: SetAlgebra {
     /// - Returns: Whether the set didn't contain the element before but does now, and the element as it is after the insertion.
     func insert(_ newMember: Element) -> (inserted: Bool, memberAfterInsert: Element) {
         let alreadyContains = contains(newMember)
-        let index = position(of: newMember)
+        let index = slot(for: newMember)
         elements[index].weight += newMember.weight
         return (!alreadyContains && contains(newMember), elements[index])
     }
@@ -261,7 +290,7 @@ extension WeightedSet: SetAlgebra {
     /// - Parameter member: The element, with the weight to take away.
     /// - Returns: The element as it was before the removal, or `nil` if the set didn't contain it.
     func remove(_ member: Element) -> Element? {
-        guard let index = existingPosition(of: member), elements[index].weight > 0 else { return nil }
+        guard let index = elements.firstIndex(of: member), elements[index].weight > 0 else { return nil }
         let removed = elements[index]
         let reduction = member.weight > 0 ? member.weight : removed.weight
         elements[index].weight = Swift.max(removed.weight - reduction, 0)
@@ -272,8 +301,8 @@ extension WeightedSet: SetAlgebra {
     /// - Parameter newMember: The element, with its new weight.
     /// - Returns: The element as it was before the update, or `nil` if the set didn't contain it.
     func update(with newMember: Element) -> Element? {
-        let previous = existingPosition(of: newMember).map { elements[$0] }
-        elements[position(of: newMember)].weight = newMember.weight
+        let previous = elements.firstIndex(of: newMember).map { elements[$0] }
+        setWeight(newMember.weight, of: newMember)
         return previous.flatMap { $0.weight > 0 ? $0 : nil }
     }
     
@@ -298,7 +327,7 @@ extension WeightedSet: SetAlgebra {
         let copy = WeightedSet()
         copy.elements = elements
         for element in other.elements {
-            guard let index = copy.existingPosition(of: element) else { continue }
+            guard let index = copy.elements.firstIndex(of: element) else { continue }
             copy.elements[index].weight = Swift.max(copy.elements[index].weight - element.weight, 0)
         }
         return copy
@@ -357,10 +386,6 @@ extension WeightedSet: CustomStringConvertible {
 extension WeightedSet where Element: SafeRawRepresentable {
 	func weight(of rawValue: Element.RawValue) -> Int {
 		weight(of: Element(rawValue: rawValue))
-	}
-
-	func position(of rawValue: Element.RawValue) -> Int {
-		position(of: Element(rawValue: rawValue))
 	}
 
 	func contains(rawValue: Element.RawValue) -> Bool {

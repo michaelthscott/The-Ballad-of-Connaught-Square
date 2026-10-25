@@ -17,7 +17,7 @@ import SwiftUI
         ordering = .init()
 		// We are assuming that the tags have at least weight 1.
         for tag in tags {
-            ordering[ordering.position(of: tag)].weight = tag.weight
+            ordering.setWeight(tag.weight, of: tag)
         }
         // Heaviest first, then by name. A tag's own `<` ignores weight.
         ordering.sort { lhs, rhs in
@@ -29,7 +29,7 @@ import SwiftUI
     /// - Parameter tag: The specified tag.
     /// - Returns: The position of the tag, or `nil` if the ordering doesn't hold it.
     func index(of tag: WeightedLinguisticTag) -> Int? {
-        ordering.existingPosition(of: tag)
+        ordering.firstIndex(of: tag)
     }
 
     /// The number of words that map to the tag.

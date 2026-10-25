@@ -280,10 +280,43 @@ struct WeightedSetTests {
     
     @Test func testIndex() {
 		let set = C3B2A1
-        #expect(set.position(of: .A) == 2)
-        #expect(set.position(of: .B) == 1)
-        #expect(set.position(of: .C) == 0)
-        #expect(set.position(of: .D) == 3)
+        #expect(set.firstIndex(of: .A()) == 2)
+        #expect(set.firstIndex(of: .B()) == 1)
+        #expect(set.firstIndex(of: .C()) == 0)
+        // Looking up a missing element doesn't add it.
+        #expect(set.firstIndex(of: .D()) == nil)
+        #expect(set.count == 3)
+    }
+
+    @Test func testSetWeight() {
+		let set = C3B2A1
+		set.setWeight(5, of: .B())
+        #expect(set.weight(of: .B) == 5)
+        #expect(set.firstIndex(of: .B()) == 1)
+		// A missing element is added at the end, and the element's own weight is ignored.
+		set.setWeight(4, of: .D(9))
+        #expect(set.weight(of: .D) == 4)
+        #expect(set.firstIndex(of: .D()) == 3)
+		set.setWeight(0, of: .A())
+        #expect(set.contains(rawValue: .A) == false)
+        #expect(set.count == 4)
+    }
+
+    @Test func testAddWeight() {
+		let set = C3B2A1
+		set.addWeight(2, to: .A())
+        #expect(set.weight(of: .A) == 3)
+		set.addWeight(1, to: .D(9))
+        #expect(set.weight(of: .D) == 1)
+        #expect(set.elements.map(\.description) == ["C(3)", "B(2)", "A(3)", "D(1)"])
+    }
+
+    @Test func testShuffleUsingAGeneratorKeepsTheElements() {
+		var generator = SeededRandomNumberGenerator(seed: 7)
+		let set = D4C3B2A1
+		set.shuffle(using: &generator)
+        #expect(Set(set.elements.map(\.description)) == ["A(1)", "B(2)", "C(3)", "D(4)"])
+        #expect(set.count == 4)
     }
     
     @Test func testInitElements() {
@@ -538,7 +571,7 @@ struct WeightedSetTests {
 
     @Test func testLookupsLeaveTheSetUnchanged() {
         let set = C3B2A1
-        #expect(set.existingPosition(of: .D()) == nil)
+        #expect(set.firstIndex(of: .D()) == nil)
         #expect(set.weight(of: .D) == 0)
         #expect(set.contains(.D()) == false)
         #expect(set.elements.count == 3)

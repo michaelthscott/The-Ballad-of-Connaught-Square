@@ -70,7 +70,7 @@ final class TuneTests {
 		let tune = Tune("Untitled", Cycle<Note>(elements: notes))
 		let vectors = tune.noteIntervalVectors(width: 3)
 		let vector = Vector<NoteInterval>([.level, .level, .level], weight: 1)
-        #expect(vectors[vectors.position(of: vector)] == vector)
+        #expect(vectors.firstIndex(of: vector).map { vectors[$0] } == vector)
         #expect(vectors.weight(of: Vector<NoteInterval>([.level, .level, .level])) == 6)
         #expect(vectors.weight(of: Vector<NoteInterval>([.rising(by: 1), .rising(by: 2), .rising(by: 3)])) == 1)
 	}
@@ -91,7 +91,7 @@ final class TuneTests {
 		let tune = Tune("Untitled", Cycle<Note>(elements: notes))
 		let vectors = tune.noteDurationVectors(width: 3)
 		let vector = Vector<NoteDuration>([.quaver, .quaver, .quaver], weight: 1)
-        #expect(vectors[vectors.position(of: vector)] == vector)
+        #expect(vectors.firstIndex(of: vector).map { vectors[$0] } == vector)
         #expect(vectors.weight(of: Vector<NoteDuration>([.quaver, .quaver, .quaver])) == 7)
         #expect(vectors.weight(of: Vector<NoteDuration>([.crotchet, .minim, .breve])) == 1)
 	}
