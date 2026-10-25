@@ -10,7 +10,8 @@ import Foundation
 /// A cycle of elements.
 struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
 	let elements: [Element]
-	var currentIndex: [Element].Index
+	/// The index of the element that `next()` returns, or `endIndex` once the last element has been returned.
+	private(set) var currentIndex: [Element].Index
     
     /// A cycle of elements.
     /// - Parameter elements: Throws a fatal error if the array is empty.
@@ -25,7 +26,7 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
     /// Finds the minimum element.
     /// - Returns: The minimum element.
 	func min() -> Element {
-        guard let element = elements.min(by: { lhs, rhs in lhs < rhs }) else {
+        guard let element = elements.min() else {
             fatalError("Failed to find minimum element")
         }
         return element
@@ -34,7 +35,7 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
     /// Finds the maximum element.
     /// - Returns: The maximum element.
 	func max() -> Element {
-        guard let element = elements.max(by: { lhs, rhs in lhs < rhs }) else {
+        guard let element = elements.max() else {
             fatalError("Failed to find maximum element")
         }
         return element
@@ -70,7 +71,7 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
     /// - Parameter width: The number of elements to include in a slice.
     /// - Returns: The sequence of slices.
 	func slices(width: UInt) -> ArraySliceSequence<Element> {
-		ArraySliceSequence<Element>(elements[..<elements.endIndex], width: width)
+		ArraySliceSequence<Element>(elements[...], width: width)
 	}
 }
 

@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `Cycle.currentIndex` can no longer be set from outside the cycle, as an index out of range crashed `next()`.
+
 - `decodeAsset` now throws, so a missing or malformed asset reports why it failed rather than returning `nil`. `decodeAssets` has been removed; to decode an array, ask `decodeAsset` for an array type.
 
 - `Speakers.nextSpeaker` is now the `takeTurn()` method, as reading it passed the turn to the other speaker.
