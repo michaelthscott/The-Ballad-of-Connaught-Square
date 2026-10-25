@@ -56,6 +56,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Pausing just as the accompaniment began could leave it sounding while paused. An instrument that started playing after the pause restarted the paused engine, so held notes became audible again. `SoundBank.startEngine()` now does nothing while the engine is paused; only `resumeEngine()` restarts it. `SoundBank` has an `isEngineRunning` property.
 
+- Stopping and quickly restarting the performance could silence its opening music. The stopped performance's engine stop could take effect after the new performance had started the engine. A performance now waits for any earlier change to the engine before it begins.
+
 - A performance stopped just before a part was due to be spoken no longer speaks it. `SpeechSynthesizer.speak(_:in:)` returns straight away if its task is already cancelled.
 
 - Speakers are ordered by name and then by identifier, so different voices with the same name have a consistent order. They were previously neither equal nor ordered.

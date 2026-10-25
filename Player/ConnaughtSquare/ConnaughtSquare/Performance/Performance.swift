@@ -111,6 +111,9 @@ import Foundation
     }
 
     private func run() async {
+        // The accompaniment starts the engine itself, outside the queue of engine changes, so let
+        // the last performance's stop take effect first; otherwise it could stop this one's engine.
+        await engineControlTask?.value
         var events = EventsSequence(performance: self)
         while !Task.isCancelled, let batch = events.next() {
             await soundBank.pauseGate.wait()
