@@ -236,11 +236,9 @@ extension WeightedLinguisticTag: Equatable {
  */
 
 extension WeightedLinguisticTag: Comparable {
+    /// Tags are ordered by name. Weights are ignored, as they are in equality.
     public static func < (lhs: WeightedLinguisticTag, rhs: WeightedLinguisticTag) -> Bool {
-        if lhs.weight == rhs.weight {
-            return lhs.name < rhs.name
-        }
-        return lhs.weight > rhs.weight
+        lhs.name < rhs.name
     }
 }
 
@@ -269,7 +267,10 @@ extension WeightedLinguisticTag: Codable {
 }
 
 extension WeightedLinguisticTag: Hashable {
-	
+	/// Hashes the raw value alone, so that tags which are equal, whatever their weights, hash the same.
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(rawValue)
+	}
 }
 
 extension WeightedLinguisticTag: CustomStringConvertible {
@@ -279,7 +280,8 @@ extension WeightedLinguisticTag: CustomStringConvertible {
 }
 
 extension WeightedLinguisticTag: Identifiable {
+	/// The name alone, so that a tag keeps its identity when its weight changes.
 	var id: String {
-		description
+		name
 	}
 }

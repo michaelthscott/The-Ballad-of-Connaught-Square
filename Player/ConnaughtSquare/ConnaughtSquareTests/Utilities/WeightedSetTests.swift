@@ -94,12 +94,10 @@ extension WeightedABCD: Equatable {
 	}
 }
 
+// Like `==`, ordering and hashing ignore the weight, as `Weighted` requires.
 extension WeightedABCD: Comparable {
     static func < (lhs: WeightedABCD, rhs: WeightedABCD) -> Bool {
-        if lhs.weight == rhs.weight {
-            return lhs.rawValue.rawValue < rhs.rawValue.rawValue
-        }
-        return lhs.weight > rhs.weight
+        lhs.rawValue.rawValue < rhs.rawValue.rawValue
     }
 }
 
@@ -107,11 +105,14 @@ extension WeightedABCD: Codable {
 }
 
 extension WeightedABCD: Hashable {
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(rawValue)
+	}
 }
 
 extension WeightedABCD: Identifiable {
 	var id: String {
-		description
+		rawValue.rawValue
 	}
 }
 
@@ -123,19 +124,24 @@ extension WeightedABCD: CustomStringConvertible {
 
 struct WeightedSetTests {
 
+	// `init` sorts by the elements' `<`, which ignores weight, so these fixtures sort by weight
+	// themselves, heaviest first, to give the order their names describe.
+	private func heaviestFirst(_ elements: [WeightedABCD]) -> WeightedSet<WeightedABCD> {
+		var set = WeightedSet<WeightedABCD>(elements)
+		set.sort { $0.weight > $1.weight }
+		return set
+	}
+
 	var C3B2A1: WeightedSet<WeightedABCD> {
-		let set: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
-		return set
+		heaviestFirst([.A(1), .B(2), .C(3)])
 	}
-	
+
 	var C3B2A1D0: WeightedSet<WeightedABCD> {
-		let set: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3), .D(0)]
-		return set
+		heaviestFirst([.A(1), .B(2), .C(3), .D(0)])
 	}
-	
+
 	var D4C3B2A1: WeightedSet<WeightedABCD> {
-		let set: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3), .D(4)]
-		return set
+		heaviestFirst([.A(1), .B(2), .C(3), .D(4)])
 	}
 	
     @Test func testEquatable() {
@@ -544,42 +550,60 @@ struct WeightedSetTests {
     @Test func testMove() {
 		var x: WeightedSet<WeightedABCD>
 		
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [0], toOffset: 0)
         #expect(x.elements == [.C(3), .B(2), .A(1)])
 
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [0], toOffset: 1)
         #expect(x.elements == [.C(3), .B(2), .A(1)])
 		
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [0], toOffset: 2)
         #expect(x.elements == [.B(2), .C(3), .A(1)])
 		
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [0], toOffset: 3)
         #expect(x.elements == [.B(2), .A(1), .C(3)])
 
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [1, 2], toOffset: 0)
         #expect(x.elements == [.B(2), .A(1), .C(3)])
 
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [1, 2], toOffset: 1)
         #expect(x.elements == [.C(3), .B(2), .A(1)])
 		
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [1, 2], toOffset: 2)
         #expect(x.elements == [.C(3), .B(2), .A(1)])
 		
-		x = [.C(3), .B(2), .A(1)]
+		x = C3B2A1
 		x.move(fromOffsets: [1, 2], toOffset: 3)
         #expect(x.elements == [.C(3), .B(2), .A(1)])
 	}
 	
     @Test func testElementId() {
-        #expect(C3B2A1D0.elements[0].id == "C(3)")
+        // The id is the name alone, so it doesn't change with the weight.
+        #expect(C3B2A1D0.elements[0].id == "C")
 	}
+
+    @Test func testInitSortsByName() {
+        let set: WeightedSet<WeightedABCD> = [.C(3), .A(1), .B(2)]
+        #expect(set.elements.map(\.description) == ["A(1)", "B(2)", "C(3)"])
+    }
+
+    @Test func testEqualElementsHashAlike() {
+        #expect(WeightedABCD.A(1).hashValue == WeightedABCD.A(5).hashValue)
+        #expect(Set<WeightedABCD>([.A(1), .A(5)]).count == 1)
+    }
+
+    /// Equality no longer depends on how the weights rank the elements.
+    @Test func testEqualityIgnoresWeightRanking() {
+        let x: WeightedSet<WeightedABCD> = [.A(1), .B(5)]
+        let y: WeightedSet<WeightedABCD> = [.A(5), .B(1)]
+        #expect(x == y)
+    }
 	
     @Test func testFormIndex() {
 		var index = 1

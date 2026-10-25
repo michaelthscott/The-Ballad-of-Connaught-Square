@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- A `WeightedLinguisticTag`'s weight is no longer part of its identity anywhere. `<` now orders tags by name alone, matching `==`, so two equal tags can no longer be ordered. `hash(into:)` hashes the tag alone, and `id` is the tag's name rather than its name and weight. The ballad's tag order still lists the heaviest tags first: `LinguisticTagOrder` now sorts by weight itself. A `WeightedSet` of tags is otherwise sorted by name, and its equality no longer depends on how the weights rank the tags. The `Weighted` protocol documents the rule.
+
 - `Cycle.currentIndex` can no longer be set from outside the cycle, as an index out of range crashed `next()`.
 
 - `decodeAsset` now throws, so a missing or malformed asset reports why it failed rather than returning `nil`. `decodeAssets` has been removed; to decode an array, ask `decodeAsset` for an array type.

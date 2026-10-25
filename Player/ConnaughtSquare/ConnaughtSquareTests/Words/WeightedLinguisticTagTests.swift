@@ -53,14 +53,12 @@ struct WeightedLinguisticTagTests {
      */
 
     @Test func testComparable() {
-        // Weight
+        // Weight is ignored, as it is in equality.
         #expect(( WeightedLinguisticTag.verb(weight: 1) < WeightedLinguisticTag.verb(weight: 1) ) == false)
-        
-        #expect(
-            WeightedLinguisticTag.verb(weight: 2) < WeightedLinguisticTag.verb(weight: 1) &&
-            !(WeightedLinguisticTag.verb(weight: 1) < WeightedLinguisticTag.verb(weight: 2))
-        )
-        
+        #expect(( WeightedLinguisticTag.verb(weight: 2) < WeightedLinguisticTag.verb(weight: 1) ) == false)
+        #expect(( WeightedLinguisticTag.verb(weight: 1) < WeightedLinguisticTag.verb(weight: 2) ) == false)
+        #expect(WeightedLinguisticTag.adjective(weight: 9) < WeightedLinguisticTag.noun(weight: 1))
+
         // Name
         #expect(
             WeightedLinguisticTag.adjective() < WeightedLinguisticTag.noun() &&
@@ -69,6 +67,16 @@ struct WeightedLinguisticTagTests {
         )
     }
     
+    @Test func testEqualTagsHashAlike() {
+        #expect(WeightedLinguisticTag.verb(weight: 1).hashValue == WeightedLinguisticTag.verb(weight: 2).hashValue)
+        #expect(Set<WeightedLinguisticTag>([.verb(weight: 1), .verb(weight: 2)]).count == 1)
+    }
+
+    @Test func testIdIgnoresWeight() {
+        #expect(WeightedLinguisticTag.verb(weight: 1).id == WeightedLinguisticTag.verb(weight: 2).id)
+        #expect(WeightedLinguisticTag.verb(weight: 1).id == "Verb")
+    }
+
     @Test func testCodable() throws {
         let encoder = PropertyListEncoder()
         encoder.outputFormat = .xml

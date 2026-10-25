@@ -19,7 +19,10 @@ import SwiftUI
         for tag in tags {
             ordering[ordering.position(of: tag)].weight = tag.weight
         }
-        ordering.sort()
+        // Heaviest first, then by name. A tag's own `<` ignores weight.
+        ordering.sort { lhs, rhs in
+            lhs.weight == rhs.weight ? lhs < rhs : lhs.weight > rhs.weight
+        }
     }
     
     /// The position of the tag in the ordering. This doesn't change the ordering.
