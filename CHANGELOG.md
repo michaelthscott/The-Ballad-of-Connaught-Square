@@ -46,6 +46,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Performing again after stopping now starts with no parts shown as recited.
 
+- Lines are now sorted consistently by their linguistic tags. The comparison let two lines each come before the other, so the order was unreliable. The first position where two lines' tags differ now decides the order, so the ballad opens with lines led by the most frequent tag.
+
+- Vowels with no consonant between them, as in "being", are now separate syllables. Previously the second vowel replaced the first, so the syllable and its stress were lost.
+
+- Single, double and dactylic rhymes now compare the words from the stressed vowel to the end. They previously compared only the stressed syllable, including its leading consonants, so "bell" and "tell" didn't rhyme, while "almost" and "also" counted as a double rhyme.
+
+- Encoding a `Part` now keeps its pronunciations. They were read back from an attributed string attribute that was never set, so none were encoded.
+
+- `Part.attributedString` now applies each pronunciation at its location. It searched for the text instead, so a word appearing more than once in a part got the pronunciation on its first occurrence. A pronunciation outside the string is now ignored, where previously it crashed or emptied the whole string.
+
 - A performance that finished just after being stopped and restarted could mark the new performance as finished.
 
 - Stopping and quickly restarting the performance could cut its first line short, as the stopped line's cancellation ended the new line's wait. The stopped performance was also left waiting forever for its last line to finish.

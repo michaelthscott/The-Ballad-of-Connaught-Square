@@ -85,6 +85,17 @@ final class LinguisticTagOrderTests {
         #expect(tags.areOrdered([.noun], [.verb]))
         #expect(tags.areOrdered([.verb], [.noun]) == false)
     }
+
+    /// The first position where the tags differ decides the order, so it never goes both ways.
+    @Test func testAreOrderedIsAsymmetric() {
+        #expect(tags.areOrdered([.noun, .verb], [.verb, .noun]))
+        #expect(tags.areOrdered([.verb, .noun], [.noun, .verb]) == false)
+        #expect(tags.areOrdered([.noun, .verb], [.noun, .noun]) == false)
+        #expect(tags.areOrdered([.noun, .noun], [.noun, .verb]))
+        // When one starts with the other, the longer one comes first.
+        #expect(tags.areOrdered([.noun, .verb], [.noun]))
+        #expect(tags.areOrdered([.noun], [.noun, .verb]) == false)
+    }
 	
     @Test func testMove() {
         #expect(tags.index(of: .noun()) == 0)

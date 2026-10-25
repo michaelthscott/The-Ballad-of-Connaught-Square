@@ -62,4 +62,27 @@ final class WordTests {
         #expect(lexicon.word("AGREEMENTS")?.penultimateStressedSyllable?.description == "GR-IY1")
         #expect(lexicon.word("AGREEMENTS")?.antepenultimateStressedSyllable == nil)
 	}
+
+    @Test func testPerfectRhyme() {
+        // The leading consonants of the stressed syllable are left out.
+        #expect(lexicon.word("BELL")?.perfectRhyme(syllablesFromEnd: 1)?.description == "EH1-L")
+        #expect(lexicon.word("BELL")?.perfectRhyme(syllablesFromEnd: 1) == lexicon.word("TELL")?.perfectRhyme(syllablesFromEnd: 1))
+        // The syllables after the stressed one are included.
+        #expect(lexicon.word("AGREEMENTS")?.perfectRhyme(syllablesFromEnd: 2)?.description == "IY1-M-AH0-N-T-S")
+        // Unstressed syllables, and words that are too short, have no perfect rhyme.
+        #expect(lexicon.word("AGREEMENTS")?.perfectRhyme(syllablesFromEnd: 1) == nil)
+        #expect(lexicon.word("BELL")?.perfectRhyme(syllablesFromEnd: 2) == nil)
+        #expect(lexicon.word("BELL")?.perfectRhyme(syllablesFromEnd: 0) == nil)
+	}
+
+    @Test func testDactylicPerfectRhyme() {
+        func word(_ string: String, onset: [SpeechSound]) -> Word {
+            let tail: [Phoneme] = [Phoneme(sound: .EH, stress: .primaryStress), Phoneme(sound: .N), Phoneme(sound: .D), Phoneme(sound: .ER, stress: .noStress), Phoneme(sound: .L), Phoneme(sound: .IY, stress: .noStress)]
+            return Word(string: string, pronunciation: Pronunciation(phonemes: onset.map { Phoneme(sound: $0) } + tail))
+        }
+        let tenderly = word("TENDERLY", onset: [.T])
+        let slenderly = word("SLENDERLY", onset: [.S, .L])
+        #expect(tenderly.perfectRhyme(syllablesFromEnd: 3)?.description == "EH1-N-D-ER0-L-IY0")
+        #expect(tenderly.perfectRhyme(syllablesFromEnd: 3) == slenderly.perfectRhyme(syllablesFromEnd: 3))
+	}
 }

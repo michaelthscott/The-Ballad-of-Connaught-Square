@@ -61,6 +61,20 @@ final class Word {
 		return syllable.isStressed ? .antepenultimate(syllable) : nil
 	}
 	
+	/// The sounds of a perfect rhyme on the syllable the specified number of places from the end, if that syllable is stressed.
+	/// A perfect rhyme runs from the stressed vowel to the end of the word, so the consonants before the stressed vowel are ignored.
+	/// - Parameter count: The number of syllables from the end: one for a single, two for a double and three for a dactylic rhyme.
+	/// - Returns: The rhyme, or `nil` if the word is too short or that syllable is unstressed.
+	func perfectRhyme(syllablesFromEnd count: Int) -> Rhyme? {
+		let tail = syllables.suffix(count)
+		guard count > 0, tail.count == count, let stressed = tail.first, stressed.isStressed else { return nil }
+		var phonemes = [stressed.nucleus.phoneme] + (stressed.coda?.phonemes ?? [])
+		for syllable in tail.dropFirst() {
+			phonemes += (syllable.onset?.phonemes ?? []) + [syllable.nucleus.phoneme] + (syllable.coda?.phonemes ?? [])
+		}
+		return Rhyme(phonemes: phonemes)
+	}
+
 	var vowels: [Phoneme] {
 		pronunciation.phonemes.filter { $0.isVowel }
 	}

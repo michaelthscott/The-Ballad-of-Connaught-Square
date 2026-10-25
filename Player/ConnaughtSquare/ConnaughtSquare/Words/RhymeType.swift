@@ -69,23 +69,22 @@ extension RhymeType {
 	
 	/// A rhyme in which the stress is on the final syllable.
 	func isSingleRhyme(_ pair: LinePair) -> Bool {
-		guard let first = pair.first.lastWord?.finalStressedSyllable, let second = pair.second.lastWord?.finalStressedSyllable else {
-			return false
-		}
-		return first == second
+		isPerfectRhyme(pair, syllablesFromEnd: 1)
 	}
-	
+
 	/// A rhyme in which the stress is on the penultimate (second from last) syllable.
 	func isDoubleRhyme(_ pair: LinePair) -> Bool {
-		guard let first = pair.first.lastWord?.penultimateStressedSyllable, let second = pair.second.lastWord?.penultimateStressedSyllable else {
-			return false
-		}
-		return first == second
+		isPerfectRhyme(pair, syllablesFromEnd: 2)
 	}
-	
+
 	/// A rhyme in which the stress is on the antepenultimate (third from last) syllable.
 	func isDactylicRhyme(_ pair: LinePair) -> Bool {
-		guard let first = pair.first.lastWord?.antepenultimateStressedSyllable, let second = pair.second.lastWord?.antepenultimateStressedSyllable else {
+		isPerfectRhyme(pair, syllablesFromEnd: 3)
+	}
+
+	/// Whether the last words match from the stressed vowel to the end, with the stress the specified number of syllables from the end.
+	private func isPerfectRhyme(_ pair: LinePair, syllablesFromEnd count: Int) -> Bool {
+		guard let first = pair.first.lastWord?.perfectRhyme(syllablesFromEnd: count), let second = pair.second.lastWord?.perfectRhyme(syllablesFromEnd: count) else {
 			return false
 		}
 		return first == second

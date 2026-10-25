@@ -85,11 +85,35 @@ final class PartTests {
             return
         }
         #expect(part == copy)
-        
+        #expect(copy.pronunciations == part.pronunciations)
+
 //        print("nsAttributedString = \(part.nsAttributedString)")
 //        print("attributedString = \(part.attributedString)")
     }
 	
+    /// The pronunciation is applied at its location, not to the first occurrence of the same text.
+    @Test func testAttributedStringMarksTheLocatedOccurrence() {
+        let part = Part(speaker: 0, string: "read and read", pronunciations: [
+            CorrectPronunciation(ipa: "ɹɛd", location: 9, length: 4)])
+        let attributedString = part.attributedString
+        let marked = attributedString.runs.compactMap { run in
+            run.accessibilitySpeechPhoneticNotation.map { (String(attributedString[run.range].characters), $0) }
+        }
+        #expect(marked.count == 1)
+        #expect(marked.first?.0 == "read")
+        #expect(marked.first?.1 == "ɹɛd")
+        #expect(attributedString.runs.first?.accessibilitySpeechPhoneticNotation == nil)
+    }
+
+    /// A pronunciation outside the string is ignored rather than discarding the string.
+    @Test func testAttributedStringIgnoresAPronunciationOutsideTheString() {
+        let part = Part(speaker: 0, string: "Woah.", pronunciations: [
+            CorrectPronunciation(ipa: "wəʊ", location: 3, length: 10)])
+        let attributedString = part.attributedString
+        #expect(String(attributedString.characters) == "Woah.")
+        #expect(attributedString.runs.allSatisfy { $0.accessibilitySpeechPhoneticNotation == nil })
+    }
+
     @Test func testDuration() {
 		let words = Lexicon.shared.words
 		let text = words[0..<183].map({ $0.string }).joined(separator: " ")

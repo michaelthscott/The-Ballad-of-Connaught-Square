@@ -131,5 +131,15 @@ final class PronunciationTests {
 		word = lexicon.word("UNFORTUNATELY")!
         #expect("\(word.pronunciation.syllables)" == "[AH0-N, F-AO1-R, CH-AH0, N-AH0, TL-IY0]")
 	}
+
+    /// Vowels with no consonants between them belong to separate syllables.
+    @Test func testSyllablesOfAdjacentVowels() {
+        #expect("\(lexicon.word("BEING")!.pronunciation.syllables)" == "[B-IY1, IH0-NG]")
+        #expect("\(lexicon.word("AREA")!.pronunciation.syllables)" == "[EH1, R-IY0, AH0]")
+        #expect("\(lexicon.word("APPRECIATE")!.pronunciation.syllables)" == "[AH0, PR-IY1, SH-IY0, EY2-T]")
+        // A coda followed directly by a vowel, with no legal onset between them.
+        let singer = Pronunciation(phonemes: [Phoneme(sound: .S), Phoneme(sound: .IH, stress: .primaryStress), Phoneme(sound: .NG), Phoneme(sound: .ER, stress: .noStress)])
+        #expect("\(singer.syllables)" == "[S-IH1-NG, ER0]")
+	}
 }
 

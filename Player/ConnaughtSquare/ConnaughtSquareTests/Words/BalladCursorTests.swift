@@ -14,26 +14,26 @@ struct BalladCursorTests {
         var sequence = BalladCursorSequence(ballad: Ballad())
         #expect(sequence.cursor?.cantoIndex == 0)
         #expect(sequence.cursor?.stanzaIndex == 0)
-        #expect(sequence.cursor?.lineIndex == 1000)
+        #expect(sequence.cursor?.lineIndex == 0)
         #expect(sequence.cursor?.partIndex == 0)
         #expect(sequence.next() != nil)
-        #expect(sequence.cursor?.lineIndex == 1001)
+        #expect(sequence.cursor?.lineIndex == 1)
         #expect(sequence.next() != nil)
-        #expect(sequence.cursor?.lineIndex == 1002)
+        #expect(sequence.cursor?.lineIndex == 2)
         #expect(sequence.next() != nil)
-        #expect(sequence.cursor?.lineIndex == 1003)
-        #expect(sequence.next() != nil)
-        #expect(sequence.cursor?.stanzaIndex == 1)
-        #expect(sequence.cursor?.lineIndex == 1004)
+        #expect(sequence.cursor?.lineIndex == 3)
         #expect(sequence.next() != nil)
         #expect(sequence.cursor?.stanzaIndex == 1)
-        #expect(sequence.cursor?.lineIndex == 1005)
+        #expect(sequence.cursor?.lineIndex == 4)
+        #expect(sequence.next() != nil)
+        #expect(sequence.cursor?.stanzaIndex == 1)
+        #expect(sequence.cursor?.lineIndex == 5)
     }
 
     @Test func testCurrentPart() async throws {
         var sequence = BalladCursorSequence(ballad: Ballad())
         var string = sequence.currentPart?.string
-        #expect(string == "Buying, and buying brand new cars.")
+        #expect(string == "Had intended doing ah Christmas on the beat.")
         while sequence.next() != nil {
             string = sequence.currentPart?.string
         }

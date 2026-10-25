@@ -32,7 +32,8 @@ struct Pronunciation {
 				if nextIndex == segments.endIndex {
 					syllables.append(Syllable(onset: onset, nucleus: nucleus, coda: coda))
 					break
-				} else if segments[nextIndex] is Onset {
+				} else if segments[nextIndex] is Onset || segments[nextIndex] is Nucleus {
+					// A following nucleus with no onset between them still starts a new syllable, as in "being".
 					syllables.append(Syllable(onset: onset, nucleus: nucleus, coda: coda))
 					onset = nil
 					nucleus = nil

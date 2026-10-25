@@ -40,10 +40,10 @@ import Accessibility
     var attributedString: AttributedString {
         var attrString = AttributedString(string)
         for pronunciation in pronunciations {
-            let startIndex = string.index(string.startIndex, offsetBy: pronunciation.location)
-            let endIndex = string.index(startIndex, offsetBy: pronunciation.length)
-            let substring = string[startIndex..<endIndex]
-            guard let range = attrString.range(of: substring) else { return AttributedString() }
+            // The location and length are UTF-16 offsets, as in `nsAttributedString`. Converting them directly,
+            // rather than searching for the text, marks the right occurrence of a word that appears more than once.
+            let nsRange = NSRange(location: pronunciation.location, length: pronunciation.length)
+            guard let range = Range(nsRange, in: attrString) else { continue }
             attrString[range].accessibilitySpeechPhoneticNotation = pronunciation.ipa
         }
         return attrString
@@ -92,22 +92,12 @@ extension Part: Codable {
         case speaker, string, pronunciations
     }
     
-    /// Encodes the line part. The IPA notation is encoded using NSAttributedString as an array of `CorrectPronunciation`s.
+    /// Encodes the line part. The IPA notation is encoded as an array of `CorrectPronunciation`s.
     /// - Parameter encoder: The encoder.
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(speaker, forKey: .speaker)
         try container.encode(string, forKey: .string)
-        // TODO: Get IPA attributes from AttributedString.
-        let key = NSAttributedString.Key(rawValue: AVSpeechSynthesisIPANotationAttribute)
-        let copy = NSAttributedString(attributedString)
-        var pronunciations: [CorrectPronunciation] = []
-        copy.enumerateAttribute(key, in: NSRange(0..<copy.length)) { value, range, stop in
-            guard let value = value else {
-                return
-            }
-            pronunciations.append(CorrectPronunciation(ipa: value as! String, location: range.location, length: range.length))
-        }
         if pronunciations.count > 0 {
             try container.encode(pronunciations, forKey: .pronunciations)
         }

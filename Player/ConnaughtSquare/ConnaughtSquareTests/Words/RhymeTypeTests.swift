@@ -43,19 +43,27 @@ struct RhymeTypeTests {
         #expect(rhymes.contains(.pararhyme) == false)
     }
 
-    /// "almost" and "also" share a stressed penultimate syllable.
+    /// "bell" and "tell" match from the stressed vowel onwards, even though their first consonants differ.
+    @Test func testSingleRhymeIgnoresTheLeadingConsonants() {
+        #expect(pair("Ring the bell.", "Do tell.").availableRhymes == [.single, .assonance, .consonance, .half])
+    }
+
+    /// "funny" and "money" match from the stressed penultimate vowel to the end.
     @Test func testDoubleRhyme() {
-        let rhymes = pair("We are almost.", "And also.").availableRhymes
-        #expect(rhymes == [.double, .assonance, .consonance, .alliteration])
+        let rhymes = pair("Very funny.", "No money.").availableRhymes
+        #expect(rhymes == [.double, .syllabic, .assonance, .consonance, .half])
         #expect(rhymes.contains(.single) == false)
     }
 
-    /// "hospital" and "holiday" share a stressed antepenultimate syllable.
-    @Test func testDactylicRhyme() {
-        let rhymes = pair("Go to hospital.", "On holiday.").availableRhymes
-        #expect(rhymes == [.dactylic, .assonance, .consonance, .alliteration])
-        #expect(rhymes.contains(.single) == false)
-        #expect(rhymes.contains(.double) == false)
+    /// "almost" and "also" share a stressed penultimate syllable, but their final syllables differ.
+    @Test func testDoubleRhymeNeedsTheFinalSyllableToMatch() {
+        #expect(pair("We are almost.", "And also.").availableRhymes == [.assonance, .consonance, .alliteration])
+    }
+
+    /// "hospital" and "holiday" share a stressed antepenultimate syllable, but the syllables after it differ.
+    /// The lexicon has no dactylic rhymes, so `WordTests` covers a matching pair.
+    @Test func testDactylicRhymeNeedsTheFollowingSyllablesToMatch() {
+        #expect(pair("Go to hospital.", "On holiday.").availableRhymes == [.assonance, .consonance, .alliteration])
     }
 
     @Test func testLinesThatDoNotRhyme() {

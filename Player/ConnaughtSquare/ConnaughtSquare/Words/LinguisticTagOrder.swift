@@ -134,25 +134,16 @@ extension LinguisticTagOrder {
     ///   - rhs: Right-hand tags.
     /// - Returns: How the tags compare..
     func areOrdered(_ lhs: [LinguisticTag], _ rhs: [LinguisticTag]) -> Bool {
-        if lhs.count == 0 && rhs.count == 0 {
-            return false
-        }
-        // TODO: I need to check this logic.
-		// Note that min() is also an instance method when Element conforms to Comparable.
-		let count = Swift.min(lhs.count, rhs.count)
-        for i in 0..<count {
-            if areOrdered(lhs[i], rhs[i]) {
+        // The first position where the tags differ decides the order.
+        for (lhsTag, rhsTag) in zip(lhs, rhs) {
+            if areOrdered(lhsTag, rhsTag) {
                 return true
             }
-        }
-        if lhs.count == rhs.count {
-            for i in 0..<count {
-                if areOrdered(lhs[i], rhs[i]) {
-                    return true
-                }
+            if areOrdered(rhsTag, lhsTag) {
+                return false
             }
-            return false
         }
+        // When one array starts with the other, the longer one comes first.
         return lhs.count > rhs.count
     }
     
