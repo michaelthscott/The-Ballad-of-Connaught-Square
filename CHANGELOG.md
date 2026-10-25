@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `Composer` works out `initialNote`, `ceilingNote` and `floorNote` once when it's created, rather than for every note it composes. A composer whose tunes give an invalid range now fails when it's created rather than when it first composes.
 
+- The performance's events and the notes each instrument played are now logged with `Logger` at the debug level rather than printed. A failure to restart the audio engine on resume is logged as an error rather than ignored.
+
 ### Added
 
 - The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.

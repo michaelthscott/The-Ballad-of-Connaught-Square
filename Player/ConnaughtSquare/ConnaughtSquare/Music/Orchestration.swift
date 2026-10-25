@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ConnaughtSquare", category: "Orchestration")
 
 /// An orchestration is a titled instrumentation.
 struct Orchestration: Sendable {
@@ -30,7 +33,7 @@ struct Orchestration: Sendable {
             for assignment in assignments {
                 group.addTask {
                     let played = await assignment.play(duration: duration, on: soundBank)
-                    print("\(assignment.instrument.name): \(played)")
+                    logger.debug("\(assignment.instrument.name): \(played)")
                 }
             }
         }

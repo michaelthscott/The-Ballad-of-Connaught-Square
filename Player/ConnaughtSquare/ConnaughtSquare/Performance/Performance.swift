@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ConnaughtSquare", category: "Performance")
 
 /// A performance of the ballad with musical accompaniment.
 ///
@@ -83,7 +86,13 @@ import Foundation
     /// Resumes a paused performance from where it was paused. Does nothing unless the performance is paused.
     func resume() {
         guard state == .paused else { return }
-        controlEngine { try? await $0.resumeEngine() }
+        controlEngine { soundBank in
+            do {
+                try await soundBank.resumeEngine()
+            } catch {
+                logger.error("Couldn't resume the audio engine: \(String(describing: error))")
+            }
+        }
         speech.resume()
         soundBank.pauseGate.resume()
         state = .playing
@@ -133,7 +142,7 @@ import Foundation
         var accompaniment: [Accompaniment] = []
         var recitation: [(part: Part, speaker: Speaker)] = []
         for event in events {
-            print(event.description)
+            logger.debug("\(event.description)")
             switch event {
             case .play(let orchestration, let duration):
                 accompaniment.append(.play(orchestration: orchestration, duration: duration))
