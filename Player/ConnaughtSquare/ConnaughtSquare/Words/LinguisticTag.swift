@@ -56,7 +56,7 @@ extension LinguisticTag: Equatable {
  */
 
 extension LinguisticTag: Comparable {
-    /// Tags are ordered by weight, and raw value when weights are equal.
+    /// Tags are ordered by name.
     /// - Parameters:
     ///   - lhs: The left-hand  tag.
     ///   - rhs: The right-hand  tag.
@@ -168,10 +168,8 @@ extension LinguisticTag: RawRepresentable {
     }
 }
 
-extension LinguisticTag: CaseIterable {
-    /// The initial default cases with zero weight.
-    nonisolated(unsafe) static var allCases: [LinguisticTag] = [.noun, .verb, .adjective, .adverb, .pronoun, .determiner, .particle, .preposition, .number, .conjunction, .interjection, .classifier, .idiom, .otherWord, .personalName, .organizationName, .placeName]
-}
+// The cases are listed in the order they are declared.
+extension LinguisticTag: CaseIterable {}
 
 extension LinguisticTag: CustomStringConvertible {
     var description: String {

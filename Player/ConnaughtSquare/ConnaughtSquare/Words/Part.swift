@@ -63,8 +63,8 @@ import Accessibility
 
 // MARK: Equatable
 extension Part: Equatable {
-    /// The line parts are equal when their strings are equal.
-    /// Note that this ignores the speaker, and assumes the pronunciations are the same,
+    /// The line parts are equal when their strings and speakers are equal.
+    /// Note that this assumes the pronunciations are the same.
     /// - Parameters:
     ///   - lhs: The left hand side line part.
     ///   - rhs: The right hand side line part.

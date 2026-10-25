@@ -37,20 +37,9 @@ struct Syllable {
 		return ipa
 	}
 	
-	// TODO: This needs to be tested.
+	/// Whether the syllable carries the primary stress. Only vowels are stressed, so this is the stress of the nucleus.
 	var isStressed: Bool {
-		if nucleus.phoneme.stress == .primaryStress {
-			return true
-		}
-		guard let coda else {
-			return false
-		}
-		for phoneme in coda.phonemes {
-			if phoneme.stress == .primaryStress {
-				return true
-			}
-		}
-		return false
+		nucleus.phoneme.stress == .primaryStress
 	}
 }
 

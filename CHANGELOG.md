@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - The performance's events and the notes each instrument played are now logged with `Logger` at the debug level rather than printed. A failure to restart the audio engine on resume is logged as an error rather than ignored.
 
+- The legal syllable onsets are built once rather than every time a word is split into syllables.
+
+- `LinguisticTag.allCases` is now the synthesized, constant list of cases rather than a mutable `nonisolated(unsafe)` variable.
+
 ### Added
 
 - The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.
@@ -55,6 +59,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Encoding a `Part` now keeps its pronunciations. They were read back from an attributed string attribute that was never set, so none were encoded.
 
 - `Part.attributedString` now applies each pronunciation at its location. It searched for the text instead, so a word appearing more than once in a part got the pronunciation on its first occurrence. A pronunciation outside the string is now ignored, where previously it crashed or emptied the whole string.
+
+- Every stanza is now in a canto. A stanza starting with a tag missing from the ballad's tag order was left out, so a ballad made without a tag order had no cantos at all. Stanzas like these now follow in cantos of their own, and stanzas with no tags join the other words.
+
+- `Lexicon.wordsWith(syllable:)` now keeps the largest groups first, as intended. A final sort put all the words in alphabetical order.
 
 - A performance that finished just after being stopped and restarted could mark the new performance as finished.
 

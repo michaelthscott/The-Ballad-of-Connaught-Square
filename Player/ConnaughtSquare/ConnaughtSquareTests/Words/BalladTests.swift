@@ -33,6 +33,23 @@ final class BalladTests {
     @Test func testParts() {
         #expect(ballad.cantos.count > 0)
     }
+
+    /// Every part is in a canto, even when the ballad's tag order doesn't hold the tag a stanza starts with.
+    @Test func testCantosHoldEveryStanza() {
+        func line(_ string: String) -> Line {
+            Line(parts: [Part(speaker: 0, string: string)])
+        }
+        // Lines without tags count as other words.
+        let lines = [line("Run home now."), line("The cat sat."), line("Go on."), line("A dog ran."), line("...")]
+        #expect(lines.last?.tags.isEmpty == true)
+        for tags in [LinguisticTagOrder(tags: []), LinguisticTagOrder(tags: [.determiner(weight: 1)])] {
+            let ballad = Ballad(lines: lines, tags: tags)
+            #expect(ballad.cantos.flatMap { $0.stanzas }.count == 2)
+            #expect(ballad.parts.count == lines.count)
+            // The cantos are numbered in turn, including those for tags missing from the order.
+            #expect(ballad.cantos.map { $0.title } == ballad.cantos.indices.map { "Canto \(romanNumeral(for: $0 + 1))" })
+        }
+    }
         
     @Test func testIsRecited() {
         #expect(ballad.isRecited == false)

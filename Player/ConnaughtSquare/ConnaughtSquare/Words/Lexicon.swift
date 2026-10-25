@@ -84,11 +84,13 @@ extension Lexicon {
 			guard let syllable = syllable(word) else { continue }
 			dict[syllable, default: []].append(word)
 		}
+		// The largest groups come first, and the words in each group are in alphabetical order.
+		// Groups of the same size are ordered by their syllable, so the result is the same each time.
 		return dict.filter({
 			element in element.value.count > 1
 		}).sorted(by: { lhs, rhs in
-			lhs.value.count > rhs.value.count
-		}).flatMap({ element in element.value }).sorted()
+			lhs.value.count == rhs.value.count ? lhs.key.description < rhs.key.description : lhs.value.count > rhs.value.count
+		}).flatMap({ element in element.value.sorted() })
 	}
 
 //	func wordsWith(perfectRhyme: PerfectRhyme) -> Dictionary<StressedSyllable, [Word]> {

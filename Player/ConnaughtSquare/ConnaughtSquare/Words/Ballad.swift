@@ -19,9 +19,7 @@ import Foundation
  Second and fourth have six syllables.
  */
 
-import Foundation
-
-/// An immutable collection of lines arranged in ballad form and ordered by linguistic tags and rhymes.
+/// A collection of lines arranged in ballad form and ordered by linguistic tags and rhymes.
 @Observable final class Ballad {
     /// The base collection of lines, initially in archived order. They can be reordered by linguistic tag and/or rhyme.
     var lines: [Line]
@@ -68,6 +66,7 @@ import Foundation
 	
     /// A ballad is divided into cantos.  Each canto contains all the stanzas that start with a particular linguistic tag. The parts are ordered according to the ordering of the linguistic tags.
     /// Note that this is dependent on the ordering of the lingustic tags, when they change the ordering of the parts will change.
+    /// Stanzas starting with a tag that isn't in the ordering follow in cantos of their own, in the order they first appear.
 	var cantos: [Canto] {
 		let numberOfLines = 4
         let stanzas = stride(from: 0, to: lines.count, by: numberOfLines).map { startIndex in
@@ -75,15 +74,24 @@ import Foundation
 			let slice = lines[startIndex..<endIndex]
 			return Stanza(lines: slice)
 		}
+		// Group the stanzas by the tag their first line starts with. A stanza with no tags counts as other words.
+		var stanzasByTag: [LinguisticTag: [Stanza]] = [:]
+		var tagsInOrderOfAppearance: [LinguisticTag] = []
+		for stanza in stanzas {
+			let tag = stanza.lines.first?.tags.first ?? .otherWord
+			if stanzasByTag[tag] == nil {
+				tagsInOrderOfAppearance.append(tag)
+			}
+			stanzasByTag[tag, default: []].append(stanza)
+		}
+		// Tags missing from the ordering come after the others, so that no stanza is left out.
+		let orderedTags = tags.map { $0.rawValue }
+		let cantoTags = orderedTags + tagsInOrderOfAppearance.filter { !orderedTags.contains($0) }
 		var newCantos: [Canto] = []
-		var number = 1
-		for tag in tags {
-			let stanzasStartingWIthTag = stanzas.filter { $0.startsWith(tag: tag.rawValue) }
-            if stanzasStartingWIthTag.count > 0 {
-				newCantos.append(Canto(tag: tag.rawValue, stanzas: stanzasStartingWIthTag, number: number))
-				number += 1
-            }
-        }
+		for tag in cantoTags {
+			guard let stanzasStartingWithTag = stanzasByTag[tag] else { continue }
+			newCantos.append(Canto(tag: tag, stanzas: stanzasStartingWithTag, number: newCantos.count + 1))
+		}
 		return newCantos
     }
 	
