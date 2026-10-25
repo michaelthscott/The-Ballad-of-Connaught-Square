@@ -28,11 +28,13 @@ import Foundation
     
     /// Create a ballad with the property list data.
     convenience init() {
-        guard let lines: [Line] = decodeAssets("Lines", from: Bundle.main),
-              let tags: LinguisticTagOrder = decodeAsset("Tags", from: Bundle.main) else {
-            fatalError("Failed to decode assets")
+        do {
+            let lines: [Line] = try decodeAsset("Lines", from: Bundle.main)
+            let tags: LinguisticTagOrder = try decodeAsset("Tags", from: Bundle.main)
+            self.init(lines: lines, tags: tags)
+        } catch {
+            fatalError("Failed to decode the ballad: \(error)")
         }
-        self.init(lines: lines, tags: tags)
     }
     
     /// Create a ballad with the specified lines and an ordered linguistic tags.

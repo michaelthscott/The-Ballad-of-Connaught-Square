@@ -13,7 +13,7 @@ final class LinePairTests {
     var lines: [Line]!
     
     init() throws {
-        lines = decodeAssets("Lines", from: Bundle(for: Line.self))
+        lines = try decodeAsset("Lines", from: Bundle(for: Line.self))
     }
     
     deinit {

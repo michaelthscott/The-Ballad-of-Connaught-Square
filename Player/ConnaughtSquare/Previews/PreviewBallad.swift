@@ -10,10 +10,8 @@ import SwiftUI
 
 struct PreviewBallad: PreviewModifier {
     static func makeSharedContext() async throws -> Ballad {
-        guard let lines: [Line] = decodeAssets("LinesPreview", from: Bundle.main),
-              let tags: LinguisticTagOrder = decodeAsset("TagsPreview", from: Bundle.main) else {
-            fatalError("Failed to decode assets")
-        }
+        let lines: [Line] = try decodeAsset("LinesPreview", from: Bundle.main)
+        let tags: LinguisticTagOrder = try decodeAsset("TagsPreview", from: Bundle.main)
         return Ballad(lines: lines, tags: tags)
     }
     

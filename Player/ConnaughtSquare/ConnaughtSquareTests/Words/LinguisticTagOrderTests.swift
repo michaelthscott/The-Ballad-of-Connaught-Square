@@ -15,7 +15,7 @@ final class LinguisticTagOrderTests {
     
     // [.noun, .noun, .verb]
     init() throws {
-        tags = decodeAsset("TagsTest", from: Bundle(for: Self.self))
+        tags = try decodeAsset("TagsTest", from: Bundle(for: Self.self))
     }
 
     deinit {

@@ -12,13 +12,10 @@ import Testing
 final class BalladTests {
     var ballad: Ballad!
     
-    init() {
-		if let lines: [Line] = decodeAssets("LinesTest", from: Bundle(for: Self.self)),
-		   let tags: LinguisticTagOrder = decodeAsset("TagsTest", from: Bundle(for: Self.self)) {
-			ballad = Ballad(lines: lines, tags: tags)
-		} else {
-			ballad = Ballad()
-		}
+    init() throws {
+		let lines: [Line] = try decodeAsset("LinesTest", from: Bundle(for: Self.self))
+		let tags: LinguisticTagOrder = try decodeAsset("TagsTest", from: Bundle(for: Self.self))
+		ballad = Ballad(lines: lines, tags: tags)
      }
 
     deinit {

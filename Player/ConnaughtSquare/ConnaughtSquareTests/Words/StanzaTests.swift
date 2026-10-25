@@ -12,12 +12,9 @@ import Testing
 final class StanzaTests {
 	var stanza: Stanza!
     
-    init() {
-		if let lines: [Line] = decodeAssets("LinesTest", from: Bundle(for: Self.self)) {
-			stanza = Stanza(lines: lines[...])
-		} else {
-			stanza = Stanza(lines: [])
-		}
+    init() throws {
+		let lines: [Line] = try decodeAsset("LinesTest", from: Bundle(for: Self.self))
+		stanza = Stanza(lines: lines[...])
     }
 
     deinit {

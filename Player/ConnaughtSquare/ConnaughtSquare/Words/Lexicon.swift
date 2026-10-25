@@ -22,8 +22,11 @@ final class Lexicon {
 	}
 	
 	convenience init(name: String, bundle: Bundle? = nil) {
-		guard let dict: [String: Pronunciation] = decodeAsset(name, from: bundle ?? Bundle(for: Self.self)) else {
-			fatalError("Failed to parse \(name)")
+		let dict: [String: Pronunciation]
+		do {
+			dict = try decodeAsset(name, from: bundle ?? Bundle(for: Self.self))
+		} catch {
+			fatalError("Failed to decode \(name): \(error)")
 		}
 		var array: [Word] = []
 		for (string, pronunciation) in dict {
