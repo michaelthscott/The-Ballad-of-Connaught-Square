@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- The `Comparable` conformances of `Cycle` and `WeightedSet`, which nothing used. Neither was a valid ordering: `<` was true only when every pair of elements was less, so two empty values were each less than the other, and the lengths were ignored. To order cycles, use `elements.lexicographicallyPrecedes(_:)`.
+
 - The `Duration.seconds` extension, which only its tests used. It was easily confused with the static `Duration.seconds(_:)`.
 
 - `Note.off`, the note's release velocity, and the `off:` parameter of `Note.init`. It was generated for every note but never used, as `AVAudioUnitSampler.stopNote` takes no velocity.

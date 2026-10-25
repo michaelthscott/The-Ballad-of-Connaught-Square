@@ -165,18 +165,6 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
 	}
 }
 
-// MARK: - Comparable
-extension WeightedSet: Comparable {
-    static func < (lhs: WeightedSet<Element>, rhs: WeightedSet<Element>) -> Bool {
-        for (lhsElement, rhsElement) in zip(lhs.weightedElements.sorted(), rhs.weightedElements.sorted()) {
-            if lhsElement >= rhsElement {
-                return false
-            }
-        }
-        return true
-    }
-}
-
 // MARK: - Equatable
 extension WeightedSet: Equatable {
     static func == (lhs: WeightedSet, rhs: WeightedSet) -> Bool {

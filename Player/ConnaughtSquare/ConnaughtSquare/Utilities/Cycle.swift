@@ -95,18 +95,6 @@ extension Cycle: ExpressibleByArrayLiteral {
 	}
 }
 
-// MARK - Comparable
-extension Cycle: Comparable {
-    static func < (lhs: Cycle<Element>, rhs: Cycle<Element>) -> Bool {
-        for (lhsElement, rhsElement) in zip(lhs.elements, rhs.elements) {
-            if lhsElement >= rhsElement {
-                return false
-            }
-        }
-        return true
-    }
-}
-
 // MARK - Hashable
 extension Cycle: Hashable {
     func hash(into hasher: inout Hasher) {
