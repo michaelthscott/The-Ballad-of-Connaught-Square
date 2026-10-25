@@ -323,8 +323,9 @@ struct WeightedSetTests {
         let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
         let expected: WeightedSet<WeightedABCD> = [.C(5), .B(3), .D(3), .A(1)]
         #expect(x.union(y) == expected)
-        // x.union(x) == x
-        #expect(x.union(x) == x)
+        // Union adds the weights, so x.union(x) doubles them rather than equalling x.
+        #expect(x.union(x) != x)
+        #expect(x.union(x) == [.A(2), .B(4), .C(6)])
         // x.union([]) == x
         #expect(x.union(WeightedSet()) == x)
         // x.contains(e) implies x.union(y).contains(e)
@@ -344,8 +345,8 @@ struct WeightedSetTests {
         // expected = WeightedSet<WeightedABCD>(elements: [C(5), B(3), A(0), D(0)])
         // x.intersection(y) = WeightedSet<WeightedABCD>(elements: [A(6), B(4), C(2), D(0)])
         #expect(x.intersection(y) == expected)
-        // x.intersection(x) == x
-        #expect(x.intersection(x) == x)
+        // Intersection adds the weights too, so x.intersection(x) doubles them.
+        #expect(x.intersection(x) == [.A(2), .B(4), .C(6)])
         // x.intersection([]) == []
         #expect(x.intersection(WeightedSet()) == WeightedSet())
         // x.contains(e) && y.contains(e) if and only if x.intersection(y).contains(e)
@@ -468,18 +469,23 @@ struct WeightedSetTests {
         let x: WeightedSet<WeightedABCD> = [.A(1)]
         let y: WeightedSet<WeightedABCD> = [.A(1), .B(1)]
         #expect(x.isSubset(of: y))
-        // x.isSubset(of: y) implies x.union(y) == y
-        #expect(x.isSubset(of: y) && x.union(y) == y)
-        #expect(( y.isSubset(of: x) && y.union(x) == x )  == false)
+        #expect(y.isSubset(of: x) == false)
+        #expect(x.isSubset(of: x))
+        #expect(WeightedSet<WeightedABCD>().isSubset(of: x))
+        // Each element needs at least as much weight in the other set.
+        let heavier: WeightedSet<WeightedABCD> = [.A(2)]
+        #expect(heavier.isSubset(of: y) == false)
+        #expect(x.isSubset(of: heavier))
+        // Zero-weight slots don't count.
+        let zero: WeightedSet<WeightedABCD> = [.A(1), .D(0)]
+        #expect(zero.isSubset(of: y))
     }
     
     @Test func testIsSuperset() {
         let x: WeightedSet<WeightedABCD> = [.A(1), .B(1)]
         let y: WeightedSet<WeightedABCD> = [.A(1)]
         #expect(x.isSuperset(of: y))
-        // x.isSuperset(of: y) implies x.union(y) == x
-        #expect(x.isSuperset(of: y) && (x.union(y) == x))
-        #expect(( y.isSuperset(of: x) && (y.union(x) == y) ) == false)
+        #expect(y.isSuperset(of: x) == false)
         // x.isSubset(of: y) if and only if y.isSuperset(of: x)
         #expect(y.isSubset(of: x) && x.isSuperset(of: y))
         #expect(( x.isSubset(of: y) && y.isSuperset(of: x) ) == false)
@@ -598,11 +604,23 @@ struct WeightedSetTests {
         #expect(Set<WeightedABCD>([.A(1), .A(5)]).count == 1)
     }
 
-    /// Equality no longer depends on how the weights rank the elements.
-    @Test func testEqualityIgnoresWeightRanking() {
+    /// Equality counts the weights, but not the order of the elements or zero-weight slots.
+    @Test func testEqualityCountsWeights() {
         let x: WeightedSet<WeightedABCD> = [.A(1), .B(5)]
-        let y: WeightedSet<WeightedABCD> = [.A(5), .B(1)]
-        #expect(x == y)
+        #expect(x != [.A(5), .B(1)])
+        #expect(x != [.A(1)])
+        #expect(x == [.B(5), .A(1), .C(0)])
+        #expect(C3B2A1 == [.A(1), .B(2), .C(3)])
+        #expect(C3B2A1 != D4C3B2A1)
+        let a: WeightedSet<WeightedABCD> = [.A(1)]
+        #expect(a != [.A(5)])
+    }
+
+    @Test func testEqualSetsHashAlike() {
+        let x: WeightedSet<WeightedABCD> = [.A(1), .B(5)]
+        let y: WeightedSet<WeightedABCD> = [.B(5), .A(1), .C(0)]
+        #expect(x.hashValue == y.hashValue)
+        #expect(Set([x, y]).count == 1)
     }
 	
     @Test func testFormIndex() {

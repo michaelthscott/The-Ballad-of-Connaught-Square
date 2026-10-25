@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Two `WeightedSet`s are now equal only when they hold the same elements with the same weights, so `[A(1)]` no longer equals `[A(5)]`. The order of the elements and any zero-weight slots are still ignored, and the hash now includes the weights to match. As union adds weights, `x.union(x)` is no longer equal to `x`. `isSubset(of:)`, `isSuperset(of:)` and their strict versions now compare weights directly: one set is a subset of another when each of its elements has at least as much weight in the other. Previously they came from `SetAlgebra`'s defaults, which assume laws that adding weights breaks. Nothing in the app compares sets, so its behaviour is unchanged.
+
 - A `WeightedLinguisticTag`'s weight is no longer part of its identity anywhere. `<` now orders tags by name alone, matching `==`, so two equal tags can no longer be ordered. `hash(into:)` hashes the tag alone, and `id` is the tag's name rather than its name and weight. The ballad's tag order still lists the heaviest tags first: `LinguisticTagOrder` now sorts by weight itself. A `WeightedSet` of tags is otherwise sorted by name, and its equality no longer depends on how the weights rank the tags. The `Weighted` protocol documents the rule.
 
 - `Cycle.currentIndex` can no longer be set from outside the cycle, as an index out of range crashed `next()`.

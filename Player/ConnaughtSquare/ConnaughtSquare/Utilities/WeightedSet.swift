@@ -167,8 +167,13 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
 
 // MARK: - Equatable
 extension WeightedSet: Equatable {
+    /// Two sets are equal when they hold the same elements with the same weights.
+    /// The order of the elements and any zero-weight slots are ignored.
     static func == (lhs: WeightedSet, rhs: WeightedSet) -> Bool {
-        return lhs.weightedElements.sorted() == rhs.weightedElements.sorted()
+        let lhsElements = lhs.weightedElements.sorted()
+        let rhsElements = rhs.weightedElements.sorted()
+        return lhsElements.count == rhsElements.count
+            && zip(lhsElements, rhsElements).allSatisfy { $0 == $1 && $0.weight == $1.weight }
     }
 }
 
@@ -192,9 +197,11 @@ extension WeightedSet: Codable {
 
 // MARK - Hashable
 extension WeightedSet: Hashable {
+    /// Hashes each weighted element with its weight, in order, to match `==`.
     func hash(into hasher: inout Hasher) {
         for element in weightedElements.sorted() {
             hasher.combine(element)
+            hasher.combine(element.weight)
         }
     }
 }
@@ -307,35 +314,27 @@ extension WeightedSet: SetAlgebra {
         return true
     }
     
-    // TODO: Remove these when sure the default implementations are enough.
-    
-    // Set A is a subset of another set B if every member of A is also a member of B.
-//	func isSubset(of other: WeightedSet) -> Bool {
-//        for element in weightedElements {
-//            if !other.contains(element) {
-//                return false
-//            }
-//        }
-//        return true
-//    }
-//    
-//    // Set A is a superset of another set B if every member of B is also a member of A.
-//    func isSuperset(of other: WeightedSet) -> Bool {
-//        other.isSubset(of: self)
-//    }
-//    
-//    // Set A is a strict subset of another set B if every member of A is also a member of B and B contains at least one element that is not a member of A.
-//    func isStrictSubset(of other: WeightedSet) -> Bool {
-//        if !isSubset(of: other) {
-//            return false
-//        }
-//        return weightedElements.count < other.weightedElements.count
-//    }
-//    
-//    // Set A is a strict superset of another set B if every member of B is also a member of A and A contains at least one element that is not a member of B.
-//    func isStrictSuperset(of other: WeightedSet) -> Bool {
-//        other.isStrictSubset(of: self)
-//    }
+    // SetAlgebra's default subset checks rely on set laws that adding weights breaks, so these compare weights directly.
+
+    /// Whether every weighted element of this set has at least as much weight in the other set.
+    func isSubset(of other: WeightedSet) -> Bool {
+        weightedElements.allSatisfy { other.weight(of: $0) >= $0.weight }
+    }
+
+    /// Whether every weighted element of the other set has at least as much weight in this set.
+    func isSuperset(of other: WeightedSet) -> Bool {
+        other.isSubset(of: self)
+    }
+
+    /// Whether this set is a subset of the other set but isn't equal to it.
+    func isStrictSubset(of other: WeightedSet) -> Bool {
+        isSubset(of: other) && self != other
+    }
+
+    /// Whether this set is a superset of the other set but isn't equal to it.
+    func isStrictSuperset(of other: WeightedSet) -> Bool {
+        other.isStrictSubset(of: self)
+    }
 
 }
 
