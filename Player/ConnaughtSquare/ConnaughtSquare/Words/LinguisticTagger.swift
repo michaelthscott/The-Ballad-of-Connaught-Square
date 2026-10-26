@@ -7,6 +7,9 @@
 
 import Foundation
 import NaturalLanguage
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ConnaughtSquare", category: "LinguisticTagger")
 
 /// The errors thrown by ``LinguisticTagger``.
 enum LinguisticTaggerError: LocalizedError {
@@ -31,10 +34,23 @@ struct LinguisticTagger {
     let taggerOptions: NLTagger.Options = [.omitPunctuation, .omitWhitespace, .joinNames]
     let language: NLLanguage = .english
 
+    /// Whether the framework lists the tag scheme for words in the tagger's language.
+    private var isTagSchemeListed: Bool {
+        NLTagger.availableTagSchemes(for: .word, language: language).contains(tagScheme)
+    }
+
     /// Whether the tag scheme's assets are on this device for words in the tagger's language.
     /// Some run destinations, such as the simulators, lack them.
+    ///
+    /// The framework only lists a tag scheme once its assets have been loaded into the process,
+    /// which tagging does, so a scheme that isn't listed is tagged with once before checking again.
     var isTagSchemeAvailable: Bool {
-        NLTagger.availableTagSchemes(for: .word, language: language).contains(tagScheme)
+        if isTagSchemeListed {
+            return true
+        }
+        logger.debug("The \(tagScheme.rawValue, privacy: .public) tag scheme isn't listed, so tagging to load its assets")
+        _ = tags(for: "Man eats dog")
+        return isTagSchemeListed
     }
 
     /// Checks that the tag scheme is available on this device.
@@ -48,7 +64,14 @@ struct LinguisticTagger {
     /// Asks the Natural Language framework to load the tag scheme's assets onto this device.
     /// - Throws: ``LinguisticTaggerError/assetsUnavailable(_:_:)`` when the tag scheme still isn't available, or the framework's error when the request fails.
     func requestAssets() async throws {
-        let result = try await NLTagger.requestAssets(for: language, tagScheme: tagScheme)
+        let result: NLTagger.AssetsResult
+        do {
+            result = try await NLTagger.requestAssets(for: language, tagScheme: tagScheme)
+        } catch {
+            logger.error("The request for the tag scheme's assets failed: \(error, privacy: .public)")
+            throw error
+        }
+        logger.debug("The request for the tag scheme's assets returned \(String(describing: result), privacy: .public)")
         guard result == .available, isTagSchemeAvailable else {
             throw LinguisticTaggerError.assetsUnavailable(tagScheme, language)
         }
@@ -60,6 +83,11 @@ struct LinguisticTagger {
     /// - Throws: ``LinguisticTaggerError/tagSchemeUnavailable(_:_:)`` when the tag scheme isn't available on this device, as every word would otherwise be tagged as other word.
     func linguisticTagsArray(string: String) throws -> [LinguisticTag] {
         try checkTagSchemeAvailability()
+        return tags(for: string)
+    }
+
+    /// Tags the string without checking that the tag scheme is available.
+    private func tags(for string: String) -> [LinguisticTag] {
         let tagger = NLTagger(tagSchemes: [tagScheme])
         tagger.string = string
         let range = string.startIndex..<string.endIndex

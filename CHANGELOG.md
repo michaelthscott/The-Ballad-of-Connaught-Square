@@ -60,7 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
 
-- At startup the app checks that the `nameTypeOrLexicalClass` tag scheme is available for English, as the ballad is sorted by its linguistic tags. If it isn't, an alert offers to request its assets. If the user declines, or the request fails, the app says so and can't continue: on macOS it quits, and on iOS and visionOS it shows that linguistic tagging is unavailable and asks the user to quit. `LinguisticTagger` has `isTagSchemeAvailable`, `checkTagSchemeAvailability()` and `requestAssets()`, and its errors are `LinguisticTaggerError`.
+- At startup the app checks that the `nameTypeOrLexicalClass` tag scheme is available for English, as the ballad is sorted by its linguistic tags. The Natural Language framework only lists a tag scheme once its assets are loaded into the app, so a scheme that isn't listed is tagged with once before it's checked again. If it still isn't available, an alert offers to request its assets. If the user declines, or the request fails, the app says so and can't continue: on macOS it quits, and on iOS and visionOS it shows that linguistic tagging is unavailable and asks the user to quit. `LinguisticTagger` has `isTagSchemeAvailable`, `checkTagSchemeAvailability()` and `requestAssets()`, and its errors are `LinguisticTaggerError`.
 
 ### Fixed
 
