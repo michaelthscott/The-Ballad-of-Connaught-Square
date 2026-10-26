@@ -8,6 +8,8 @@
 import Testing
 import NaturalLanguage
 import SwiftUI
+import Observation
+import Synchronization
 @testable import ConnaughtSquare
 
 final class LinguisticTagOrderTests {
@@ -51,15 +53,39 @@ final class LinguisticTagOrderTests {
     @Test func testSubscript() {
         #expect(tags[0] == .noun && tags[0].weight == 2)
         #expect(tags[1] == .verb && tags[1].weight == 1)
-		tags[0] = .noun(weight: 3)
-        #expect(tags[0] == .noun && tags[0].weight == 3)
-        #expect(tags[1] == .verb && tags[1].weight == 1)
-		tags[10] = .noun(weight: 4)
+		// Moving a tag shifts the others, and keeps each tag exactly once with its weight.
+		tags.move(fromOffsets: [0], toOffset: 11)
         #expect(tags[0] == .verb && tags[0].weight == 1)
-        #expect(tags[10] == .noun && tags[10].weight == 4)
-		tags[16] = .verb(weight: 5)
-        #expect(tags[9] == .noun && tags[9].weight == 4)
-        #expect(tags[16] == .verb && tags[16].weight == 5)
+        #expect(tags[10] == .noun && tags[10].weight == 2)
+		tags.move(fromOffsets: [0], toOffset: 17)
+        #expect(tags[9] == .noun && tags[9].weight == 2)
+        #expect(tags[16] == .verb && tags[16].weight == 1)
+        #expect(Set(tags.map(\.name)).count == 17)
+    }
+
+    /// `WeightedSet` is a class, so rearranging it in place must still tell observers, or the tag list wouldn't refresh.
+    @Test(arguments: [TagSortOrder.ascending, .descending, .invert, .random])
+    func testReorderingNotifiesObservers(order: TagSortOrder) {
+        let tags = LinguisticTagOrder(tags: [.noun(weight: 3), .verb(weight: 2), .adverb(weight: 1)])
+        let notified = Mutex(false)
+        withObservationTracking {
+            _ = tags.ordering
+        } onChange: {
+            notified.withLock { $0 = true }
+        }
+        tags.orderTags(with: order)
+        #expect(notified.withLock { $0 })
+    }
+
+    @Test func testMoveNotifiesObservers() {
+        let notified = Mutex(false)
+        withObservationTracking {
+            _ = tags.ordering
+        } onChange: {
+            notified.withLock { $0 = true }
+        }
+        tags.move(fromOffsets: [0], toOffset: 2)
+        #expect(notified.withLock { $0 })
     }
     
     @Test func testOrderedByWeight() {

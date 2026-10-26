@@ -13,15 +13,17 @@ struct TagListView: View {
 	@Environment(Ballad.self) var ballad
 	
 	var body: some View {
-		@Bindable var ballad = ballad
 		VStack {
 			List {
-				ForEach($ballad.tags.ordering, editActions: [.move]) { $tag in
+				ForEach(ballad.tags.ordering) { tag in
 					HStack {
 						Text(tag.name)
 						Spacer()
 						Text(String(tag.weight))
 					}
+				}
+				.onMove { source, destination in
+					ballad.tags.move(fromOffsets: source, toOffset: destination)
 				}
 			}
 			.onChange(of: ballad.tags.description) {

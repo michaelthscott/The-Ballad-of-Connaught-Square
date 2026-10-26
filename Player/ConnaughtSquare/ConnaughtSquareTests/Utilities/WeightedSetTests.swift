@@ -127,7 +127,7 @@ struct WeightedSetTests {
 	// `init` sorts by the elements' `<`, which ignores weight, so these fixtures sort by weight
 	// themselves, heaviest first, to give the order their names describe.
 	private func heaviestFirst(_ elements: [WeightedABCD]) -> WeightedSet<WeightedABCD> {
-		var set = WeightedSet<WeightedABCD>(elements)
+        let set = WeightedSet<WeightedABCD>(elements)
 		set.sort { $0.weight > $1.weight }
 		return set
 	}
@@ -152,64 +152,14 @@ struct WeightedSetTests {
     }
    
     @Test func testSubscriptPosition() {
-		var set: WeightedSet<WeightedABCD>
-		
-		set = C3B2A1
-        #expect(set[0] == .C)
-        #expect(set[1] == .B)
-        #expect(set[2] == .A)
-		set[0] = .A(4)
-        #expect(set[0] == .A && set[0].weight == 4)
-        #expect(set[1] == .C && set[1].weight == 3)
-        #expect(set[2] == .B && set[2].weight == 2)
-		
-		set = C3B2A1
-        #expect(set[0] == .C(3))
-        #expect(set[1] == .B(2))
-        #expect(set[2] == .A(1))
-		set[1] = .A(4)
+		let set = C3B2A1
         #expect(set[0] == .C && set[0].weight == 3)
-        #expect(set[1] == .A && set[1].weight == 4)
-        #expect(set[2] == .B && set[2].weight == 2)
-		
-		set = C3B2A1
-        #expect(set[0] == .C(3))
-        #expect(set[1] == .B(2))
-        #expect(set[2] == .A(1))
-		set[2] = .C(5)
-        #expect(set[0] == .B && set[0].weight == 2)
-        #expect(set[1] == .A && set[1].weight == 1)
-        #expect(set[2] == .C && set[2].weight == 5)
-		
-		set = C3B2A1
-        #expect(set[0] == .C(3))
-        #expect(set[1] == .B(2))
-        #expect(set[2] == .A(1))
-		print(set)
-		set[1] = .C(5)
-		print(set)
-        #expect(set[0] == .B && set[0].weight == 2)
-        #expect(set[1] == .C && set[1].weight == 5)
+        #expect(set[1] == .B && set[1].weight == 2)
         #expect(set[2] == .A && set[2].weight == 1)
 	}
-	
-    @Test func testSubscriptPositionFailure() {
-		// This sequence once left D(0) in the set twice. It now keeps every element exactly once.
-		let set = C3B2A1D0
-		set[0] = .B(2)
-		set[1] = .C(3)
-		set[1] = .D(0)
-		set[3] = .C(3)
-        #expect(set[0] == .B && set[0].weight == 2)
-        #expect(set[1] == .D && set[1].weight == 0)
-        #expect(set[2] == .A && set[2].weight == 1)
-        #expect(set[3] == .C && set[3].weight == 3)
-	}
-	
+
     @Test func testSubscriptBounds() {
-		var set: WeightedSet<WeightedABCD>
-		
-		set = C3B2A1D0
+		let set = C3B2A1D0
         #expect(set[0..<1] == [.C(3)])
         #expect(set[1..<2] == [.B(2)])
         #expect(set[2..<3] == [.A(1)])
@@ -219,45 +169,33 @@ struct WeightedSetTests {
         #expect(set[...] == [.C(3), .B(2), .A(1), .D(0)])
         #expect(set[...1] == [.C(3), .B(2)])
         #expect(set[1...] == [.B(2), .A(1), .D(0)])
-		set[0..<1] = [.A(4)]
-        #expect(set[0] == .A())
-        #expect(set[1] == .C(3))
-        #expect(set[2] == .B(2))
-
-		set = C3B2A1
-		set[0..<2] = [.A(1), .C(3)]
-        #expect(set[0] == .A(1))
-        #expect(set[1] == .C(3))
-        #expect(set[2] == .B(2))
-		
-		set = C3B2A1
-		set[0..<3] = [.A(1), .B(2), .C(3)]
-        #expect(set[0] == .A(1))
-        #expect(set[1] == .B(2))
-        #expect(set[2] == .C(3))
 	}
 
-	/// Assigning a range an element that sits before it moves the element towards the end,
-	/// which used to land it one place short and overwrite another element.
-    @Test func testSubscriptBoundsMovingTowardsTheEnd() {
-		let set = C3B2A1
-		set[1..<2] = [.C(3)]
-        #expect(set.elements.map(\.description) == ["B(2)", "C(3)", "A(1)"])
-
-		let other = C3B2A1D0
-		other[2..<4] = [.C(3), .B(2)]
-        #expect(other.elements.map(\.description) == ["A(1)", "D(0)", "C(3)", "B(2)"])
+	/// Rearranging can't create duplicates or lose elements, unlike the subscript setters it replaced,
+	/// which once left an element in the set twice.
+    @Test func testRearrangingKeepsEachElementOnce() {
+		var generator = SeededRandomNumberGenerator(seed: 3)
+		let set = D4C3B2A1
+		for _ in 0..<200 {
+			let source = IndexSet((0..<set.count).filter { _ in Bool.random(using: &generator) })
+			set.move(fromOffsets: source, toOffset: Int.random(in: 0...set.count, using: &generator))
+			if Bool.random(using: &generator) {
+				set.reverse()
+			}
+		}
+        #expect(set.count == 4)
+        #expect(Set(set.elements.map(\.description)) == ["A(1)", "B(2)", "C(3)", "D(4)"])
 	}
 
 	// TODO: More tests.
-    @Test func testCompareSubscriptPositionAndMove() {
-		let x = C3B2A1D0
-		var y = C3B2A1D0
-		x[0] = .D(0)
-		y.move(fromOffsets: [3], toOffset: 0)
-        #expect(x == y)
+    @Test func testCompareSetWeightAndMove() {
+		// Adding a missing element puts it at the end; moving it puts it where it's wanted.
+		let x = C3B2A1
+		x.setWeight(0, of: .D())
+		x.move(fromOffsets: [3], toOffset: 0)
+        #expect(x.elements.map(\.description) == ["D(0)", "C(3)", "B(2)", "A(1)"])
 	}
-	
+
     @Test func testCollection() {
         let set = C3B2A1
         #expect(WeightedSet<WeightedABCD>().isEmpty == true)
@@ -665,14 +603,14 @@ struct WeightedSetTests {
 	}
 	
     @Test func testShuffle() {
-		var set = WeightedSet<WeightedLinguisticTag>(WeightedLinguisticTag.allCases)
+        let set = WeightedSet<WeightedLinguisticTag>(WeightedLinguisticTag.allCases)
 		let description = set.description
 		set.shuffle()
         #expect(description != set.description)
 	}
 	
     @Test func testReverse() {
-		var set = C3B2A1D0
+        let set = C3B2A1D0
         #expect(set[0] == .C && set[0].weight == 3)
         #expect(set[1] == .B && set[1].weight == 2)
         #expect(set[2] == .A && set[2].weight == 1)

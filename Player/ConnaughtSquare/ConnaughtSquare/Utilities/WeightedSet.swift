@@ -12,9 +12,8 @@ import Foundation
 import SwiftUI
 
 typealias WeightedSetElement = Weighted & Comparable & Hashable & Codable
-typealias WeightedSetCollection = RandomAccessCollection & MutableCollection
 
-final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
+final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
     private(set) var elements: [Element]
 	
 	/// The empty set.
@@ -119,7 +118,7 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
         elements[slot(for: element)].weight += weight
     }
 
-    // Rearranging the elements can't create duplicates, unlike assigning through the subscripts.
+    // The set isn't a MutableCollection: these rearrange the elements without being able to create duplicates.
 
     /// Moves the elements at the specified offsets to the specified destination offset.
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {
@@ -146,51 +145,14 @@ final class WeightedSet<Element: WeightedSetElement>: WeightedSetCollection {
         elements.sort(by: areInIncreasingOrder)
     }
 
-	/*
-	 An index is the position of an element. Offsets are the start and end of an element. The start offset is the index. The end offset is the index + 1.
-	 1) If the element does not move then just update its value.
-	 2) If the element is moved to somewhere towards the start of the array then the offset is same as the new index.
-	 3) If the element is moved to somewhere towards the end of the array then the offset is same as the new index + 1.
-	 */
-	
-    /// Used to access an element.
-    /// Note that assigning a different element will cause the elements to be moved.
+    /// The element at the specified position.
     subscript(position: Int) -> Element {
-        get {
-            elements[position]
-        }
-		set(newValue) {
-			let previousPosition = slot(for: newValue)
-            if previousPosition != position {
-				var offset: Int
-				switch position {
-				case startIndex:
-					offset = 0
-				case startIndex..<previousPosition:
-					offset = position
-				default:
-					offset = position + 1
-				}
-				elements.move(fromOffsets: [previousPosition], toOffset: offset)
-			}
-			elements[position] = newValue
-        }
+        elements[position]
     }
-    
-	/// Used to access a range of elements.
-	/// Note that assigning different elements will cause the elements to be moved.
+
+	/// The elements in the specified range.
 	subscript(bounds: Range<Int>) -> ArraySlice<Element> {
-		get {
-			elements[bounds]
-		}
-		set(newValue) {
-			// Take the assigned elements out, then put them back as a block starting at the lower bound,
-			// so they end up exactly in the bounds whichever way each of them moves.
-			let values = Array(newValue)
-			var remaining = elements.filter { !values.contains($0) }
-			remaining.insert(contentsOf: values, at: Swift.min(bounds.lowerBound, remaining.count))
-			elements = remaining
-		}
+		elements[bounds]
 	}
 }
 
