@@ -197,8 +197,11 @@ extension WeightedSet: Hashable {
     }
 }
 
-// MARK: - SetAlgebra
-extension WeightedSet: SetAlgebra {
+// MARK: - Set operations
+
+// These follow SetAlgebra's names, but the set doesn't conform to it: adding weights breaks its laws,
+// so that, for example, x.union(x) doubles every weight rather than equalling x.
+extension WeightedSet {
 	func contains(_ element: Element) -> Bool {
         weight(of: element) > 0
     }
@@ -240,6 +243,7 @@ extension WeightedSet: SetAlgebra {
     /// Adds the new member's weight to the element's weight.
     /// - Parameter newMember: The element, with the weight to add.
     /// - Returns: Whether the set didn't contain the element before but does now, and the element as it is after the insertion.
+    @discardableResult
     func insert(_ newMember: Element) -> (inserted: Bool, memberAfterInsert: Element) {
         let alreadyContains = contains(newMember)
         let index = slot(for: newMember)
@@ -251,6 +255,7 @@ extension WeightedSet: SetAlgebra {
     /// A member with no positive weight, such as `Element(rawValue:)`, takes away all of the element's weight.
     /// - Parameter member: The element, with the weight to take away.
     /// - Returns: The element as it was before the removal, or `nil` if the set didn't contain it.
+    @discardableResult
     func remove(_ member: Element) -> Element? {
         guard let index = elements.firstIndex(of: member), elements[index].weight > 0 else { return nil }
         let removed = elements[index]
@@ -262,6 +267,7 @@ extension WeightedSet: SetAlgebra {
     /// Replaces the element's weight with the new member's weight.
     /// - Parameter newMember: The element, with its new weight.
     /// - Returns: The element as it was before the update, or `nil` if the set didn't contain it.
+    @discardableResult
     func update(with newMember: Element) -> Element? {
         let previous = elements.firstIndex(of: newMember).map { elements[$0] }
         setWeight(newMember.weight, of: newMember)
@@ -305,8 +311,6 @@ extension WeightedSet: SetAlgebra {
         return true
     }
     
-    // SetAlgebra's default subset checks rely on set laws that adding weights breaks, so these compare weights directly.
-
     /// Whether every weighted element of this set has at least as much weight in the other set.
     func isSubset(of other: WeightedSet) -> Bool {
         weightedElements.allSatisfy { other.weight(of: $0) >= $0.weight }

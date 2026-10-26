@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- `WeightedSet`'s `SetAlgebra` conformance. Its operations add weights, which breaks the laws `SetAlgebra` promises, such as `x.union(x) == x`. `union`, `intersection`, `symmetricDifference`, `subtracting`, their `form…` versions, `insert`, `remove`, `update`, `contains`, `isDisjoint(with:)` and the subset checks remain as plain methods with the same behaviour. `SetAlgebra`'s initialiser from a sequence has gone; use `init(_:)` with an array.
+
 - The `Comparable` conformances of `Cycle` and `WeightedSet`, which nothing used. Neither was a valid ordering: `<` was true only when every pair of elements was less, so two empty values were each less than the other, and the lengths were ignored. To order cycles, use `elements.lexicographicallyPrecedes(_:)`.
 
 - The `Duration.seconds` extension, which only its tests used. It was easily confused with the static `Duration.seconds(_:)`.

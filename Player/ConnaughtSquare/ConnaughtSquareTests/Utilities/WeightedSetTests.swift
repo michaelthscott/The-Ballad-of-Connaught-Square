@@ -147,8 +147,8 @@ struct WeightedSetTests {
     @Test func testEquatable() {
         let set1 = C3B2A1
         let set2 = D4C3B2A1
-        #expect(WeightedSet<WeightedABCD>(set1) == WeightedSet<WeightedABCD>(set1))
-        #expect(WeightedSet<WeightedABCD>(set1) != WeightedSet<WeightedABCD>(set2))
+        #expect(WeightedSet<WeightedABCD>(set1.elements) == WeightedSet<WeightedABCD>(set1.elements))
+        #expect(WeightedSet<WeightedABCD>(set1.elements) != WeightedSet<WeightedABCD>(set2.elements))
     }
    
     @Test func testSubscriptPosition() {
