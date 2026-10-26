@@ -8,9 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
-- `WeightedSet`'s `SetAlgebra` conformance. Its operations add weights, which breaks the laws `SetAlgebra` promises, such as `x.union(x) == x`. `union`, `intersection`, `symmetricDifference`, `subtracting`, their `form…` versions, `insert`, `remove`, `update`, `contains`, `isDisjoint(with:)` and the subset checks remain as plain methods with the same behaviour. `SetAlgebra`'s initialiser from a sequence has gone; use `init(_:)` with an array.
+- `WeightedSet`'s `MutableCollection`, `SetAlgebra` and `Comparable` conformances, `LinguisticTagOrder`'s `MutableCollection` conformance, and `Cycle`'s `Comparable` conformance. Assigning through `WeightedSet`'s subscripts could leave an element in the set twice and lose another, and assigning a new element added it rather than replacing one. Adding weights breaks the laws `SetAlgebra` promises, such as `x.union(x) == x`. Neither `<` was a valid ordering, and nothing used them; to order cycles, use `elements.lexicographicallyPrecedes(_:)`. `union`, `intersection`, `symmetricDifference`, `subtracting`, their `form…` versions, `insert`, `remove`, `update`, `contains` and `isDisjoint(with:)` remain as plain methods with the same weight arithmetic, so the music is unchanged. `SetAlgebra`'s initialiser from a sequence has gone; use `init(_:)` with an array.
 
-- The `Comparable` conformances of `Cycle` and `WeightedSet`, which nothing used. Neither was a valid ordering: `<` was true only when every pair of elements was less, so two empty values were each less than the other, and the lengths were ignored. To order cycles, use `elements.lexicographicallyPrecedes(_:)`.
+- `WeightedSet.position(of:)`, which looked like a lookup but added a zero-weight slot for a missing element, and `existingPosition(of:)`. Use `firstIndex(of:)`, `weight(of:)` or `contains(_:)` to look an element up.
 
 - The `Duration.seconds` extension, which only its tests used. It was easily confused with the static `Duration.seconds(_:)`.
 
@@ -20,15 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- `WeightedSet` is now a struct rather than a class, so copies no longer share their elements and its changing methods are `mutating`. `subtracting(_:)` no longer has to copy the elements by hand, `Composer` combines the tunes' sets with `reduce(into:)`, and `LinguisticTagOrder` no longer needs to tell observers itself when it rearranges its tags, because changing the `ordering` struct does that.
+- `WeightedSet` is now a struct rather than a class, so copies no longer share their elements, and it has an explicit API for changing it. `setWeight(_:of:)` and `addWeight(_:to:)` change an element's weight, adding the element at the end if it's missing. `move(fromOffsets:toOffset:)`, `reverse()`, `shuffle()`, `shuffle(using:)` and `sort(by:)` rearrange the elements, and can't create duplicates. `LinguisticTagOrder` has its own `move(fromOffsets:toOffset:)`, which `TagListView` calls from `onMove` rather than moving tags through a binding.
 
-- `WeightedSet` and `LinguisticTagOrder` are no longer `MutableCollection`s: their subscripts are read-only, so assigning through them can no longer move elements around or add new ones. Rearrange them with `move(fromOffsets:toOffset:)`, `reverse()` and `shuffle()` instead. `TagListView` moves tags with `onMove` rather than through a binding. `LinguisticTagOrder` now tells observers when it rearranges its tags, which the in-place rearranging methods added to `WeightedSet` had briefly stopped, so the tag list refreshes when a tag order is chosen.
-
-- `WeightedSet` has an explicit API for changing weights: `setWeight(_:of:)` and `addWeight(_:to:)`, which add a missing element at the end. `position(of:)`, which looked like a lookup but added a zero-weight slot for a missing element, has been removed, along with `existingPosition(of:)`; use `firstIndex(of:)` to look an element up. The set also has its own `move(fromOffsets:toOffset:)`, `reverse()`, `shuffle()`, `shuffle(using:)` and `sort(by:)`, which rearrange the elements directly rather than through the subscript setters.
-
-- Two `WeightedSet`s are now equal only when they hold the same elements with the same weights, so `[A(1)]` no longer equals `[A(5)]`. The order of the elements and any zero-weight slots are still ignored, and the hash now includes the weights to match. As union adds weights, `x.union(x)` is no longer equal to `x`. `isSubset(of:)`, `isSuperset(of:)` and their strict versions now compare weights directly: one set is a subset of another when each of its elements has at least as much weight in the other. Previously they came from `SetAlgebra`'s defaults, which assume laws that adding weights breaks. Nothing in the app compares sets, so its behaviour is unchanged.
-
-- A `WeightedLinguisticTag`'s weight is no longer part of its identity anywhere. `<` now orders tags by name alone, matching `==`, so two equal tags can no longer be ordered. `hash(into:)` hashes the tag alone, and `id` is the tag's name rather than its name and weight. The ballad's tag order still lists the heaviest tags first: `LinguisticTagOrder` now sorts by weight itself. A `WeightedSet` of tags is otherwise sorted by name, and its equality no longer depends on how the weights rank the tags. The `Weighted` protocol documents the rule.
+- A weight is no longer part of an element's identity. A `WeightedLinguisticTag`'s `<` now orders tags by name alone, matching `==`, its hash ignores the weight, and its `id` is its name rather than its name and weight. The `Weighted` protocol documents the rule. The ballad's tag order still lists the heaviest tags first, as `LinguisticTagOrder` now sorts by weight itself. Two `WeightedSet`s, by contrast, are now equal only when they hold the same elements with the same weights, so `[A(1)]` no longer equals `[A(5)]`. The order of the elements and any zero-weight slots are ignored, and the hash matches. `isSubset(of:)`, `isSuperset(of:)` and their strict versions now compare weights: one set is a subset of another when each of its elements has at least as much weight in the other.
 
 - `Cycle.currentIndex` can no longer be set from outside the cycle, as an index out of range crashed `next()`.
 
@@ -66,13 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- Assigning a range of a `WeightedSet` no longer duplicates one element and loses another when an assigned element moves towards the end. The assigned elements now always end up exactly in the range. Moving tags in the app didn't go through this setter, so the tag order was unaffected.
-
-- `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing. It returns the element as it was before the removal, rather than the reduced element.
-
-- `WeightedSet.insert(_:)` now returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` now replaces the element's weight rather than adding to it, and returns the element as it was before, as `SetAlgebra` requires. Nothing in the app calls these.
-
-- `WeightedSet.isEmpty` no longer counts zero-weight slots, so it now agrees with `contains(_:)`: `x.subtracting(x).isEmpty` is `true`. `count` still includes those slots.
+- `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing, and `remove` returns the element as it was before rather than the reduced element. `insert(_:)` returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` replaces the element's weight rather than adding to it, and returns the element as it was before. `isEmpty` no longer counts zero-weight slots, so it agrees with `contains(_:)`; `count` still includes them.
 
 - `String.words` no longer counts the empty strings between repeated spaces, or an empty string, as words, and now also separates words at newlines and tabs. An empty part's estimated speaking time is now zero.
 
