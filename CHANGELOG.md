@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
+- The Classifier and Idiom tags from the Tags asset, so they no longer appear in the tag order. No line has either tag, so both had a weight of 0.
+
 - `WeightedSet`'s `MutableCollection`, `SetAlgebra` and `Comparable` conformances, `LinguisticTagOrder`'s `MutableCollection` conformance, and `Cycle`'s `Comparable` conformance. Assigning through `WeightedSet`'s subscripts could leave an element in the set twice and lose another, and assigning a new element added it rather than replacing one. Adding weights breaks the laws `SetAlgebra` promises, such as `x.union(x) == x`. Neither `<` was a valid ordering, and nothing used them; to order cycles, use `elements.lexicographicallyPrecedes(_:)`. `union`, `intersection`, `symmetricDifference`, `subtracting`, their `form…` versions, `insert`, `remove`, `update`, `contains` and `isDisjoint(with:)` remain as plain methods with the same weight arithmetic, so the music is unchanged. `SetAlgebra`'s initialiser from a sequence has gone; use `init(_:)` with an array.
 
 - `WeightedSet.position(of:)`, which looked like a lookup but added a zero-weight slot for a missing element, and `existingPosition(of:)`. Use `firstIndex(of:)`, `weight(of:)` or `contains(_:)` to look an element up.
@@ -65,6 +67,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - The Performance and Settings tabs now have icons on iOS, rather than showing only their titles.
+
+- The Tags asset's weights for Noun and PersonalName now match the number of times each tag appears in the lines: 1257 rather than 1259, and 50 rather than 49.
 
 - `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing, and `remove` returns the element as it was before rather than the reduced element. `insert(_:)` returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` replaces the element's weight rather than adding to it, and returns the element as it was before. `isEmpty` no longer counts zero-weight slots, so it agrees with `contains(_:)`; `count` still includes them.
 

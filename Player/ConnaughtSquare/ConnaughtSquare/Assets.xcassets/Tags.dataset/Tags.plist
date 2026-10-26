@@ -20,7 +20,7 @@
 			<key>name</key>
 			<string>Noun</string>
 			<key>weight</key>
-			<integer>1259</integer>
+			<integer>1257</integer>
 		</dict>
 		<dict>
 			<key>name</key>
@@ -74,7 +74,7 @@
 			<key>name</key>
 			<string>PersonalName</string>
 			<key>weight</key>
-			<integer>49</integer>
+			<integer>50</integer>
 		</dict>
 		<dict>
 			<key>name</key>
@@ -93,18 +93,6 @@
 			<string>OtherWord</string>
 			<key>weight</key>
 			<integer>4</integer>
-		</dict>
-		<dict>
-			<key>name</key>
-			<string>Classifier</string>
-			<key>weight</key>
-			<integer>0</integer>
-		</dict>
-		<dict>
-			<key>name</key>
-			<string>Idiom</string>
-			<key>weight</key>
-			<integer>0</integer>
 		</dict>
 	</array>
 </dict>

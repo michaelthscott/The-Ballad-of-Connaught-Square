@@ -132,7 +132,7 @@ final class LinguisticTagOrderTests {
     /// Pins the ballad's tags, weights and order, heaviest first, so that refactoring `WeightedSet` can't change them unnoticed.
     @Test func testBalladTagOrderIsUnchanged() {
         let ballad = Ballad()
-        let expected = ["Verb=1983", "Pronoun=1270", "Noun=1259", "Adverb=841", "Determiner=745", "Preposition=650", "Interjection=450", "Adjective=400", "Number=244", "Particle=223", "Conjunction=193", "PersonalName=49", "PlaceName=33", "OrganizationName=10", "OtherWord=4", "Classifier=0", "Idiom=0"]
+        let expected = ["Verb=1983", "Pronoun=1270", "Noun=1257", "Adverb=841", "Determiner=745", "Preposition=650", "Interjection=450", "Adjective=400", "Number=244", "Particle=223", "Conjunction=193", "PersonalName=50", "PlaceName=33", "OrganizationName=10", "OtherWord=4"]
         #expect(ballad.tags.map { "\($0.name)=\($0.weight)" } == expected)
     }
 
