@@ -67,7 +67,8 @@ struct PauseGateTests {
             try await gate.sleep(for: .milliseconds(100))
         }
         #expect(elapsed >= .milliseconds(100))
-        #expect(elapsed < .milliseconds(300))
+        // Only guards against hanging: sleeps can wake late while other tests run in parallel.
+        #expect(elapsed < .seconds(1))
     }
 
     @Test func testSleepExcludesTimePaused() async throws {
@@ -77,12 +78,15 @@ struct PauseGateTests {
         // Pause part-way through the sleep, for longer than the sleep has left.
         try await Task.sleep(for: .milliseconds(100))
         gate.pause()
-        try await Task.sleep(for: .milliseconds(300))
+        try await Task.sleep(for: .seconds(1))
         gate.resume()
         try await sleeping.value
         let elapsed = clock.now - start
-        #expect(elapsed >= .milliseconds(500))
-        #expect(elapsed < .milliseconds(800))
+        // 100 ms before the pause, 1 s paused, then the 100 ms left.
+        #expect(elapsed >= .milliseconds(1200))
+        // Counting the pause twice would take about 2.2 s. The long pause leaves room below that for
+        // sleeps that wake late while other tests run in parallel.
+        #expect(elapsed < .seconds(2))
     }
 
     @Test func testSleepThrowsWhenCancelled() async throws {
