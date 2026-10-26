@@ -64,6 +64,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The Performance and Settings tabs now have icons on iOS, rather than showing only their titles.
+
 - `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing, and `remove` returns the element as it was before rather than the reduced element. `insert(_:)` returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` replaces the element's weight rather than adding to it, and returns the element as it was before. `isEmpty` no longer counts zero-weight slots, so it agrees with `contains(_:)`; `count` still includes them.
 
 - `String.words` no longer counts the empty strings between repeated spaces, or an empty string, as words, and now also separates words at newlines and tabs. An empty part's estimated speaking time is now zero.

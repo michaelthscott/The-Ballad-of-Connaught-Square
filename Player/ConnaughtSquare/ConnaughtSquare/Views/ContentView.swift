@@ -12,9 +12,9 @@ struct ContentView: View {
         VStack {
             TabView {
                 PerformanceView()
-                    .tabItem { Text("Performance") }
+                    .tabItem { Label("Performance", systemImage: "theatermasks") }
 				SettingsView()
-					.tabItem { Text("Settings") }
+					.tabItem { Label("Settings", systemImage: "gear") }
             }
         }
     }
