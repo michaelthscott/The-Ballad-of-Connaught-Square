@@ -15,9 +15,10 @@ import Synchronization
 final class LinguisticTagOrderTests {
     var tags: LinguisticTagOrder!
     
-    // [.noun, .noun, .verb]
-    init() throws {
-        tags = try decodeAsset("TagsTest", from: Bundle(for: Self.self))
+    // [.noun, .noun, .verb], with every other tag at weight 0, after them in order of name.
+    init() {
+        let others = WeightedLinguisticTag.allCases.filter { $0 != .noun() && $0 != .verb() }
+        tags = LinguisticTagOrder(tags: [.noun(weight: 2), .verb(weight: 1)] + others)
     }
 
     deinit {

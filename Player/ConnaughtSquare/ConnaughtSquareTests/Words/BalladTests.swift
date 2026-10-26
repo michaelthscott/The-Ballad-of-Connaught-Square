@@ -14,8 +14,7 @@ final class BalladTests {
     
     init() throws {
 		let lines: [Line] = try decodeAsset("LinesTest", from: Bundle(for: Self.self))
-		let tags: LinguisticTagOrder = try decodeAsset("TagsTest", from: Bundle(for: Self.self))
-		ballad = Ballad(lines: lines, tags: tags)
+		ballad = Ballad(lines: lines, tags: LinguisticTagOrder(lines: lines))
      }
 
     deinit {
