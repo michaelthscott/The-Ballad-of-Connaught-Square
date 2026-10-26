@@ -83,7 +83,7 @@ import Accessibility
 		return first == tag
     }
     
-	// TODO: Tags don't change therefore we don't need to repeatedly calculate this.
+	/// The number of times the tag appears in the line.
 	func countFor(tag: WeightedLinguisticTag) -> Int {
 		tagCounts.weight(of: tag)
 	}
@@ -107,9 +107,7 @@ import Accessibility
         }
         return lastWord.rhyme == rhyme
     }
-    
-	// TODO: These two probably doesn't need to be optional.
-	
+
     /// The last word in the line if there is one.
     var lastWord: Word? {
         guard let last = string.components(separatedBy: .whitespaces).last else {

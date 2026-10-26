@@ -119,8 +119,6 @@ struct Composer {
         }
         return intervalVector
     }
-    
-	// TODO: floor <= initial <= ceiling
 
 	/// The note each assignment starts from: the highest of the tunes' most frequent notes.
 	let initialNote: Note

@@ -73,9 +73,7 @@ extension WeightedLinguisticTag: SafeRawRepresentable {
             self = .placeName(weight: weight)
         }
     }
-    
-    // TODO: Remove () from LinguisticTag enum values when weight has been removed from LinguisticTag.
-    
+
     var rawValue: LinguisticTag {
         switch self {
         case .noun:

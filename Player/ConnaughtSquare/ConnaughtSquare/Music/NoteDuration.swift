@@ -5,9 +5,9 @@
 //  Created by Michael Scott on 07/12/2023.
 //
 
-// TODO: Is this microseconds?
-
 /// The duration of a note in standard musical terminology.
+///
+/// The raw value is the duration in microseconds.
 enum NoteDuration: UInt32 {
     case breve = 8000000
     case semibreve = 4000000

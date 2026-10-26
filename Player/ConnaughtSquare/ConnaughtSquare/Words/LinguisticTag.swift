@@ -8,7 +8,7 @@
 import Foundation
 import NaturalLanguage
 
-/// ``LinguisticTag`` is a wrapper around `NLTag` so that there are a specific set of possible tags produced by ``LinguisticTagger``.  By default the weight of a tag is zero.
+/// ``LinguisticTag`` is a wrapper around `NLTag` so that there are a specific set of possible tags produced by ``LinguisticTagger``.
 enum LinguisticTag {
     case noun
     case verb
@@ -36,7 +36,7 @@ enum LinguisticTag {
  */
 
 extension LinguisticTag: Equatable {
-    /// Two tags are equal when their raw values are equal. Weights are ignored.
+    /// Two tags are equal when their raw values are equal.
     /// - Parameters:
     ///   - lhs: The left-hand  tag.
     ///   - rhs: The right-hand  tag.

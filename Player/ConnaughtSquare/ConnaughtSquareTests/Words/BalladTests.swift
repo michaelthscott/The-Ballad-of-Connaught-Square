@@ -25,7 +25,6 @@ final class BalladTests {
         #expect(ballad.lines.count == 10)
     }
         
-    // TODO: This depends on the tag order. Parts are defined by the first tag in the stanza.
     @Test func testParts() {
         #expect(ballad.cantos.count > 0)
     }

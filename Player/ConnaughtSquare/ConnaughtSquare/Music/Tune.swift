@@ -5,9 +5,6 @@
 //  Created by Michael Scott on 05/12/2023.
 //
 
-// TODO: The notes of a tune should be cyclic.
-// https://github.com/apple/swift-algorithms/blob/1.2.0/Sources/Algorithms/Cycle.swift#L13
-
 typealias NoteDurationVector = Vector<NoteDuration>
 typealias NoteIntervalVector = Vector<NoteInterval>
 typealias NoteDurationVectors = WeightedSet<NoteDurationVector>

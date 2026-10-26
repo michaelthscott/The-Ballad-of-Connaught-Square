@@ -98,12 +98,6 @@ extension Vector: Collection {
 	subscript(index: Int) -> Element {
 		elements[index]
 	}
-	
-	// TODO: Could return Vector<Element>. I don't think this is actually used.
-//    subscript(bounds: Range<Array<Element>.Index>) -> ArraySlice<Element> {
-//        elements[bounds]
-//    }
-	
 	func index(after i: Array<Element>.Index) -> Array<Element>.Index {
 		elements.index(after: i)
 	}

@@ -263,7 +263,6 @@ struct WeightedSetTests {
         #expect(set == copy)
     }
     
-    // TODO: How does this test Sequence.
     @Test func testSequence() {
 		let set = C3B2A1D0
         var string = ""

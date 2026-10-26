@@ -7,8 +7,6 @@
 
 import Foundation
 
-// TODO: Write some tests.
-
 func romanNumeral(for number: Int) -> String {
 	guard number > 0 && number < 4000 else {
 		fatalError("Number must be between 1 and 3999")

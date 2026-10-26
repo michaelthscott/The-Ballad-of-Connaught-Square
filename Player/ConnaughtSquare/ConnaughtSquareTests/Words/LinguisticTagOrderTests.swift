@@ -32,7 +32,6 @@ final class LinguisticTagOrderTests {
     }
     
     @Test func testIndexOf() {
-        // TODO: This used to be index == 0 because the tags were rearranged to be in weight decending order.
         #expect(tags.index(of: .noun()) == 0)
     }
 
