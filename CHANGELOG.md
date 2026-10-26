@@ -48,6 +48,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `LinguisticTag.allCases` is now the synthesized, constant list of cases rather than a mutable `nonisolated(unsafe)` variable.
 
+- `LinguisticTagger.linguisticTagsArray(string:)` and `Line.init(parts:)` now throw `LinguisticTaggerError.tagSchemeUnavailable` when the tag scheme isn't available on the device, rather than tagging every word as an other word.
+
 ### Added
 
 - The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.
@@ -57,6 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `PerformanceView` has a play/pause button and a stop button, which is disabled when the performance is stopped.
 
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
+
+- At startup the app checks that the `nameTypeOrLexicalClass` tag scheme is available for English, as the ballad is sorted by its linguistic tags. If it isn't, an alert offers to request its assets. If the user declines, or the request fails, the app says so and can't continue: on macOS it quits, and on iOS and visionOS it shows that linguistic tagging is unavailable and asks the user to quit. `LinguisticTagger` has `isTagSchemeAvailable`, `checkTagSchemeAvailability()` and `requestAssets()`, and its errors are `LinguisticTaggerError`.
 
 ### Fixed
 

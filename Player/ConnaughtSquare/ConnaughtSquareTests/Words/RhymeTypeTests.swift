@@ -11,8 +11,9 @@ import Testing
 /// The rhyme classifications are driven by the last word of each line, so these use words that are
 /// in the lexicon. Update the expectations when rhyme identification changes.
 struct RhymeTypeTests {
+    /// The rhymes don't depend on the tags, so the line isn't tagged.
     func line(_ string: String) -> Line {
-        Line(parts: [Part(speaker: 0, string: string)])
+        Line(parts: [Part(speaker: 0, string: string)], string: string)
     }
 
     func pair(_ first: String, _ second: String) -> LinePair {

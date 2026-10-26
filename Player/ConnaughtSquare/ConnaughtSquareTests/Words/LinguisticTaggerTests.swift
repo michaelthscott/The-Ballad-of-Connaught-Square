@@ -10,11 +10,17 @@ import Testing
 
 struct LinguisticTaggerTests {
 
-    @Test func testLinguisticTagsArray() throws {
-        let tags = LinguisticTagger().linguisticTagsArray(string: "Man eats dog")
+    @Test(.enabled(if: LinguisticTagger().isTagSchemeAvailable)) func testLinguisticTagsArray() throws {
+        let tags = try LinguisticTagger().linguisticTagsArray(string: "Man eats dog")
         #expect(tags[0] == .noun)
         #expect(tags[1] == .verb)
         #expect(tags[2] == .noun)
+    }
+
+    @Test(.disabled(if: LinguisticTagger().isTagSchemeAvailable)) func testLinguisticTagsArrayThrowsWhenTheTagSchemeIsUnavailable() {
+        #expect(throws: LinguisticTaggerError.self) {
+            try LinguisticTagger().linguisticTagsArray(string: "Man eats dog")
+        }
     }
 
 }

@@ -18,14 +18,18 @@ import UIKit
 // TODO: Redo these tests so that they don't require tag parsing in Line().
 
 final class LineTests {
+    func parts(_ speakers: [String]) -> [Part] {
+        speakers.indices.map { Part(speaker: Int($0), string: speakers[$0]) }
+    }
+
+    /// A line that isn't tagged, for tests that don't depend on the tags.
     func line(_ speakers: String...) -> Line {
-        var parts: [Part] = []
-        var strings: [String] = []
-        for speaker in speakers.indices {
-            parts.append(Part(speaker: Int(speaker), string: speakers[speaker]))
-            strings.append(speakers[speaker])
-        }
-		return Line(parts: parts)
+        Line(parts: parts(speakers), string: speakers.joined(separator: " "))
+    }
+
+    /// A line tagged by the linguistic tagger.
+    func taggedLine(_ speakers: String...) throws -> Line {
+        try Line(parts: parts(speakers))
     }
     
     @Test func testEquatable() {
@@ -36,8 +40,8 @@ final class LineTests {
         #expect(line("Cow") < line("Milking"))
     }
     
-    @Test func testStartsWith() {
-        #expect(line("Cow", "Milking").startsWith(tag: .noun))
+    @Test(.enabled(if: LinguisticTagger().isTagSchemeAvailable)) func testStartsWith() throws {
+        #expect(try taggedLine("Cow", "Milking").startsWith(tag: .noun))
     }
     
     @Test func testEndsWith() {
@@ -61,10 +65,10 @@ final class LineTests {
         }
     }
     
-    @Test func testLineTags() {
-        #expect(line("The cat sat on the mat.").tags == [.determiner, .noun, .verb, .preposition, .determiner, .noun])
-        #expect(line("How is the brown horse?").tags == [.pronoun, .verb, .determiner, .adjective, .noun])
-        #expect(line("Mike likes coffee.").tags == [.personalName, .verb, .noun])
+    @Test(.enabled(if: LinguisticTagger().isTagSchemeAvailable)) func testLineTags() throws {
+        #expect(try taggedLine("The cat sat on the mat.").tags == [.determiner, .noun, .verb, .preposition, .determiner, .noun])
+        #expect(try taggedLine("How is the brown horse?").tags == [.pronoun, .verb, .determiner, .adjective, .noun])
+        #expect(try taggedLine("Mike likes coffee.").tags == [.personalName, .verb, .noun])
     }
     
     @Test func testLastWord() {

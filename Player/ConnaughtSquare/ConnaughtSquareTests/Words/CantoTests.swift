@@ -11,7 +11,7 @@ import Testing
 final class CantoTests {
 	var canto: Canto!
 	
-	init() {
+	init() throws {
 		let tagger = LinguisticTagger()
 		let string1 = "The number one."
 		let string2 = "The number two."
@@ -19,8 +19,8 @@ final class CantoTests {
 		let part2 = Part(speaker: 1, string: string2)
 		let lineString1 = "\(string1) \(string2)"
 		let lineString2 = "\(string2) \(string1)"
-		let line1 = Line(parts: [part1, part2], string: lineString1, tags: tagger.linguisticTagsArray(string: lineString1))
-		let line2 = Line(parts: [part1, part2], string: lineString2, tags: tagger.linguisticTagsArray(string: lineString2))
+		let line1 = Line(parts: [part1, part2], string: lineString1, tags: try tagger.linguisticTagsArray(string: lineString1))
+		let line2 = Line(parts: [part1, part2], string: lineString2, tags: try tagger.linguisticTagsArray(string: lineString2))
 		let lines1 = [line1, line2]
 		let lines2 = [line2, line1]
 		let stanzas = [Stanza(lines: lines1[...]), Stanza(lines: lines2[...])]

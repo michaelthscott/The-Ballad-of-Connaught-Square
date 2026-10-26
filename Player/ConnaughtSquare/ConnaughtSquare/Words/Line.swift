@@ -21,9 +21,12 @@ import Accessibility
 	let tags: [LinguisticTag]
 	private let tagCounts: WeightedSet<WeightedLinguisticTag>
 
-	convenience init(parts: [Part]) {
+	/// Creates a line with one or more parts, tagging the joined string.
+	/// - Parameter parts: The parts of the line.
+	/// - Throws: ``LinguisticTaggerError/tagSchemeUnavailable(_:_:)`` when the tag scheme isn't available on this device.
+	convenience init(parts: [Part]) throws {
 		let string = parts.map { $0.string }.joined(separator: " ")
-		self.init(parts: parts, string: string, tags: LinguisticTagger().linguisticTagsArray(string: string))
+		self.init(parts: parts, string: string, tags: try LinguisticTagger().linguisticTagsArray(string: string))
 	}
 	
     /// Creates a line with one or more parts.
