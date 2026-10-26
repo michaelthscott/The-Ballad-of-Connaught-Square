@@ -127,7 +127,7 @@ struct WeightedSetTests {
 	// `init` sorts by the elements' `<`, which ignores weight, so these fixtures sort by weight
 	// themselves, heaviest first, to give the order their names describe.
 	private func heaviestFirst(_ elements: [WeightedABCD]) -> WeightedSet<WeightedABCD> {
-        let set = WeightedSet<WeightedABCD>(elements)
+        var set = WeightedSet<WeightedABCD>(elements)
 		set.sort { $0.weight > $1.weight }
 		return set
 	}
@@ -175,7 +175,7 @@ struct WeightedSetTests {
 	/// which once left an element in the set twice.
     @Test func testRearrangingKeepsEachElementOnce() {
 		var generator = SeededRandomNumberGenerator(seed: 3)
-		let set = D4C3B2A1
+		var set = D4C3B2A1
 		for _ in 0..<200 {
 			let source = IndexSet((0..<set.count).filter { _ in Bool.random(using: &generator) })
 			set.move(fromOffsets: source, toOffset: Int.random(in: 0...set.count, using: &generator))
@@ -190,7 +190,7 @@ struct WeightedSetTests {
 	// TODO: More tests.
     @Test func testCompareSetWeightAndMove() {
 		// Adding a missing element puts it at the end; moving it puts it where it's wanted.
-		let x = C3B2A1
+		var x = C3B2A1
 		x.setWeight(0, of: .D())
 		x.move(fromOffsets: [3], toOffset: 0)
         #expect(x.elements.map(\.description) == ["D(0)", "C(3)", "B(2)", "A(1)"])
@@ -227,7 +227,7 @@ struct WeightedSetTests {
     }
 
     @Test func testSetWeight() {
-		let set = C3B2A1
+		var set = C3B2A1
 		set.setWeight(5, of: .B())
         #expect(set.weight(of: .B) == 5)
         #expect(set.firstIndex(of: .B()) == 1)
@@ -241,7 +241,7 @@ struct WeightedSetTests {
     }
 
     @Test func testAddWeight() {
-		let set = C3B2A1
+		var set = C3B2A1
 		set.addWeight(2, to: .A())
         #expect(set.weight(of: .A) == 3)
 		set.addWeight(1, to: .D(9))
@@ -251,7 +251,7 @@ struct WeightedSetTests {
 
     @Test func testShuffleUsingAGeneratorKeepsTheElements() {
 		var generator = SeededRandomNumberGenerator(seed: 7)
-		let set = D4C3B2A1
+		var set = D4C3B2A1
 		set.shuffle(using: &generator)
         #expect(Set(set.elements.map(\.description)) == ["A(1)", "B(2)", "C(3)", "D(4)"])
         #expect(set.count == 4)
@@ -336,7 +336,7 @@ struct WeightedSetTests {
     }
     
     @Test func testInsert() {
-        let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+        var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         var result = x.insert(.A(1))
         #expect(x.weight(of: .A) == 2)
         #expect(result.inserted == false)
@@ -349,14 +349,14 @@ struct WeightedSetTests {
     }
 
     @Test func testInsertWithoutWeightIsNotAnInsertion() {
-        let x: WeightedSet<WeightedABCD> = [.A(1)]
+        var x: WeightedSet<WeightedABCD> = [.A(1)]
         let result = x.insert(.B(0))
         #expect(result.inserted == false)
         #expect(x.contains(rawValue: .B) == false)
     }
 
     @Test func testUpdate() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         // Updating replaces the weight, and returns the element as it was.
         var updated = x.update(with: .A(5))
         #expect(x.weight(of: .A) == 5)
@@ -367,7 +367,7 @@ struct WeightedSetTests {
     }
 
     @Test func testRemove() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         var removed = x.remove(.A(1))
         #expect(x.contains(rawValue: .A) == false)
         // The removed member keeps the weight it had before the removal.
@@ -381,7 +381,7 @@ struct WeightedSetTests {
     }
 
     @Test func testRemoveStopsAtZero() {
-        let x: WeightedSet<WeightedABCD> = [.A(2)]
+        var x: WeightedSet<WeightedABCD> = [.A(2)]
         let removed = x.remove(.A(5))
         #expect(removed?.description == "A(2)")
         #expect(x.weight(of: .A) == 0)
@@ -390,7 +390,7 @@ struct WeightedSetTests {
     }
 
     @Test func testRemoveWithoutWeightRemovesTheWholeWeight() {
-        let x: WeightedSet<WeightedABCD> = [.A(2), .B(3)]
+        var x: WeightedSet<WeightedABCD> = [.A(2), .B(3)]
         let removed = x.remove(.B(0))
         #expect(removed?.description == "B(3)")
         #expect(x.contains(rawValue: .B) == false)
@@ -407,7 +407,7 @@ struct WeightedSetTests {
     }
     
     @Test func testFormUnion() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
         let expected: WeightedSet<WeightedABCD> = [.C(5), .B(3), .D(3), .A(1)]
         x.formUnion(y)
@@ -415,7 +415,7 @@ struct WeightedSetTests {
     }
     
     @Test func testFormIntersection() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
         let expected: WeightedSet<WeightedABCD> = [.B(3), .C(5)]
         x.formIntersection(y)
@@ -423,7 +423,7 @@ struct WeightedSetTests {
     }
     
     @Test func testFormSymmetricDifference() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
         let expected: WeightedSet<WeightedABCD> = [.A(1), .D(3)]
         x.formSymmetricDifference(y)
@@ -483,7 +483,7 @@ struct WeightedSetTests {
     }
     
     @Test func testSubtract() {
-		let x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
+		var x: WeightedSet<WeightedABCD> = [.A(1), .B(2), .C(3)]
         let y: WeightedSet<WeightedABCD> = [.B(1), .C(2), .D(3)]
         let expected: WeightedSet<WeightedABCD> = [.A(1), .B(1), .C(1)]
         x.subtract(y)
@@ -603,14 +603,14 @@ struct WeightedSetTests {
 	}
 	
     @Test func testShuffle() {
-        let set = WeightedSet<WeightedLinguisticTag>(WeightedLinguisticTag.allCases)
+        var set = WeightedSet<WeightedLinguisticTag>(WeightedLinguisticTag.allCases)
 		let description = set.description
 		set.shuffle()
         #expect(description != set.description)
 	}
 	
     @Test func testReverse() {
-        let set = C3B2A1D0
+        var set = C3B2A1D0
         #expect(set[0] == .C && set[0].weight == 3)
         #expect(set[1] == .B && set[1].weight == 2)
         #expect(set[2] == .A && set[2].weight == 1)

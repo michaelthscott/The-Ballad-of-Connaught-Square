@@ -146,43 +146,32 @@ extension LinguisticTagOrder {
     /// Orders the tags in the specified order.
     /// - Parameter order: An order.
     func orderTags(with order: TagSortOrder) {
-        rearrange { ordering in
-            switch order {
-            case .ascending:
-                let tags = Array(tagsOrderedByWeight().reversed())
-                for position in tags.indices {
-                    // The tags come from the ordering itself, so each one is found.
-                    guard let index = index(of: tags[position]) else { continue }
-                    ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
-                }
-            case .descending:
-                let tags = tagsOrderedByWeight()
-                for position in tags.indices {
-                    guard let index = index(of: tags[position]) else { continue }
-                    ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
-                }
-            case .invert:
-                ordering.reverse()
-            case .random:
-                ordering.shuffle()
-            case .choose:
-                break
+        switch order {
+        case .ascending:
+            let tags = Array(tagsOrderedByWeight().reversed())
+            for position in tags.indices {
+                // The tags come from the ordering itself, so each one is found.
+                guard let index = index(of: tags[position]) else { continue }
+                ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
             }
+        case .descending:
+            let tags = tagsOrderedByWeight()
+            for position in tags.indices {
+                guard let index = index(of: tags[position]) else { continue }
+                ordering.move(fromOffsets: IndexSet([index]), toOffset: position)
+            }
+        case .invert:
+            ordering.reverse()
+        case .random:
+            ordering.shuffle()
+        case .choose:
+            break
         }
     }
 
     /// Moves the tags at the specified offsets to the specified destination offset, as `List`'s `onMove` asks.
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {
-        rearrange { $0.move(fromOffsets: source, toOffset: destination) }
-    }
-
-    /// Rearranges the ordering and tells observers that it changed.
-    ///
-    /// `WeightedSet` is a class, so rearranging it in place doesn't set `ordering`, and Observation wouldn't notice.
-    private func rearrange(_ change: (WeightedSet<WeightedLinguisticTag>) -> Void) {
-        withMutation(keyPath: \.ordering) {
-            change(ordering)
-        }
+        ordering.move(fromOffsets: source, toOffset: destination)
     }
 }
 

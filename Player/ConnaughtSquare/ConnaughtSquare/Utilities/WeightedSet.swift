@@ -13,7 +13,7 @@ import SwiftUI
 
 typealias WeightedSetElement = Weighted & Comparable & Hashable & Codable
 
-final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
+struct WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
     private(set) var elements: [Element]
 	
 	/// The empty set.
@@ -24,7 +24,7 @@ final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
 	/// Initialise the set with the specified elements.
 	/// Note that weights will be summed for identical elements.
 	/// - Parameter elements: Initial elements for the set.
-	convenience init(_ elements: [Element]) {
+	init(_ elements: [Element]) {
 		self.init()
 		for element in elements {
 			addWeight(element.weight, to: element)
@@ -92,7 +92,7 @@ final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
 
     /// The index of an element, adding a zero-weight slot for it at the end if the set doesn't hold it.
     /// To look an element up without changing the set, use `firstIndex(of:)`, `weight(of:)` or `contains(_:)`.
-    private func slot(for element: Element) -> Int {
+    private mutating func slot(for element: Element) -> Int {
         if let index = elements.firstIndex(of: element) {
             return index
         }
@@ -106,7 +106,7 @@ final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
     /// - Parameters:
     ///   - weight: The new weight.
     ///   - element: The element. Its own weight is ignored.
-    func setWeight(_ weight: Int, of element: Element) {
+    mutating func setWeight(_ weight: Int, of element: Element) {
         elements[slot(for: element)].weight = weight
     }
 
@@ -114,34 +114,34 @@ final class WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
     /// - Parameters:
     ///   - weight: The weight to add.
     ///   - element: The element. Its own weight is ignored.
-    func addWeight(_ weight: Int, to element: Element) {
+    mutating func addWeight(_ weight: Int, to element: Element) {
         elements[slot(for: element)].weight += weight
     }
 
     // The set isn't a MutableCollection: these rearrange the elements without being able to create duplicates.
 
     /// Moves the elements at the specified offsets to the specified destination offset.
-    func move(fromOffsets source: IndexSet, toOffset destination: Int) {
+    mutating func move(fromOffsets source: IndexSet, toOffset destination: Int) {
         elements.move(fromOffsets: source, toOffset: destination)
     }
 
     /// Reverses the order of the elements.
-    func reverse() {
+    mutating func reverse() {
         elements.reverse()
     }
 
     /// Shuffles the elements.
-    func shuffle() {
+    mutating func shuffle() {
         elements.shuffle()
     }
 
     /// Shuffles the elements, using the specified random number generator.
-    func shuffle<T: RandomNumberGenerator>(using generator: inout T) {
+    mutating func shuffle<T: RandomNumberGenerator>(using generator: inout T) {
         elements.shuffle(using: &generator)
     }
 
     /// Sorts the elements with the specified ordering.
-    func sort(by areInIncreasingOrder: (Element, Element) -> Bool) {
+    mutating func sort(by areInIncreasingOrder: (Element, Element) -> Bool) {
         elements.sort(by: areInIncreasingOrder)
     }
 
@@ -179,7 +179,7 @@ extension WeightedSet: Codable {
         try container.encode(elements, forKey: .elements)
     }
     
-    convenience init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let elements = try container.decode([Element].self, forKey: .elements)
 		self.init(elements)
@@ -207,7 +207,7 @@ extension WeightedSet {
     }
 
 	func union(_ other: WeightedSet) -> WeightedSet {
-        let union = WeightedSet(elements)
+        var union = WeightedSet(elements)
         for element in other.elements {
 			union.addWeight(element.weight, to: element)
         }
@@ -215,7 +215,7 @@ extension WeightedSet {
     }
     
 	func intersection(_ other: WeightedSet) -> WeightedSet {
-        let intersection = WeightedSet()
+        var intersection = WeightedSet()
         for element in other.elements {
             if contains(element) && other.contains(element) {
 				let weight = weight(of: element) + other.weight(of: element)
@@ -226,7 +226,7 @@ extension WeightedSet {
     }
     
     func symmetricDifference(_ other: WeightedSet) -> WeightedSet {
-        let symmetricDifference = WeightedSet()
+        var symmetricDifference = WeightedSet()
         for element in elements {
             if !other.contains(element) {
                 symmetricDifference.setWeight(element.weight, of: element)
@@ -244,7 +244,7 @@ extension WeightedSet {
     /// - Parameter newMember: The element, with the weight to add.
     /// - Returns: Whether the set didn't contain the element before but does now, and the element as it is after the insertion.
     @discardableResult
-    func insert(_ newMember: Element) -> (inserted: Bool, memberAfterInsert: Element) {
+    mutating func insert(_ newMember: Element) -> (inserted: Bool, memberAfterInsert: Element) {
         let alreadyContains = contains(newMember)
         let index = slot(for: newMember)
         elements[index].weight += newMember.weight
@@ -256,7 +256,7 @@ extension WeightedSet {
     /// - Parameter member: The element, with the weight to take away.
     /// - Returns: The element as it was before the removal, or `nil` if the set didn't contain it.
     @discardableResult
-    func remove(_ member: Element) -> Element? {
+    mutating func remove(_ member: Element) -> Element? {
         guard let index = elements.firstIndex(of: member), elements[index].weight > 0 else { return nil }
         let removed = elements[index]
         let reduction = member.weight > 0 ? member.weight : removed.weight
@@ -268,32 +268,30 @@ extension WeightedSet {
     /// - Parameter newMember: The element, with its new weight.
     /// - Returns: The element as it was before the update, or `nil` if the set didn't contain it.
     @discardableResult
-    func update(with newMember: Element) -> Element? {
+    mutating func update(with newMember: Element) -> Element? {
         let previous = elements.firstIndex(of: newMember).map { elements[$0] }
         setWeight(newMember.weight, of: newMember)
         return previous.flatMap { $0.weight > 0 ? $0 : nil }
     }
     
-	func formUnion(_ other: WeightedSet) {
+	mutating func formUnion(_ other: WeightedSet) {
 		elements = union(other).elements
     }
     
-	func formIntersection(_ other: WeightedSet) {
+	mutating func formIntersection(_ other: WeightedSet) {
 		elements = intersection(other).elements
     }
 
-	func formSymmetricDifference(_ other: WeightedSet) {
+	mutating func formSymmetricDifference(_ other: WeightedSet) {
 		elements = symmetricDifference(other).elements
     }
     
-	func subtract(_ other: WeightedSet) {
+	mutating func subtract(_ other: WeightedSet) {
 		elements = subtracting(other).elements
     }
     
 	func subtracting(_ other: WeightedSet) -> WeightedSet {
-        // WeightedSet is a class, so copy the elements rather than the reference to avoid changing this set.
-        let copy = WeightedSet()
-        copy.elements = elements
+        var copy = self
         for element in other.elements {
             guard let index = copy.elements.firstIndex(of: element) else { continue }
             copy.elements[index].weight = Swift.max(copy.elements[index].weight - element.weight, 0)
@@ -336,7 +334,7 @@ extension WeightedSet {
 // MARK: - ExpressibleByArrayLiteral
 extension WeightedSet: ExpressibleByArrayLiteral {
     typealias ArrayLiteralElement = Element
-	convenience init(arrayLiteral elements: ArrayLiteralElement...) {
+	init(arrayLiteral elements: ArrayLiteralElement...) {
         self.init(elements)
     }
 }

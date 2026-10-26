@@ -41,7 +41,7 @@ struct Composer {
     
     static func durations(from tunes: [Tune], using operation: SetOperation, with vectorWidth: UInt) -> NoteDurationVectors {
         guard let first = tunes.first else { return [] }
-        return tunes.dropFirst().reduce(first.noteDurationVectors(width: vectorWidth)) { set, tune in
+        return tunes.dropFirst().reduce(into: first.noteDurationVectors(width: vectorWidth)) { set, tune in
             switch operation {
             case .union:
                 set.formUnion(tune.noteDurationVectors(width: vectorWidth))
@@ -50,13 +50,12 @@ struct Composer {
             case .symmetricDifference:
                 set.formSymmetricDifference(tune.noteDurationVectors(width: vectorWidth))
             }
-            return set
         }
     }
     
     static func intervals(from tunes: [Tune], using operation: SetOperation, with vectorWidth: UInt) -> NoteIntervalVectors {
         guard let first = tunes.first else { return [] }
-        return tunes.dropFirst().reduce(first.noteIntervalVectors(width: vectorWidth)) { set, tune in
+        return tunes.dropFirst().reduce(into: first.noteIntervalVectors(width: vectorWidth)) { set, tune in
             switch operation {
             case .union:
                 set.formUnion(tune.noteIntervalVectors(width: vectorWidth))
@@ -65,7 +64,6 @@ struct Composer {
             case .symmetricDifference:
                 set.formSymmetricDifference(tune.noteIntervalVectors(width: vectorWidth))
             }
-            return set
         }
     }
 

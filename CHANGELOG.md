@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `WeightedSet` is now a struct rather than a class, so copies no longer share their elements and its changing methods are `mutating`. `subtracting(_:)` no longer has to copy the elements by hand, `Composer` combines the tunes' sets with `reduce(into:)`, and `LinguisticTagOrder` no longer needs to tell observers itself when it rearranges its tags, because changing the `ordering` struct does that.
+
 - `WeightedSet` and `LinguisticTagOrder` are no longer `MutableCollection`s: their subscripts are read-only, so assigning through them can no longer move elements around or add new ones. Rearrange them with `move(fromOffsets:toOffset:)`, `reverse()` and `shuffle()` instead. `TagListView` moves tags with `onMove` rather than through a binding. `LinguisticTagOrder` now tells observers when it rearranges its tags, which the in-place rearranging methods added to `WeightedSet` had briefly stopped, so the tag list refreshes when a tag order is chosen.
 
 - `WeightedSet` has an explicit API for changing weights: `setWeight(_:of:)` and `addWeight(_:to:)`, which add a missing element at the end. `position(of:)`, which looked like a lookup but added a zero-weight slot for a missing element, has been removed, along with `existingPosition(of:)`; use `firstIndex(of:)` to look an element up. The set also has its own `move(fromOffsets:toOffset:)`, `reverse()`, `shuffle()`, `shuffle(using:)` and `sort(by:)`, which rearrange the elements directly rather than through the subscript setters.
