@@ -15,15 +15,11 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
 enum LinguisticTaggerError: LocalizedError {
     /// The tag scheme's assets aren't on this device for the language.
     case tagSchemeUnavailable(NLTagScheme, NLLanguage)
-    /// The request for the tag scheme's assets didn't make the tag scheme available.
-    case assetsUnavailable(NLTagScheme, NLLanguage)
 
     var errorDescription: String? {
         switch self {
         case let .tagSchemeUnavailable(tagScheme, language):
             "The \(tagScheme.rawValue) tag scheme for \(language.rawValue) isn't available on this device."
-        case let .assetsUnavailable(tagScheme, language):
-            "The assets for the \(tagScheme.rawValue) tag scheme for \(language.rawValue) couldn't be loaded onto this device."
         }
     }
 }
@@ -58,22 +54,6 @@ struct LinguisticTagger {
     func checkTagSchemeAvailability() throws(LinguisticTaggerError) {
         guard isTagSchemeAvailable else {
             throw LinguisticTaggerError.tagSchemeUnavailable(tagScheme, language)
-        }
-    }
-
-    /// Asks the Natural Language framework to load the tag scheme's assets onto this device.
-    /// - Throws: ``LinguisticTaggerError/assetsUnavailable(_:_:)`` when the tag scheme still isn't available, or the framework's error when the request fails.
-    func requestAssets() async throws {
-        let result: NLTagger.AssetsResult
-        do {
-            result = try await NLTagger.requestAssets(for: language, tagScheme: tagScheme)
-        } catch {
-            logger.error("The request for the tag scheme's assets failed: \(error, privacy: .public)")
-            throw error
-        }
-        logger.debug("The request for the tag scheme's assets returned \(String(describing: result), privacy: .public)")
-        guard result == .available, isTagSchemeAvailable else {
-            throw LinguisticTaggerError.assetsUnavailable(tagScheme, language)
         }
     }
 

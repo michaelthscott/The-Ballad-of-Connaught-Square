@@ -24,7 +24,20 @@ import SwiftUI
             lhs.weight == rhs.weight ? lhs < rhs : lhs.weight > rhs.weight
         }
     }
-    
+
+    /// Creates an order of the tags in the lines, each weighted by the number of times it appears, heaviest first.
+    /// Tags that don't appear in the lines aren't included.
+    /// - Parameter lines: The lines.
+    convenience init(lines: [Line]) {
+        var counts = WeightedSet<WeightedLinguisticTag>()
+        for line in lines {
+            for tag in line.tags {
+                counts.addWeight(1, to: WeightedLinguisticTag(rawValue: tag))
+            }
+        }
+        self.init(tags: counts.elements)
+    }
+
     /// The position of the tag in the ordering. This doesn't change the ordering.
     /// - Parameter tag: The specified tag.
     /// - Returns: The position of the tag, or `nil` if the ordering doesn't hold it.

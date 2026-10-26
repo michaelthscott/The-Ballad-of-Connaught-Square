@@ -23,15 +23,14 @@ import Foundation
 @Observable final class Ballad {
     /// The base collection of lines, initially in archived order. They can be reordered by linguistic tag and/or rhyme.
     var lines: [Line]
-    /// The linguistic tags, initially ordered by frequency of use. They can be reordered by the user.
+    /// The linguistic tags, initially ordered by how often they appear in the lines. They can be reordered by the user.
 	var tags: LinguisticTagOrder
-    
-    /// Create a ballad with the property list data.
+
+    /// Create a ballad with the property list data, ordering the tags by how often they appear in its lines.
     convenience init() {
         do {
             let lines: [Line] = try decodeAsset("Lines", from: Bundle.main)
-            let tags: LinguisticTagOrder = try decodeAsset("Tags", from: Bundle.main)
-            self.init(lines: lines, tags: tags)
+            self.init(lines: lines, tags: LinguisticTagOrder(lines: lines))
         } catch {
             fatalError("Failed to decode the ballad: \(error)")
         }

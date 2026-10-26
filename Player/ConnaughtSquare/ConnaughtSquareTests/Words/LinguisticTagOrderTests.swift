@@ -129,7 +129,20 @@ final class LinguisticTagOrderTests {
         #expect(tags.index(of: .noun()) == 1)
 	}
 
-    /// Pins the ballad's tags, weights and order, heaviest first, so that refactoring `WeightedSet` can't change them unnoticed.
+    /// Counts each tag across the lines, heaviest first, leaving out tags that don't appear.
+    @Test func testInitFromLines() {
+        let lines = [
+            Line(parts: [Part(speaker: 0, string: "Dogs chase dogs")], string: "Dogs chase dogs", tags: [.noun, .verb, .noun]),
+            Line(parts: [Part(speaker: 0, string: "Run home")], string: "Run home", tags: [.verb, .noun]),
+        ]
+        let order = LinguisticTagOrder(lines: lines)
+        #expect(order.map { "\($0.name)=\($0.weight)" } == ["Noun=3", "Verb=2"])
+        #expect(order.index(of: .adjective()) == nil)
+        #expect(LinguisticTagOrder(lines: []).isEmpty)
+    }
+
+    /// Pins the ballad's tags, weights and order, heaviest first, as counted from its lines, so that refactoring `WeightedSet` can't change them unnoticed.
+    /// The weights are those the Tags asset held before the order was counted from the lines.
     @Test func testBalladTagOrderIsUnchanged() {
         let ballad = Ballad()
         let expected = ["Verb=1983", "Pronoun=1270", "Noun=1257", "Adverb=841", "Determiner=745", "Preposition=650", "Interjection=450", "Adjective=400", "Number=244", "Particle=223", "Conjunction=193", "PersonalName=50", "PlaceName=33", "OrganizationName=10", "OtherWord=4"]

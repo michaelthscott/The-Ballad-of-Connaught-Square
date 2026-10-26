@@ -11,11 +11,12 @@ and performs it.
 ### Arranging the words
 
 Each ``Line`` of the ballad is made of one or more ``Part``s, and each part carries the
-pronunciations of its words, taken from the ``Lexicon``. The ``LinguisticTagger`` tags every word
-by its lexical class, such as noun, verb or personal name.
+pronunciations of its words, taken from the ``Lexicon``. When the lines were prepared, the
+``LinguisticTagger`` tagged every word by its lexical class, such as noun, verb or personal name,
+and the tags are stored with the lines.
 
 The ``Ballad`` orders its lines in two passes. First it sorts them by their tags, following the
-``LinguisticTagOrder``, which initially lists the most frequent tags first. Then it picks lines
+``LinguisticTagOrder``, which counts the lines' tags and initially lists the most frequent first. Then it picks lines
 so that they rhyme as much as possible, aiming for the ABAB pattern of a ballad's quatrains.
 The lines are grouped four at a time into ``Stanza``s, and the stanzas are grouped into
 ``Canto``s by the tag their first line starts with.

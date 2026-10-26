@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Removed
 
-- The Classifier and Idiom tags from the Tags asset, so they no longer appear in the tag order. No line has either tag, so both had a weight of 0.
-
 - `WeightedSet`'s `MutableCollection`, `SetAlgebra` and `Comparable` conformances, `LinguisticTagOrder`'s `MutableCollection` conformance, and `Cycle`'s `Comparable` conformance. Assigning through `WeightedSet`'s subscripts could leave an element in the set twice and lose another, and assigning a new element added it rather than replacing one. Adding weights breaks the laws `SetAlgebra` promises, such as `x.union(x) == x`. Neither `<` was a valid ordering, and nothing used them; to order cycles, use `elements.lexicographicallyPrecedes(_:)`. `union`, `intersection`, `symmetricDifference`, `subtracting`, their `form…` versions, `insert`, `remove`, `update`, `contains` and `isDisjoint(with:)` remain as plain methods with the same weight arithmetic, so the music is unchanged. `SetAlgebra`'s initialiser from a sequence has gone; use `init(_:)` with an array.
 
 - `WeightedSet.position(of:)`, which looked like a lookup but added a zero-weight slot for a missing element, and `existingPosition(of:)`. Use `firstIndex(of:)`, `weight(of:)` or `contains(_:)` to look an element up.
@@ -21,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The `Recitable` protocol, which nothing used. Its `isRecited` setter changed copies of the elements rather than the elements themselves.
 
 ### Changed
+
+- The ballad's tag order is now counted from the tags stored with its lines when it loads, using the new `LinguisticTagOrder.init(lines:)`, so the weights can no longer drift from the lines. The Tags and TagsPreview assets have gone. Only tags that appear in the lines are listed, so Classifier and Idiom, which no line has, no longer appear in the tag order. The weights for Noun and PersonalName are now 1257 and 50, rather than the 1259 and 49 the Tags asset held, and the previews now show the same weights as the app, rather than the TagsPreview asset's out-of-date ones.
 
 - `WeightedSet` is now a struct rather than a class, so copies no longer share their elements, and it has an explicit API for changing it. `setWeight(_:of:)` and `addWeight(_:to:)` change an element's weight, adding the element at the end if it's missing. `move(fromOffsets:toOffset:)`, `reverse()`, `shuffle()`, `shuffle(using:)` and `sort(by:)` rearrange the elements, and can't create duplicates. `LinguisticTagOrder` has its own `move(fromOffsets:toOffset:)`, which `TagListView` calls from `onMove` rather than moving tags through a binding.
 
@@ -62,13 +62,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `WeightedSet.weightedRandomElement()` selects an element with a probability proportional to its weight, never selecting elements without a positive weight.
 
-- At startup the app checks that the `nameTypeOrLexicalClass` tag scheme is available for English, as the ballad is sorted by its linguistic tags. The Natural Language framework only lists a tag scheme once its assets are loaded into the app, so a scheme that isn't listed is tagged with once before it's checked again. If it still isn't available, an alert offers to request its assets. If the user declines, or the request fails, the app says so and can't continue: on macOS it quits, and on iOS and visionOS it shows that linguistic tagging is unavailable and asks the user to quit. `LinguisticTagger` has `isTagSchemeAvailable`, `checkTagSchemeAvailability()` and `requestAssets()`, and its errors are `LinguisticTaggerError`.
+- `LinguisticTagger.isTagSchemeAvailable` and `checkTagSchemeAvailability()` report whether the `nameTypeOrLexicalClass` tag scheme is available for English on the device. The Natural Language framework only lists a tag scheme once its assets are loaded into the app, so a scheme that isn't listed is tagged with once before it's checked again. Its errors are `LinguisticTaggerError`.
 
 ### Fixed
 
 - The Performance and Settings tabs now have icons on iOS, rather than showing only their titles.
-
-- The Tags asset's weights for Noun and PersonalName now match the number of times each tag appears in the lines: 1257 rather than 1259, and 50 rather than 49.
 
 - `WeightedSet.remove(_:)` no longer leaves a negative weight: it stops at zero, as `subtracting(_:)` does. A member with no weight, such as `Element(rawValue:)`, now removes the element's whole weight rather than nothing, and `remove` returns the element as it was before rather than the reduced element. `insert(_:)` returns the stored element with its new total weight, and doesn't report an insertion when the element still has no weight. `update(with:)` replaces the element's weight rather than adding to it, and returns the element as it was before. `isEmpty` no longer counts zero-weight slots, so it agrees with `contains(_:)`; `count` still includes them.
 
