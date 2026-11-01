@@ -28,34 +28,33 @@ struct EventsSequenceTests {
                       tags: LinguisticTagOrder(tags: [.determiner(weight: 1)]))
     }
 
-    func makeSequence(partsInFirstLine: Int = 2) -> EventsSequence {
-        let performance = Performance(ballad: makeBallad(partsInFirstLine: partsInFirstLine),
+    func makeSequence(partsInFirstLine: Int = 2, score: Score = .standard) -> EventsSequence {
+        let performance = Performance(score: score,
+                                      ballad: makeBallad(partsInFirstLine: partsInFirstLine),
                                       speakers: Speakers())
         return EventsSequence(performance: performance)
     }
 
-    /// The next batch of events. The sequence is mutating, so it can't be advanced inside `#require`.
-    func nextBatch(of sequence: inout EventsSequence) throws -> [Event] {
-        let batch = sequence.next()
-        return try #require(batch)
+    /// The next cue. The sequence is mutating, so it can't be advanced inside `#require`.
+    func nextCue(of sequence: inout EventsSequence) throws -> Cue {
+        let cue = sequence.next()
+        return try #require(cue)
     }
 
-    /// One batch for each part of the ballad. A ballad sorts its lines, so the batches are matched
+    /// One cue for each part of the ballad. A ballad sorts its lines, so the cues are matched
     /// by the part they recite rather than by position.
-    func batches(partsInFirstLine: Int) throws -> [[Event]] {
+    func cues(partsInFirstLine: Int, score: Score = .standard) throws -> [Cue] {
         let ballad = makeBallad(partsInFirstLine: partsInFirstLine)
-        var sequence = EventsSequence(performance: Performance(ballad: ballad, speakers: Speakers()))
-        var batches: [[Event]] = []
+        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers()))
+        var cues: [Cue] = []
         for _ in 0..<ballad.parts.count {
-            batches.append(try nextBatch(of: &sequence))
+            cues.append(try nextCue(of: &sequence))
         }
-        return batches
+        return cues
     }
 
-    func batch(reciting string: String, in batches: [[Event]]) -> [Event]? {
-        batches.first { batch in
-            batch.contains { spokenPart(of: $0)?.string == string }
-        }
+    func cue(reciting string: String, in cues: [Cue]) -> Cue? {
+        cues.first { $0.part.string == string }
     }
 
     func playDuration(of event: Event) -> Duration? {
@@ -68,105 +67,212 @@ struct EventsSequenceTests {
         return duration
     }
 
-    func spokenPart(of event: Event) -> Part? {
-        guard case .speak(let part, _) = event else { return nil }
-        return part
+    /// A passage of music for one instrument.
+    func passage(seconds: Double, instrument: InstrumentName = .viola) -> Segment {
+        .music(Passage(seconds: seconds, instruments: [InstrumentPart(instrument: instrument)]))
     }
 
-    /// The ballad opens with thirteen seconds of music and a second of silence.
-    @Test func testFirstBatchOpensTheBallad() throws {
+    /// The ballad is introduced by thirteen seconds of music and a second of silence, which the first part waits for.
+    @Test func testFirstCueIntroducesTheBallad() throws {
         var sequence = makeSequence()
-        let batch = try nextBatch(of: &sequence)
-        #expect(batch.count == 3)
-        #expect(playDuration(of: batch[0]) == .seconds(13))
-        #expect(silenceDuration(of: batch[1]) == .seconds(1))
-        #expect(spokenPart(of: batch[2]) != nil)
+        let cue = try nextCue(of: &sequence)
+        #expect(cue.before.count == 2)
+        #expect(playDuration(of: cue.before[0]) == .seconds(13))
+        #expect(silenceDuration(of: cue.before[1]) == .seconds(1))
+        #expect(cue.under.isEmpty)
     }
 
-    /// A new line opens with five seconds of music and a second of silence.
+    /// A new line opens with five seconds of music and a second of silence, which the part waits for.
     @Test func testNewLineOpensWithMusic() throws {
         var sequence = makeSequence(partsInFirstLine: 1)
         _ = sequence.next()
-        let batch = try nextBatch(of: &sequence)
-        #expect(batch.count == 3)
-        #expect(playDuration(of: batch[0]) == .seconds(5))
-        #expect(silenceDuration(of: batch[1]) == .seconds(1))
+        let cue = try nextCue(of: &sequence)
+        #expect(cue.before.count == 2)
+        #expect(playDuration(of: cue.before[0]) == .seconds(5))
+        #expect(silenceDuration(of: cue.before[1]) == .seconds(1))
+        #expect(cue.under.isEmpty)
     }
 
     /// The last part of a line is separated from the part before it by a second of silence, like a middle part.
     @Test func testLastPartOfALineIsPrecededBySilence() throws {
         let lastPart = "The cat sat on mat number 1."
-        let batch = try #require(batch(reciting: lastPart, in: try batches(partsInFirstLine: 2)))
-        #expect(batch.count == 2)
-        #expect(silenceDuration(of: batch[0]) == .seconds(1))
-        #expect(spokenPart(of: batch[1])?.string == lastPart)
+        let cue = try #require(cue(reciting: lastPart, in: try cues(partsInFirstLine: 2)))
+        #expect(cue.before.count == 1)
+        #expect(silenceDuration(of: cue.before[0]) == .seconds(1))
+        #expect(cue.under.isEmpty)
     }
 
     /// A part in the middle of a line is separated from the part before it by a second of silence.
     @Test func testMiddlePartOfALineIsPrecededBySilence() throws {
         let middlePart = "The cat sat on mat number 1."
-        let batch = try #require(batch(reciting: middlePart, in: try batches(partsInFirstLine: 3)))
-        #expect(batch.count == 2)
-        #expect(silenceDuration(of: batch[0]) == .seconds(1))
-        #expect(spokenPart(of: batch[1])?.string == middlePart)
-    }
-
-    /// Every batch recites exactly one part, and it is the last event in the batch.
-    @Test func testEveryBatchRecitesOnePart() throws {
-        var sequence = makeSequence()
-        for _ in 1...3 {
-            let batch = try nextBatch(of: &sequence)
-            #expect(batch.compactMap { spokenPart(of: $0) }.count == 1)
-            let last = try #require(batch.last)
-            #expect(spokenPart(of: last) != nil)
-        }
+        let cue = try #require(cue(reciting: middlePart, in: try cues(partsInFirstLine: 3)))
+        #expect(cue.before.count == 1)
+        #expect(silenceDuration(of: cue.before[0]) == .seconds(1))
+        #expect(cue.under.isEmpty)
     }
 
     /// Each part of the ballad is recited once, in order.
     @Test func testEachPartIsRecitedInOrder() throws {
         let ballad = makeBallad()
-        let performance = Performance(ballad: ballad, speakers: Speakers())
-        var sequence = EventsSequence(performance: performance)
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers()))
         var recited: [String] = []
         for _ in 1...ballad.parts.count {
-            let batch = try nextBatch(of: &sequence)
-            recited.append(contentsOf: batch.compactMap { spokenPart(of: $0)?.string })
+            recited.append(try nextCue(of: &sequence).part.string)
         }
         #expect(recited == ballad.parts.map { $0.string })
     }
 
-    /// The speakers take turns, starting with the second speaker.
+    /// In the standard score the speakers take turns, starting with the second speaker.
     @Test func testSpeakersAlternate() throws {
         let speakers = Speakers()
-        let expected = [speakers.secondSpeaker.name, speakers.firstSpeaker.name, speakers.secondSpeaker.name]
-        var sequence = EventsSequence(performance: Performance(ballad: makeBallad(), speakers: speakers))
+        let first = speakers.speaker(forRole: 0)
+        let second = speakers.speaker(forRole: 1)
+        let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
+        var sequence = EventsSequence(performance: performance)
         var names: [String] = []
         for _ in 1...3 {
-            let batch = try nextBatch(of: &sequence)
-            for event in batch {
-                if case .speak(_, let speaker) = event {
-                    names.append(speaker.name)
-                }
-            }
+            names.append(try nextCue(of: &sequence).speaker.name)
         }
-        #expect(names == expected)
+        #expect(names == [second.name, first.name, second.name])
+    }
+
+    /// Each sequence starts the turns afresh, so a performance stopped after an odd number of
+    /// parts still starts the next one with the second speaker.
+    @Test func testEachSequenceStartsTheTurnsAfresh() throws {
+        let speakers = Speakers()
+        let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
+        var first = EventsSequence(performance: performance)
+        _ = try nextCue(of: &first)
+        var second = EventsSequence(performance: performance)
+        #expect(try nextCue(of: &second).speaker == speakers.speaker(forRole: 1))
+    }
+
+    /// A score can notate music before the part, which the part waits for, as well as under it.
+    @Test func testMusicBeforeThePart() throws {
+        var score = Score.standard
+        score.line = Interlude(before: [passage(seconds: 2), .rest(seconds: 0.5)], under: [passage(seconds: 3, instrument: .cello)])
+        var sequence = makeSequence(partsInFirstLine: 1, score: score)
+        _ = sequence.next()
+        let cue = try nextCue(of: &sequence)
+        #expect(cue.before.count == 2)
+        #expect(playDuration(of: cue.before[0]) == .seconds(2))
+        #expect(silenceDuration(of: cue.before[1]) == .milliseconds(500))
+        #expect(cue.under.count == 1)
+        #expect(playDuration(of: cue.under[0]) == .seconds(3))
+    }
+
+    /// The passage's instruments are the ones in the score.
+    @Test func testPassageIsOrchestratedForItsInstruments() throws {
+        var score = Score.standard
+        score.introduction = Interlude(under: [.music(Passage(seconds: 2, instruments: [InstrumentPart(instrument: .acousticGrandPiano),
+                                                                                         InstrumentPart(instrument: .harpsichord)]))])
+        var sequence = makeSequence(score: score)
+        let cue = try nextCue(of: &sequence)
+        guard case .play(let orchestration, _) = try #require(cue.under.first) else {
+            Issue.record("Expected music under the first part")
+            return
+        }
+        #expect(orchestration.assignments.map(\.instrument.name) == [.acousticGrandPiano, .harpsichord])
+        #expect(orchestration.assignments.map(\.volume) == [1, 1])
+    }
+
+    /// Each instrument plays at the volume the score gives it.
+    @Test func testPassageVolumes() throws {
+        var score = Score.standard
+        score.introduction = Interlude(under: [.music(Passage(instruments: [InstrumentPart(instrument: .viola, volume: 0.3),
+                                                                            InstrumentPart(instrument: .cello)]))])
+        var sequence = makeSequence(score: score)
+        let cue = try nextCue(of: &sequence)
+        guard case .accompany(let orchestration) = try #require(cue.under.first) else {
+            Issue.record("Expected the viola and cello to accompany the part")
+            return
+        }
+        #expect(orchestration.assignments.map(\.volume) == [0.3, 1])
+    }
+
+    /// A passage without instruments is a rest of the same length.
+    @Test func testPassageWithoutInstrumentsIsARest() throws {
+        var score = Score.standard
+        score.introduction = Interlude(before: [.music(Passage(seconds: 2, instruments: []))])
+        var sequence = makeSequence(score: score)
+        let cue = try nextCue(of: &sequence)
+        #expect(silenceDuration(of: try #require(cue.before.first)) == .seconds(2))
+    }
+
+    /// A passage without seconds accompanies the part, composed for as long as the part is expected to take.
+    @Test func testPassageLastingAsLongAsThePart() throws {
+        var score = Score.standard
+        score.introduction = Interlude(under: [.music(Passage(instruments: [InstrumentPart(instrument: .viola)])), .rest(seconds: 1)])
+        var sequence = makeSequence(score: score)
+        let cue = try nextCue(of: &sequence)
+        #expect(cue.under.count == 2)
+        guard case .accompany(let orchestration) = try #require(cue.under.first) else {
+            Issue.record("Expected the viola to accompany the part")
+            return
+        }
+        #expect(orchestration.assignments.map(\.instrument.name) == [.viola])
+        #expect(silenceDuration(of: cue.under[1]) == .seconds(1))
+    }
+
+    /// A passage without seconds, or without instruments as well, is left out where it can't be measured.
+    @Test func testPassageWithoutSecondsIsLeftOut() throws {
+        var score = Score.standard
+        score.introduction = Interlude(before: [.music(Passage(instruments: [InstrumentPart(instrument: .viola)]))],
+                                       under: [.music(Passage(instruments: []))])
+        var sequence = makeSequence(score: score)
+        let cue = try nextCue(of: &sequence)
+        #expect(cue.before.isEmpty)
+        #expect(cue.under.isEmpty)
+    }
+
+    /// The introduction opens the ballad only, and the other interludes open their divisions.
+    @Test func testIntroductionOpensOnlyTheBallad() throws {
+        var score = Score.standard
+        score.introduction = Interlude(before: [.rest(seconds: 3)])
+        score.canto = Interlude(before: [.rest(seconds: 4)])
+        score.stanza = Interlude(before: [.rest(seconds: 5)])
+        score.line = Interlude(before: [.rest(seconds: 6)])
+        score.part = Interlude(before: [.rest(seconds: 7)])
+        let cues = try cues(partsInFirstLine: 2, score: score)
+        let rests = cues.map { silenceDuration(of: $0.before[0]) }
+        // Three parts: the first opens the ballad, the second follows in the same line, and the third opens a line.
+        #expect(rests.first == .seconds(3))
+        #expect(rests.filter { $0 == .seconds(3) }.count == 1)
+        #expect(rests.contains(.seconds(7)))
+        #expect(rests.contains(.seconds(6)))
+        #expect(rests.contains(.seconds(4)) == false)
+    }
+
+    /// Parts can be given to roles by their position in the line.
+    @Test func testVoicesByPartIndex() throws {
+        var score = Score.standard
+        score.voices.rule = .byPartIndex(roles: [0, 1])
+        let speakers = Speakers()
+        let ballad = makeBallad(partsInFirstLine: 2)
+        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: speakers))
+        for _ in 1...ballad.parts.count {
+            let cue = try nextCue(of: &sequence)
+            let line = try #require(ballad.cantos.flatMap(\.stanzas).flatMap(\.lines).first { $0.parts.contains(cue.part) })
+            let index = try #require(line.parts.firstIndex(of: cue.part))
+            #expect(cue.speaker == speakers.speaker(forRole: index))
+        }
     }
 
     /// Once the last part has been recited the sequence finishes rather than starting the ballad over.
     @Test func testSequenceFinishesAfterTheLastPart() throws {
         let ballad = makeBallad()
-        var sequence = EventsSequence(performance: Performance(ballad: ballad, speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers()))
         for _ in 1...ballad.parts.count {
-            _ = try nextBatch(of: &sequence)
+            _ = try nextCue(of: &sequence)
         }
-        if let batch = sequence.next() {
-            Issue.record("Expected no further events but got \(batch.map { $0.description }).")
+        if let cue = sequence.next() {
+            Issue.record("Expected no further cues but got \(cue).")
         }
     }
 
-    /// A ballad with no parts has no events.
-    @Test func testEmptyBalladHasNoEvents() {
-        var sequence = EventsSequence(performance: Performance(ballad: Ballad(lines: []), speakers: Speakers()))
+    /// A ballad with no parts has no cues.
+    @Test func testEmptyBalladHasNoCues() {
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers()))
         #expect(sequence.next() == nil)
     }
 }

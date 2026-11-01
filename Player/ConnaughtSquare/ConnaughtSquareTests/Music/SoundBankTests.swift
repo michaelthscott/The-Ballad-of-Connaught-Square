@@ -30,12 +30,39 @@ struct SoundBankTests {
     }
 
     @Test func testStopEngine() async throws {
+        // A sound bank of its own, as stopping releases the instruments other tests have loaded.
+        let soundBank = try SoundBank()
+        await soundBank.stopEngine()
+    }
+
+    /// Stopping the engine empties the samplers' presets, so it releases the instruments, and
+    /// playing again loads them afresh rather than playing the sampler's default sound.
+    @Test func testStopEngineReleasesInstruments() async throws {
+        let soundBank = try SoundBank()
+        let cycle = Cycle(elements: [Note(value: .a2, duration: .quaver)])
+        _ = try await soundBank.play(notes: cycle, duration: NoteDuration.quaver.duration, instrument: .violin)
+        #expect(await soundBank.loadedInstruments == [.violin])
+        await soundBank.stopEngine()
+        #expect(await soundBank.loadedInstruments.isEmpty)
+        let played = try await soundBank.play(notes: cycle, duration: NoteDuration.quaver.duration, instrument: .violin)
+        #expect(played.count == 1)
+        #expect(await soundBank.loadedInstruments == [.violin])
+        #expect(await soundBank.isEngineRunning)
         await soundBank.stopEngine()
     }
 
     @Test func testPlayNote() async throws {
         try await soundBank.loadInstrument(.electricPiano1)
         await soundBank.play(note: Note(value: .a2, on: .f, duration: .crotchet), instrument: .electricPiano1)
+    }
+
+    /// Notes at a volume of 0 are silent, but still take their time.
+    @Test func testPlaySilently() async throws {
+        let soundBank = try SoundBank()
+        let cycle = Cycle(elements: [Note(value: .a2, duration: .quaver)])
+        let played = try await soundBank.play(notes: cycle, duration: NoteDuration.quaver.duration, instrument: .viola, volume: 0)
+        #expect(played.count == 1)
+        await soundBank.stopEngine()
     }
 
     @Test func testLoadInstrumentsSeparately() async throws {

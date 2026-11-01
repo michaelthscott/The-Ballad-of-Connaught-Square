@@ -10,7 +10,7 @@ import SwiftUI
 
 struct PreviewSpeakers: PreviewModifier {
     static func makeSharedContext() async throws -> Speakers {
-        Speakers()
+        Speakers(roles: Score.bundled.voices.roles)
     }
     
     func body(content: Content, context: Speakers) -> some View {

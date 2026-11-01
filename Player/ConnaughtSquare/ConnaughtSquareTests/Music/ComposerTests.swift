@@ -92,4 +92,26 @@ struct ComposerTests {
         #expect(composer.intervals.map { fingerprint($0, short) } == expected)
     }
 
+    /// The standard selection composes as the default composer does.
+    @Test func testStandardSelection() {
+        let selected = Composer(selection: .standard)
+        #expect(selected.durations == composer.durations)
+        #expect(selected.intervals == composer.intervals)
+    }
+
+    /// A selection keeps only the sets for its operations, in the usual order, whatever order they're written in.
+    @Test func testSelectionOperations() {
+        let selected = Composer(selection: NoteSelection(operations: [.symmetricDifference, .intersection]))
+        #expect(selected.durations == [composer.durations[1], composer.durations[2]])
+        #expect(selected.intervals == [composer.intervals[1], composer.intervals[2]])
+    }
+
+    /// A selection can take its patterns from a single tune.
+    @Test func testSelectionTunes() {
+        let selected = Composer(selection: NoteSelection(tunes: [.theBritishGrenadiers], vectorWidth: 2, operations: [.union]))
+        #expect(selected.tunes.map(\.title) == ["The British Grenadiers"])
+        #expect(selected.vectorWidth == 2)
+        #expect(selected.durations == [Tune.theBritishGrenadiers.noteDurationVectors(width: 2)])
+    }
+
 }

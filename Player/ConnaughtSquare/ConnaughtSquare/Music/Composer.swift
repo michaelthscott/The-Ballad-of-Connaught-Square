@@ -7,7 +7,8 @@
 
 /// A composer composes an orchestration to be performed.
 struct Composer {
-    enum SetOperation: CaseIterable {
+    /// The ways the tunes' patterns can be combined. The raw values are the names written in the score.
+    enum SetOperation: String, CaseIterable, Codable, Sendable {
         case union
         case intersection
         case symmetricDifference
@@ -17,9 +18,10 @@ struct Composer {
     // When we have more than two tunes, unions are accumulative. Symmetric differences are gradually accumulative, but can also be reductive. Intersections are gradually reductive.
     // What we currently do is to discard empty sets, these are more likely to occur with wider vectors because of the increasing difference between the elements.
     
-    static func nonEmptyDurationSets(from tunes: [Tune], with vectorWidth: UInt) -> [NoteDurationVectors] {
+    /// The non-empty sets made by combining the tunes in each of the operations, in the order of `SetOperation.allCases`.
+    static func nonEmptyDurationSets(from tunes: [Tune], with vectorWidth: UInt, using operations: [SetOperation] = SetOperation.allCases) -> [NoteDurationVectors] {
         var array: [NoteDurationVectors] = []
-        for operation in SetOperation.allCases {
+        for operation in SetOperation.allCases where operations.contains(operation) {
             let set = durations(from: tunes, using: operation, with: vectorWidth)
             if !set.isEmpty {
                 array.append(set)
@@ -28,9 +30,10 @@ struct Composer {
         return array
     }
     
-    static func nonEmptyIntervalSets(from tunes: [Tune], with vectorWidth: UInt) -> [NoteIntervalVectors] {
+    /// The non-empty sets made by combining the tunes in each of the operations, in the order of `SetOperation.allCases`.
+    static func nonEmptyIntervalSets(from tunes: [Tune], with vectorWidth: UInt, using operations: [SetOperation] = SetOperation.allCases) -> [NoteIntervalVectors] {
         var array: [NoteIntervalVectors] = []
-        for operation in SetOperation.allCases {
+        for operation in SetOperation.allCases where operations.contains(operation) {
             let set = intervals(from: tunes, using: operation, with: vectorWidth)
             if !set.isEmpty {
                 array.append(set)
@@ -73,14 +76,21 @@ struct Composer {
     let intervals: [NoteIntervalVectors]
 
     init() {
-        self.init(tunes: [Tune.theSashMyFatherWore, Tune.theBritishGrenadiers], vectorWidth: 3)
+        self.init(selection: .standard)
+    }
+
+    /// Creates a composer that selects notes as the score notates.
+    init(selection: NoteSelection) {
+        self.init(tunes: selection.tunes.map(\.tune), vectorWidth: selection.vectorWidth, operations: selection.operations)
     }
     
-    init(tunes: [Tune], vectorWidth: UInt) {
+    init(tunes: [Tune], vectorWidth: UInt, operations: [SetOperation] = SetOperation.allCases) {
         self.tunes = tunes
         self.vectorWidth = vectorWidth
-        durations = Self.nonEmptyDurationSets(from: tunes, with: vectorWidth)
-        intervals = Self.nonEmptyIntervalSets(from: tunes, with: vectorWidth)
+        durations = Self.nonEmptyDurationSets(from: tunes, with: vectorWidth, using: operations)
+        intervals = Self.nonEmptyIntervalSets(from: tunes, with: vectorWidth, using: operations)
+        // A score can ask for a combination with nothing in it, so say so now rather than when a note is first composed.
+        precondition(!durations.isEmpty && !intervals.isEmpty, "No note patterns from \(tunes.map(\.title)) \(vectorWidth) wide using \(operations)")
         // These are fixed by the tunes, so work them out once rather than for every note composed.
         guard let initial = tunes.map(\.mostFrequentNote).max() else {
             fatalError("Failed to find inital note")
@@ -152,8 +162,9 @@ struct Composer {
     /// - Parameters:
     ///   - instrument: An instrument.
     ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned.
+    ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
     /// - Returns: The assignment.
-    func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
+    func composeAssignment(instrument: Instrument, duration: Duration, volume: Double = 1) -> Assignment {
         let openingDuration = randomDurationVector.first ?? initialNote.duration
         let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), duration: openingDuration)
         var previousNote = opening
@@ -168,6 +179,6 @@ struct Composer {
             }
         }
         precondition(notes.count > 0, "No notes assigned to \(instrument)")
-        return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes))
+        return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes), volume: volume)
     }
 }

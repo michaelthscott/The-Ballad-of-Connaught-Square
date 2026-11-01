@@ -9,11 +9,10 @@ import Foundation
 import AVFoundation
 import Accessibility
 
-// TODO: We don't use speaker. We assume that parts are spoken by different speakers.
-
 /// Each part of a line is associated with a speaker.
 @Observable final class Part {
-    private let speaker: Int
+    /// The speaker written with the part. A score whose voices are recited as written gives the part to this role.
+    let speaker: Int
     var string: String
     var pronunciations: [CorrectPronunciation]
     var isRecited: Bool

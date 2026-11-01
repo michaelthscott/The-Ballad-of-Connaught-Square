@@ -39,6 +39,9 @@ actor SoundBank {
     /// Notes wait at this gate before sounding, and time their lengths against it, so pausing it
     /// holds a sounding note until it is resumed and stops further notes from starting.
     nonisolated let pauseGate = PauseGate()
+    /// Core Audio aborts when samplers in different sound banks load presets at the same time, so
+    /// presets are loaded one at a time across every sound bank, not just within this actor.
+    private static let presetLoadingLock = NSLock()
 
     private let engine: AVAudioEngine
     private let mixer: AVAudioMixerNode
@@ -102,7 +105,9 @@ actor SoundBank {
         let bankLSB = UInt8(kAUSampler_DefaultBankLSB)
         let presetID = UInt8(name.rawValue)
         do {
-            try sampler.loadSoundBankInstrument(at: url, program: presetID, bankMSB: bankMSB, bankLSB: bankLSB)
+            try Self.presetLoadingLock.withLock {
+                try sampler.loadSoundBankInstrument(at: url, program: presetID, bankMSB: bankMSB, bankLSB: bankLSB)
+            }
         } catch {
             engine.detach(sampler)
             throw SoundBankError.failedToLoadSoundBank
@@ -125,12 +130,21 @@ actor SoundBank {
         }
     }
 
+    /// Stops the engine and releases the samplers.
+    ///
+    /// Stopping the engine empties the samplers' presets, and starting it again leaves them playing
+    /// the sampler's default sound, so the samplers are detached and each instrument is loaded afresh
+    /// when it next plays.
     func stopEngine() {
         isEnginePaused = false
         if engine.isRunning {
             //TODO: How long does it take the engine to stop?
             engine.stop()
         }
+        for sampler in samplers.values {
+            engine.detach(sampler)
+        }
+        samplers.removeAll()
     }
 
     /// Silences the engine immediately, keeping its resources so it can resume quickly.
@@ -147,9 +161,12 @@ actor SoundBank {
         try startEngine()
     }
 
-    /// Starts the note sounding on the instrument. Does nothing if the instrument hasn't been loaded.
-    func startNote(_ note: Note, instrument: InstrumentName) {
-        samplers[instrument]?.startNote(note.value.rawValue, withVelocity: note.on.rawValue, onChannel: 0)
+    /// Starts the note sounding on the instrument at the volume. Does nothing if the instrument
+    /// hasn't been loaded, or if the volume leaves the note silent, as a velocity of 0 would stop it.
+    func startNote(_ note: Note, instrument: InstrumentName, volume: Double = 1) {
+        let velocity = note.on.scaled(by: volume)
+        guard velocity > 0 else { return }
+        samplers[instrument]?.startNote(note.value.rawValue, withVelocity: velocity, onChannel: 0)
     }
 
     /// Stops the note sounding on the instrument. Does nothing if the instrument hasn't been loaded.
@@ -164,8 +181,8 @@ extension SoundBank {
     /// This is `nonisolated` so that waiting out the note's duration doesn't block the actor,
     /// which lets notes from other instruments sound at the same time.
     /// - Note: Nothing sounds unless the instrument has been loaded and the engine started.
-    nonisolated func play(note: Note, instrument: InstrumentName) async {
-        await startNote(note, instrument: instrument)
+    nonisolated func play(note: Note, instrument: InstrumentName, volume: Double = 1) async {
+        await startNote(note, instrument: instrument, volume: volume)
         // Time paused doesn't count towards the note's length.
         // A cancelled sleep still falls through to `stopNote`, so a note is never left sounding.
         try? await pauseGate.sleep(for: note.duration.duration)
@@ -177,8 +194,9 @@ extension SoundBank {
     ///   - notes: A cycle of notes.
     ///   - duration: A length of time.
     ///   - instrument: The instrument whose preset the notes are played with.
+    ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
     /// - Returns: The notes played.
-    nonisolated func play(notes: Cycle<Note>, duration: Duration, instrument: InstrumentName) async throws -> [Note] {
+    nonisolated func play(notes: Cycle<Note>, duration: Duration, instrument: InstrumentName, volume: Double = 1) async throws -> [Note] {
         try await loadInstrument(instrument)
         try await startEngine()
         var notes = notes
@@ -188,7 +206,7 @@ extension SoundBank {
             await pauseGate.wait()
             guard !Task.isCancelled else { break }
             let note = notes.next()
-            await play(note: note, instrument: instrument)
+            await play(note: note, instrument: instrument, volume: volume)
             durationPlayed += note.duration.duration
             played.append(note)
         }

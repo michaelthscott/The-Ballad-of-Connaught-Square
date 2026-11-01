@@ -183,3 +183,18 @@ struct Tune: Sendable {
 	}
     
 }
+
+/// The names of the built-in tunes, as written in the score.
+enum TuneName: String, CaseIterable, Codable, Sendable {
+    case theSashMyFatherWore
+    case theBritishGrenadiers
+
+    var tune: Tune {
+        switch self {
+        case .theSashMyFatherWore:
+            Tune.theSashMyFatherWore
+        case .theBritishGrenadiers:
+            Tune.theBritishGrenadiers
+        }
+    }
+}

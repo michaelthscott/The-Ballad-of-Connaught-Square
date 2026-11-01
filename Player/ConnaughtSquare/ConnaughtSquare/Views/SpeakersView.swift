@@ -14,14 +14,12 @@ struct SpeakersView: View {
     var body: some View {
 		@Bindable var speakers = speakers
         VStack {
-			Picker(selection: $speakers.firstSpeaker, label: label("First", width: 50.0)) {
-                ForEach(speakers.availableSpeakers) { speaker in
-                    Text(speaker.name).tag(speaker)
-                }
-            }
-            Picker(selection: $speakers.secondSpeaker, label: label("Second", width: 50.0)) {
-                ForEach(speakers.availableSpeakers) { speaker in
-                    Text(speaker.name).tag(speaker)
+            // The roles are fixed by the score, so their indices are stable identities.
+            ForEach(speakers.roles.indices, id: \.self) { index in
+                Picker(selection: $speakers.voices[index], label: label(speakers.roles[index], width: 50.0)) {
+                    ForEach(speakers.availableSpeakers) { speaker in
+                        Text(speaker.name).tag(speaker)
+                    }
                 }
             }
         }

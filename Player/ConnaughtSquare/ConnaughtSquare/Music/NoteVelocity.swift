@@ -22,6 +22,14 @@ enum NoteVelocity: UInt8, CaseIterable {
 }
 
 extension NoteVelocity {
+    /// The MIDI velocity at the volume, from silent at 0 to the velocity itself at 1.
+    /// - Parameter volume: A volume between 0 and 1. Volumes outside that range are clamped to it.
+    /// - Returns: The scaled velocity, which is 0 only when the note shouldn't sound.
+    func scaled(by volume: Double) -> UInt8 {
+        let clamped = min(max(volume, 0), 1)
+        return UInt8((Double(rawValue) * clamped).rounded())
+    }
+
     /// Selects a velocity from a normal distribution centred on the middle velocities, so moderate dynamics are the most likely and the extremes rare.
     ///
     /// The distribution is over the indices of `allCases`, with a mean halfway between the first and last and a standard deviation of a sixth of the range,

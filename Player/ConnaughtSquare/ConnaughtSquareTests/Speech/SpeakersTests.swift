@@ -27,39 +27,48 @@ struct SpeakersTests {
         #expect(speakers.availableSpeakers.isEmpty == false)
     }
 
-    @Test func testFirstSpeakerIsTheFirstAvailableVoice() throws {
-        let first = try #require(speakers.availableSpeakers.first)
-        #expect(speakers.firstSpeaker == first)
+    /// The standard score has two roles.
+    @Test func testStandardRoles() {
+        #expect(speakers.roles == ["First", "Second"])
+        #expect(speakers.voices.count == 2)
     }
 
-    /// The second speaker is the next available voice, or the only voice when there is just one.
-    @Test func testSecondSpeakerIsTheNextAvailableVoice() throws {
+    @Test func testFirstRoleHasTheFirstAvailableVoice() throws {
+        let first = try #require(speakers.availableSpeakers.first)
+        #expect(speakers.speaker(forRole: 0) == first)
+    }
+
+    /// The second role has the next available voice, or the only voice when there is just one.
+    @Test func testSecondRoleHasTheNextAvailableVoice() throws {
         let available = speakers.availableSpeakers
         let expected = try #require(available.count > 1 ? available[1] : available.first)
-        #expect(speakers.secondSpeaker == expected)
+        #expect(speakers.speaker(forRole: 1) == expected)
     }
 
-    @Test func testSelectedSpeakers() {
-        #expect(speakers.selectedSpeakers == [speakers.firstSpeaker, speakers.secondSpeaker])
+    /// The available voices are given to the roles in turn, and shared when there are more roles than voices.
+    @Test func testVoicesAreGivenToTheRolesInTurn() {
+        let speakers = Speakers(roles: ["A", "B", "C", "D", "E"])
+        let available = speakers.availableSpeakers
+        #expect(speakers.voices == speakers.roles.indices.map { available[$0 % available.count] })
     }
 
-    /// The speakers take turns, starting with the second speaker.
-    @Test func testTakeTurnAlternates() {
-        #expect(speakers.takeTurn() == speakers.secondSpeaker)
-        #expect(speakers.takeTurn() == speakers.firstSpeaker)
-        #expect(speakers.takeTurn() == speakers.secondSpeaker)
-        #expect(speakers.takeTurn() == speakers.firstSpeaker)
+    /// A role outside the roles wraps around them.
+    @Test func testRolesWrap() {
+        #expect(speakers.speaker(forRole: 2) == speakers.speaker(forRole: 0))
+        #expect(speakers.speaker(forRole: -1) == speakers.speaker(forRole: 1))
     }
 
-    /// Resetting the turns starts them again with the second speaker.
-    @Test func testResetTurns() {
-        _ = speakers.takeTurn()
-        speakers.resetTurns()
-        #expect(speakers.takeTurn() == speakers.secondSpeaker)
-        #expect(speakers.takeTurn() == speakers.firstSpeaker)
+    /// Without any roles, the first available voice speaks.
+    @Test func testNoRoles() throws {
+        let speakers = Speakers(roles: [])
+        #expect(speakers.voices.isEmpty)
+        #expect(speakers.speaker(forRole: 3) == (try #require(speakers.availableSpeakers.first)))
     }
 
-    @Test func testMaxSelectedSpeakersMatchesTheSelection() {
-        #expect(speakers.selectedSpeakers.count == Speakers.maxSelectedSpeakers)
+    /// Choosing a voice for a role changes who speaks for it.
+    @Test func testChoosingAVoice() throws {
+        let last = try #require(speakers.availableSpeakers.last)
+        speakers.voices[0] = last
+        #expect(speakers.speaker(forRole: 0) == last)
     }
 }

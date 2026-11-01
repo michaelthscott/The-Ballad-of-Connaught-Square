@@ -10,6 +10,16 @@ import Testing
 
 struct NoteVelocityTests {
 
+    /// A volume scales the velocity, rounding to the nearest, and is clamped between silent and full.
+    @Test func testScaled() {
+        #expect(NoteVelocity.mp.scaled(by: 1) == 62)
+        #expect(NoteVelocity.mp.scaled(by: 0.5) == 31)
+        #expect(NoteVelocity.mf.scaled(by: 0.5) == 38)
+        #expect(NoteVelocity.ffff.scaled(by: 2) == 127)
+        #expect(NoteVelocity.ffff.scaled(by: 0) == 0)
+        #expect(NoteVelocity.ffff.scaled(by: -1) == 0)
+    }
+
     @Test func testNoteVelocity() async throws {
         #expect(NoteVelocity.random().rawValue != 0)
     }

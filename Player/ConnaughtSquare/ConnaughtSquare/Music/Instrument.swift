@@ -26,11 +26,12 @@ struct Instrument: Sendable {
     /// - Parameters:
     ///   - notes: A sequence of notes.
     ///   - duration: A length of time.
+    ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
     ///   - soundBank: The sound bank to play on.
     /// - Returns: The notes played.
-    func play(notes: Cycle<Note>, duration: Duration, on soundBank: SoundBank = .shared) async -> [Note] {
+    func play(notes: Cycle<Note>, duration: Duration, volume: Double = 1, on soundBank: SoundBank = .shared) async -> [Note] {
         do {
-            return try await soundBank.play(notes: notes, duration: duration, instrument: name)
+            return try await soundBank.play(notes: notes, duration: duration, instrument: name, volume: volume)
         } catch {
             print(error.localizedDescription)
             return []

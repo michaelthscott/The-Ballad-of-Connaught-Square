@@ -20,6 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+
+- Settings now has a voice picker for each of the score's roles, rather than First and Second pickers. `Speakers` has `roles` and `voices` in place of `firstSpeaker` and `secondSpeaker`, `init(roles:)`, and `speaker(forRole:)`, which wraps a role outside the roles around them. The turns are now kept by `VoiceTurns` for each performance, so `takeTurn()`, `resetTurns()`, `selectedSpeakers` and `maxSelectedSpeakers` have gone.
+
+- `EventsSequence.next()` now returns a `Cue` for each part, holding the events played before and under the part, the part, and its speaker. `Event` has the `.play` and `.silence` cases, and a new `.accompany` case that plays until the part has been recited, and is `Sendable`; `.speak` has gone. `Performance` no longer infers which silences come before the recitation from their position, but plays a cue's `before` events and then its `under` events alongside the recitation.
+
+- `Performance.init` takes a `score` rather than a `composer`, and by default uses the bundled score and creates speakers for its roles. `Performance.orchestration(duration:)` has gone; the `arranger` orchestrates the score's passages.
+
+- `Part.speaker` can now be read, so that a score can give each part to the speaker written with it.
+
 - The ballad's tag order is now counted from the tags stored with its lines when it loads, using the new `LinguisticTagOrder.init(lines:)`, so the weights can no longer drift from the lines. The Tags and TagsPreview assets have gone. Only tags that appear in the lines are listed, so Classifier and Idiom, which no line has, no longer appear in the tag order. The weights for Noun and PersonalName are now 1257 and 50, rather than the 1259 and 49 the Tags asset held, and the previews now show the same weights as the app, rather than the TagsPreview asset's out-of-date ones.
 
 - `WeightedSet` is now a struct rather than a class, so copies no longer share their elements, and it has an explicit API for changing it. `setWeight(_:of:)` and `addWeight(_:to:)` change an element's weight, adding the element at the end if it's missing. `move(fromOffsets:toOffset:)`, `reverse()`, `shuffle()`, `shuffle(using:)` and `sort(by:)` rearrange the elements, and can't create duplicates. `LinguisticTagOrder` has its own `move(fromOffsets:toOffset:)`, which `TagListView` calls from `onMove` rather than moving tags through a binding.
@@ -54,6 +63,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+
+- The performance is now written as a score, `Score`, held as JSON in the app's Score asset. The score has an introduction, and interludes that open each canto, stanza, line and later part of a line every time one begins. Each interlude lists the music and rests to play before the part is recited, which the part waits for, and those to play under it, which start as it is recited. Each passage of music lasts a number of seconds or, written without them, as long as the part takes to recite, and names its instruments, and for each instrument a `NoteSelection` of the tunes, vector width and set operations its notes are drawn from. The score also names the voices' roles and a `VoiceRule` for which role recites each part: taking turns, by the part's position in its line, or as written with the part in the ballad's lines. The Score asset is the `Score.standard` score, with the viola playing under every part, at a volume of 0.6, for as long as it takes to recite. Otherwise it performs the ballad as before, except that the first part of the ballad, and of each canto, stanza and line, now waits for the music and the second's rest that open it to finish, rather than being recited over them. `Arranger` composes the score's passages, preparing a `Composer` for each note selection once.
+
+- Each instrument in a passage of the score can have a `volume` from 0, silent, to 1, full, such as `{ "instrument": "Viola", "volume": 0.5 }`. Left out, it's 1. The velocity of each note is scaled by the volume as it's played, so the notes keep their varying dynamics, only softer, and the same instrument can play at different volumes in passages that overlap. A volume outside 0 to 1 is reported when the score is decoded. `Assignment`, `Instrument.play(notes:duration:volume:on:)`, `SoundBank.play(notes:duration:instrument:volume:)` and `Composer.composeAssignment(instrument:duration:volume:)` take the volume, and `NoteVelocity.scaled(by:)` scales a velocity.
+
+- `Composer.init(selection:)`, and an `operations` parameter on `Composer.init(tunes:vectorWidth:)`, choose the set operations the notes are drawn from. A selection that leaves no patterns to draw from now stops with a message when the composer is created, rather than when a note is first composed.
+
+- `decodeAsset` takes a `format`, `.propertyList` or `.json`. It defaults to `.propertyList`.
+
+- `InstrumentName` is `CaseIterable` and `Codable`, and is written by its description, such as "Violin". `TuneName` names the built-in tunes.
+
 - The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.
 
 - `PauseGate`, which tasks wait at while it's paused, and whose `sleep(for:)` doesn't count time spent paused. Notes and the silences between parts are timed with the sound bank's gate.
@@ -65,6 +85,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `LinguisticTagger.isTagSchemeAvailable` and `checkTagSchemeAvailability()` report whether the `nameTypeOrLexicalClass` tag scheme is available for English on the device. The Natural Language framework only lists a tag scheme once its assets are loaded into the app, so a scheme that isn't listed is tagged with once before it's checked again. Its errors are `LinguisticTaggerError`.
 
 ### Fixed
+
+- Playing again after stopping the performance now uses the score's instruments, such as the violin, viola and cello, rather than the sampler's default sound. Stopping the audio engine empties the samplers' presets, so `SoundBank.stopEngine()` now releases the samplers, and each instrument is loaded afresh when it next plays. Presets are also loaded one at a time across every `SoundBank`, as Core Audio aborts when two sound banks load them at once.
+
+- The Pad Polysynth instrument was described as "Pad Warm", the same as the instrument before it.
 
 - The Performance and Settings tabs now have icons on iOS, rather than showing only their titles.
 
