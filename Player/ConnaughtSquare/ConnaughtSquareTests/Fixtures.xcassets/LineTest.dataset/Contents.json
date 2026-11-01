@@ -1,9 +1,9 @@
 {
   "data" : [
     {
-      "filename" : "LineTest.plist",
+      "filename" : "LineTest.json",
       "idiom" : "universal",
-      "universal-type-identifier" : "com.apple.property-list"
+      "universal-type-identifier" : "public.json"
     }
   ],
   "info" : {

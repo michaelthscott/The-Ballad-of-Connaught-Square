@@ -13,7 +13,7 @@ import Testing
 struct RhymeTypeTests {
     /// The rhymes don't depend on the tags, so the line isn't tagged.
     func line(_ string: String) -> Line {
-        Line(parts: [Part(speaker: 0, string: string)], string: string)
+        Line(parts: [Part(speaker: 0, string: string)], tags: [])
     }
 
     func pair(_ first: String, _ second: String) -> LinePair {

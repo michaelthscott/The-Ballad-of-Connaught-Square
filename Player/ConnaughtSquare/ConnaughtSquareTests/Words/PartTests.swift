@@ -31,16 +31,16 @@ final class PartTests {
         #expect(part3 != part4)
     }
     
-    @Test func testPListWithoutPronunciations() {
+    @Test func testAssetWithoutPronunciations() {
         let resource = "Part-without-pronunciations"
         guard let asset = NSDataAsset(name: "\(resource)", bundle: Bundle(for: Self.self)) else {
             Issue.record("failed to find \(resource)")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         do {
             let part = try decoder.decode(Part.self, from: asset.data)
-            // Update if plist changes.
+            // Update if the asset changes.
             let string = "Keeping records."
             #expect(part.string == string)
             #expect(part.nsAttributedString.string == string)
@@ -49,16 +49,16 @@ final class PartTests {
         }
     }
     
-    @Test func testPList() {
+    @Test func testAsset() {
         let resource = "Part"
         guard let asset = NSDataAsset(name: "\(resource)", bundle: Bundle(for: Self.self)) else {
             Issue.record("failed to find \(resource)")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         do {
             let part = try decoder.decode(Part.self, from: asset.data)
-            // Update if plist changes.
+            // Update if the asset changes.
             let string = "Keeping records."
             #expect(part.string == string)
             #expect(part.pronunciations == [
@@ -74,12 +74,12 @@ final class PartTests {
         let part = Part(speaker: 0, string: "Keeping records.", pronunciations: [
             CorrectPronunciation(ipa: "ˈkiːpɪŋ", location: 0, length: 7),
             CorrectPronunciation(ipa: "ˈɻɛ.ˈkɔɻts", location: 8, length: 7)])
-        let encoder = PropertyListEncoder()
+        let encoder = JSONEncoder()
         guard let data = try? encoder.encode(part) else {
             Issue.record("Failed to encode")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         guard let copy = try? decoder.decode(Part.self, from: data) else {
             Issue.record("Failed to decode")
             return

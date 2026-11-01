@@ -31,28 +31,35 @@ final class PronunciationTests {
         #expect(lexicon.word("AGREEMENTS")?.pronunciation.description == "[AH0, G, R, IY1, M, AH0, N, T, S]")
     }
     
-    @Test func testEncode() {
+    @Test func testEncode() throws {
         let p = Pronunciation(phonemes: [Phoneme(sound: .AA, stress: .primaryStress), Phoneme(sound: .CH)])
-        let encoder = PropertyListEncoder()
-        encoder.outputFormat = .xml
-        do {
-            let data = try encoder.encode(p)
-            #expect(data.count == 397)
-        } catch {
-            Issue.record("failed to encode: \(error)")
+        let data = try JSONEncoder().encode(p)
+        #expect(String(decoding: data, as: UTF8.self) == #""AA1 CH""#)
+    }
+
+    @Test func testDecodeNotation() throws {
+        let p = try JSONDecoder().decode(Pronunciation.self, from: Data(#""S L IY1 P""#.utf8))
+        #expect(p == Pronunciation(phonemes: [Phoneme(sound: .S), Phoneme(sound: .L), Phoneme(sound: .IY, stress: .primaryStress), Phoneme(sound: .P)]))
+    }
+
+    /// A pronunciation needs at least one phoneme, and every one must be valid.
+    @Test(arguments: [#""""#, #"" ""#, #""S L IY1 X""#, #""S L1 IY1 P""#])
+    func testDecodeInvalidNotation(json: String) {
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(Pronunciation.self, from: Data(json.utf8))
         }
     }
-    
+
     @Test func testDecode() {
         let resource = "Pronunciation"
         guard let asset = NSDataAsset(name: "\(resource)", bundle: Bundle(for: Self.self)) else {
             Issue.record("failed to find \(resource)")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         do {
             let pronuciation = try decoder.decode(Pronunciation.self, from: asset.data)
-            // Update if plist changes.
+            // Update if the asset changes.
             #expect(pronuciation.phonemes.count == 8)
             if let first = pronuciation.phonemes.first {
                 #expect(first.sound == .IH)
@@ -87,12 +94,12 @@ final class PronunciationTests {
     
     @Test func testCodable() {
         let pronunciation = Pronunciation(phonemes: [Phoneme(sound: .S), Phoneme(sound: .L), Phoneme(sound: .IY, stress: .primaryStress), Phoneme(sound: .P)])
-        let encoder = PropertyListEncoder()
+        let encoder = JSONEncoder()
         guard let data = try? encoder.encode(pronunciation) else {
             Issue.record("Failed to encode")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         guard let copy = try? decoder.decode(Pronunciation.self, from: data) else {
             Issue.record("Failed to decode")
             return

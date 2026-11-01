@@ -19,8 +19,8 @@ final class CantoTests {
 		let part2 = Part(speaker: 1, string: string2)
 		let lineString1 = "\(string1) \(string2)"
 		let lineString2 = "\(string2) \(string1)"
-		let line1 = Line(parts: [part1, part2], string: lineString1, tags: try tagger.linguisticTagsArray(string: lineString1))
-		let line2 = Line(parts: [part1, part2], string: lineString2, tags: try tagger.linguisticTagsArray(string: lineString2))
+		let line1 = Line(parts: [part1, part2], tags: try tagger.linguisticTagsArray(string: lineString1))
+		let line2 = Line(parts: [part2, part1], tags: try tagger.linguisticTagsArray(string: lineString2))
 		let lines1 = [line1, line2]
 		let lines2 = [line2, line1]
 		let stanzas = [Stanza(lines: lines1[...]), Stanza(lines: lines2[...])]

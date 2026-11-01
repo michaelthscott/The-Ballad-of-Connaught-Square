@@ -1,9 +1,9 @@
 {
   "data" : [
     {
-      "filename" : "LinePart.plist",
+      "filename" : "LinePart.json",
       "idiom" : "universal",
-      "universal-type-identifier" : "com.apple.property-list"
+      "universal-type-identifier" : "public.json"
     }
   ],
   "info" : {

@@ -14,7 +14,7 @@ struct EventsSequenceTests {
     /// A line tagged as starting with a determiner. The tag is given rather than found by
     /// `LinguisticTagger`, as the lexical class model isn't available on every run destination.
     func makeLine(parts: [Part]) -> Line {
-        Line(parts: parts, string: parts.map { $0.string }.joined(separator: " "), tags: [.determiner])
+        Line(parts: parts, tags: [.determiner])
     }
 
     /// A ballad of one canto, one stanza, two lines and three parts.

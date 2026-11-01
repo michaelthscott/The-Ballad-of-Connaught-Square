@@ -24,27 +24,15 @@ enum AssetError: Error, CustomStringConvertible {
     }
 }
 
-/// The format of the data held in a data asset.
-enum AssetFormat {
-    case propertyList
-    case json
-}
-
-/// Decodes a property list, or JSON, held in a data asset.
+/// Decodes the JSON held in a data asset.
 /// - Parameters:
 ///   - name: The name of the data asset.
 ///   - bundle: The bundle holding the asset.
-///   - format: The format of the asset's data.
 /// - Returns: The decoded value. To decode an array, give an array type.
 /// - Throws: `AssetError.missing` if there's no such asset, or the `DecodingError` if it can't be decoded.
-func decodeAsset<Asset: Decodable>(_ name: String, from bundle: Bundle, format: AssetFormat = .propertyList) throws -> Asset {
+func decodeAsset<Asset: Decodable>(_ name: String, from bundle: Bundle) throws -> Asset {
     guard let asset = NSDataAsset(name: name, bundle: bundle) else {
         throw AssetError.missing(name: name)
     }
-    switch format {
-    case .propertyList:
-        return try PropertyListDecoder().decode(Asset.self, from: asset.data)
-    case .json:
-        return try JSONDecoder().decode(Asset.self, from: asset.data)
-    }
+    return try JSONDecoder().decode(Asset.self, from: asset.data)
 }

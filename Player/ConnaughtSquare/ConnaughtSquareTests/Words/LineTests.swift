@@ -24,7 +24,7 @@ final class LineTests {
 
     /// A line that isn't tagged, for tests that don't depend on the tags.
     func line(_ speakers: String...) -> Line {
-        Line(parts: parts(speakers), string: speakers.joined(separator: " "))
+        Line(parts: parts(speakers), tags: [])
     }
 
     /// A line tagged by the linguistic tagger.
@@ -48,16 +48,16 @@ final class LineTests {
         #expect(line("Good morning").endsWith(rhyme: Rhyme(phonemes: [Phoneme(sound: .IH, stress: .noStress), Phoneme(sound: .NG)])))
     }
     
-    @Test func testPList() {
+    @Test func testAsset() {
         let resource = "LineTest"
         guard let asset = NSDataAsset(name: resource, bundle: Bundle(for: Self.self)) else {
             Issue.record("failed to find \(resource)")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         do {
             let line = try decoder.decode(Line.self, from: asset.data)
-            // Update if plist changes.
+            // Update if the asset changes.
             #expect(line.parts.count == 2)
             #expect(line.string == "Won't get me out. You don't drink, you're a weirdo.")
         } catch let error {
@@ -85,19 +85,28 @@ final class LineTests {
     
     @Test func testCodable() {
         let line = line("I liked him, he was.", "Yeah, we do.")
-        let encoder = PropertyListEncoder()
+        let encoder = JSONEncoder()
         guard let data = try? encoder.encode(line) else {
             Issue.record("Failed to encode")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         guard let copy = try? decoder.decode(Line.self, from: data) else {
             Issue.record("Failed to decode")
             return
         }
         #expect(line == copy)
     }
-	
+
+    /// The string isn't encoded, as it's the joined parts.
+    @Test func testCodableOmitsString() throws {
+        let data = try JSONEncoder().encode(line("I liked him, he was.", "Yeah, we do."))
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(Set(object.keys) == ["parts", "tags"])
+        let copy = try JSONDecoder().decode(Line.self, from: data)
+        #expect(copy.string == "I liked him, he was. Yeah, we do.")
+    }
+
     @Test func testRecitedParts() {
 		let line = line("I liked him, he was.", "Yeah, we do.")
         #expect(line.parts.count == 2)

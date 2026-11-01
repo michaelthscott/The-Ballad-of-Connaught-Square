@@ -9,14 +9,14 @@ import Foundation
 import NaturalLanguage
 import Accessibility
 
-// TODO: We initialise this with duplicate information stored in the Property List.
-// The string is equal to the joined parts.
-// The tags are equal to those parsed from the string.
+// The tags are stored with the lines rather than parsed from the string, as the app never tags at runtime:
+// some run destinations lack the tagger's assets, and its results can change between OS versions.
 // The WeightedSet is used to store and provide the tag counts.
 
 /// An individual line containing one or more parts.
 @Observable final class Line {
 	var parts: [Part]
+	/// The parts joined into a single string.
 	let string: String
 	let tags: [LinguisticTag]
 	private let tagCounts: WeightedSet<WeightedLinguisticTag>
@@ -25,22 +25,26 @@ import Accessibility
 	/// - Parameter parts: The parts of the line.
 	/// - Throws: ``LinguisticTaggerError/tagSchemeUnavailable(_:_:)`` when the tag scheme isn't available on this device.
 	convenience init(parts: [Part]) throws {
-		let string = parts.map { $0.string }.joined(separator: " ")
-		self.init(parts: parts, string: string, tags: try LinguisticTagger().linguisticTagsArray(string: string))
+		let string = Line.string(joining: parts)
+		self.init(parts: parts, tags: try LinguisticTagger().linguisticTagsArray(string: string))
 	}
-	
+
     /// Creates a line with one or more parts.
-    /// Note that the string and tags are assumed to be correct.
+    /// Note that the tags are assumed to be correct.
     /// - Parameters:
     ///   - parts: The parts of the line.
-    ///   - string: The parts joined into a single string.
-    ///   - tags: The linguistic tags in the string.
-    init(parts: [Part], string: String, tags: [LinguisticTag] = []) {
+    ///   - tags: The linguistic tags in the joined parts.
+    init(parts: [Part], tags: [LinguisticTag]) {
         self.parts = parts
-        self.string = string
+        self.string = Line.string(joining: parts)
         self.tags = tags
 		tagCounts = WeightedSet<WeightedLinguisticTag>(tags.map { WeightedLinguisticTag(rawValue: $0, weight: 1)})
     }
+
+	/// The parts' strings joined with spaces.
+	private static func string(joining parts: [Part]) -> String {
+		parts.map { $0.string }.joined(separator: " ")
+	}
 	
 	var duration: Duration {
 		string.speakingTime
@@ -133,22 +137,21 @@ import Accessibility
 // MARK: - Codable
 extension Line: Codable {
     enum CodingKeys: String, CodingKey {
-        case parts, string, tags
+        case parts, tags
     }
 
+    /// Encodes the line's parts and tags. The string isn't encoded, as it's the joined parts.
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(parts, forKey: .parts)
-        try container.encode(string, forKey: .string)
         try container.encode(tags.map { $0.name }, forKey: .tags)
     }
-    
+
     convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let parts = try container.decode([Part].self, forKey: .parts)
-        let string = try container.decode(String.self, forKey: .string)
         let tags = try container.decode([String].self, forKey: .tags)
-		self.init(parts: parts, string: string, tags: tags.map { LinguisticTag(rawValue: NLTag($0)) })
+		self.init(parts: parts, tags: tags.map { LinguisticTag(rawValue: NLTag($0)) })
     }
 }
 

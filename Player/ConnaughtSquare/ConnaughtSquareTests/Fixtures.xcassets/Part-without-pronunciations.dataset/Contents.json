@@ -1,9 +1,9 @@
 {
   "data" : [
     {
-      "filename" : "LinePart-without-pronunciations.plist",
+      "filename" : "LinePart-without-pronunciations.json",
       "idiom" : "universal",
-      "universal-type-identifier" : "com.apple.property-list"
+      "universal-type-identifier" : "public.json"
     }
   ],
   "info" : {

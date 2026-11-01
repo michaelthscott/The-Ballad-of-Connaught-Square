@@ -83,7 +83,30 @@ struct Pronunciation {
 extension Pronunciation: Equatable {}
 
 // MARK: - Codable
-extension Pronunciation: Codable {}
+extension Pronunciation: Codable {
+    /// Encodes the pronunciation as its phonemes' ARPABET notation separated by spaces, as written by cmudict, e.g. "S L IY1 P".
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(phonemes.map { $0.description }.joined(separator: " "))
+    }
+
+    /// Decodes the pronunciation from its phonemes' ARPABET notation separated by spaces, e.g. "S L IY1 P".
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let notation = try container.decode(String.self)
+        var phonemes: [Phoneme] = []
+        for token in notation.split(separator: " ") {
+            guard let phoneme = Phoneme(notation: String(token)) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(token)\" in \"\(notation)\" isn't a phoneme")
+            }
+            phonemes.append(phoneme)
+        }
+        guard !phonemes.isEmpty else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "A pronunciation needs at least one phoneme")
+        }
+        self.init(phonemes: phonemes)
+    }
+}
 
 // MARK: - CustomStringConvertible
 extension Pronunciation: CustomStringConvertible {

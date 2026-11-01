@@ -264,8 +264,48 @@ struct Phoneme {
     }
 }
 
+// MARK: - ARPABET notation
+extension Phoneme {
+    /// Creates a phoneme from its ARPABET notation, as written by cmudict, e.g. "AA1" or "CH".
+    /// A vowel's stress is the digit after its sound, and a vowel without a digit has no stress.
+    /// - Parameter notation: The phoneme's notation.
+    /// - Returns: `nil` if the sound or stress is unknown, or a consonant is stressed.
+    init?(notation: String) {
+        var sound = Substring(notation)
+        var stress: LexicalStress?
+        if let last = notation.last, last.isASCII, let digit = last.wholeNumberValue {
+            guard let lexicalStress = LexicalStress(rawValue: digit) else {
+                return nil
+            }
+            stress = lexicalStress
+            sound = sound.dropLast()
+        }
+        guard let speechSound = SpeechSound(rawValue: String(sound)),
+              stress == nil || Phoneme.articulation(for: speechSound) == .vowel else {
+            return nil
+        }
+        self.init(sound: speechSound, stress: stress)
+    }
+}
+
 // MARK: - Codable
-extension Phoneme: Codable {}
+extension Phoneme: Codable {
+    /// Encodes the phoneme as its ARPABET notation, e.g. "AA1".
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(description)
+    }
+
+    /// Decodes the phoneme from its ARPABET notation, e.g. "AA1".
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let notation = try container.decode(String.self)
+        guard let phoneme = Phoneme(notation: notation) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "\"\(notation)\" isn't a phoneme")
+        }
+        self = phoneme
+    }
+}
 
 // MARK: - Equatable
 extension Phoneme: Equatable {}

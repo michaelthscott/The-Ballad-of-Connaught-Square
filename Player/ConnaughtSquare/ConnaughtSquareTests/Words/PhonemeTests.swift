@@ -38,17 +38,39 @@ struct PhonemeTests {
     
     @Test func testCodable() {
         let phoneme = Phoneme(sound: .AA, stress: .primaryStress)
-        let encoder = PropertyListEncoder()
+        let encoder = JSONEncoder()
         guard let data = try? encoder.encode(phoneme) else {
             Issue.record("Failed to encode")
             return
         }
-        let decoder = PropertyListDecoder()
+        let decoder = JSONDecoder()
         guard let copy = try? decoder.decode(Phoneme.self, from: data) else {
             Issue.record("Failed to decode")
             return
         }
         #expect(phoneme == copy)
     }
-    
+
+    /// Phonemes are written in cmudict's notation, with a vowel's stress as a digit after its sound.
+    @Test(arguments: [
+        ("AH0", Phoneme(sound: .AH, stress: .noStress)),
+        ("AA1", Phoneme(sound: .AA, stress: .primaryStress)),
+        ("EY2", Phoneme(sound: .EY, stress: .secondaryStress)),
+        ("ER", Phoneme(sound: .ER)),
+        ("CH", Phoneme(sound: .CH)),
+    ])
+    func testNotation(notation: String, phoneme: Phoneme) throws {
+        #expect(Phoneme(notation: notation) == phoneme)
+        #expect(String(decoding: try JSONEncoder().encode(phoneme), as: UTF8.self) == "\"\(notation)\"")
+        #expect(try JSONDecoder().decode(Phoneme.self, from: Data("\"\(notation)\"".utf8)) == phoneme)
+    }
+
+    /// A stressed consonant, an unknown sound or an unknown stress isn't a phoneme.
+    @Test(arguments: ["CH1", "XX", "AA9", "aa1", "", "1"])
+    func testInvalidNotation(notation: String) {
+        #expect(Phoneme(notation: notation) == nil)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(Phoneme.self, from: Data("\"\(notation)\"".utf8))
+        }
+    }
 }

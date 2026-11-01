@@ -34,7 +34,7 @@ struct Score: Codable, Sendable, Equatable {
 
     /// Decodes a score held as JSON in a data asset.
     static func asset(named name: String = "Score", from bundle: Bundle = .main) throws -> Score {
-        try decodeAsset(name, from: bundle, format: .json)
+        try decodeAsset(name, from: bundle)
     }
 
     /// Every interlude in the score, introduction first.

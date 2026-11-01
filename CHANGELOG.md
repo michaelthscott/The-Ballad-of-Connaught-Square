@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Lexicon and Lines assets, and the preview and test fixtures, are now JSON like the Score, so `decodeAsset` always decodes JSON and its `format:` parameter and `AssetFormat` have gone. Pronunciations are written in cmudict's notation, such as `"S L IY1 P"`, so the lexicon tool's output can be pasted in, and a stressed consonant or unknown sound is now a decoding error rather than being dropped. Lines no longer store their string, as it's always the parts joined with spaces, so `Line.init(parts:string:tags:)` is now `init(parts:tags:)`, and its tags no longer default to none. The tags are still stored, as the app never tags at runtime. The Lexicon is 43 KB rather than 697 KB, and Lines 351 KB rather than 724 KB. FIVER's last vowel is still unstressed, as `ER` rather than `ER0`.
 
 - Settings now has a voice picker for each of the score's roles, rather than First and Second pickers. `Speakers` has `roles` and `voices` in place of `firstSpeaker` and `secondSpeaker`, `init(roles:)`, and `speaker(forRole:)`, which wraps a role outside the roles around them. The turns are now kept by `VoiceTurns` for each performance, so `takeTurn()`, `resetTurns()`, `selectedSpeakers` and `maxSelectedSpeakers` have gone.
 

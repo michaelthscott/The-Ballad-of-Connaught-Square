@@ -1,0 +1,159 @@
+[
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "I liked him, he was."
+      }
+    ],
+    "tags" : [
+      "Pronoun",
+      "Verb",
+      "Pronoun",
+      "Pronoun",
+      "Verb"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "He is isn't he, he's over thirty."
+      }
+    ],
+    "tags" : [
+      "Pronoun",
+      "Verb",
+      "Verb",
+      "Adverb",
+      "Pronoun",
+      "Pronoun",
+      "Verb",
+      "Preposition",
+      "Number"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "I feel like I'm radioactive anyway."
+      }
+    ],
+    "tags" : [
+      "Pronoun",
+      "Verb",
+      "Preposition",
+      "Pronoun",
+      "Verb",
+      "Adjective",
+      "Noun"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "I can't do it to you."
+      }
+    ],
+    "tags" : [
+      "Pronoun",
+      "Verb",
+      "Adverb",
+      "Verb",
+      "Pronoun",
+      "Preposition",
+      "Pronoun"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "It was probably the first, because I dipped on the first."
+      }
+    ],
+    "tags" : [
+      "Pronoun",
+      "Verb",
+      "Adverb",
+      "Determiner",
+      "Adjective",
+      "Preposition",
+      "Pronoun",
+      "Verb",
+      "Preposition",
+      "Determiner",
+      "Adjective"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "Is it five series seven?"
+      }
+    ],
+    "tags" : [
+      "Verb",
+      "Pronoun",
+      "Number",
+      "Noun",
+      "Number"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "See this coming."
+      }
+    ],
+    "tags" : [
+      "Verb",
+      "Determiner",
+      "Verb"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "If you were."
+      }
+    ],
+    "tags" : [
+      "Preposition",
+      "Pronoun",
+      "Verb"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "Ok, why's that?"
+      }
+    ],
+    "tags" : [
+      "Interjection",
+      "Pronoun",
+      "Verb",
+      "Determiner"
+    ]
+  },
+  {
+    "parts" : [
+      {
+        "speaker" : 0,
+        "string" : "Yeah, we do."
+      }
+    ],
+    "tags" : [
+      "Interjection",
+      "Pronoun",
+      "Verb"
+    ]
+  }
+]
