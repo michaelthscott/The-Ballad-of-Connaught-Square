@@ -95,7 +95,7 @@ struct PerformanceTests {
             let recitation = Task<Void, Never> {
                 try? await Task.sleep(for: length)
             }
-            await Performance.play([viola(stretches)], on: soundBank, alongside: recitation)
+            _ = await Performance.play([viola(stretches)], on: soundBank, alongside: recitation)
         }
         await soundBank.stopEngine()
         return elapsed
