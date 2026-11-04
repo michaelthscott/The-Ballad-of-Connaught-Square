@@ -13,7 +13,7 @@ import Foundation
 /// Only the interlude for the largest division that begins is played, so the opening of a canto
 /// replaces the openings of its first stanza, line and part. The introduction stands in for the
 /// first canto's interlude.
-struct Score: Codable, Sendable, Equatable {
+struct Score: Sendable, Equatable {
     var title: String
     var voices: VoiceNotation
     var introduction: Interlude
@@ -70,60 +70,17 @@ struct Interlude: Sendable, Equatable {
     }
 }
 
-extension Interlude: Codable {
-    enum CodingKeys: String, CodingKey {
-        case before, under
-    }
-
-    /// Either list may be left out of the score, meaning nothing plays then.
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        before = try container.decodeIfPresent([Segment].self, forKey: .before) ?? []
-        under = try container.decodeIfPresent([Segment].self, forKey: .under) ?? []
-    }
-}
-
 /// A stretch of an interlude: a passage of music, or a rest.
 enum Segment: Sendable, Equatable {
     case music(Passage)
     case rest(seconds: Double)
 }
 
-extension Segment: Codable {
-    enum CodingKeys: String, CodingKey {
-        case music, rest
-    }
-
-    /// Written as `{ "music": { … } }` or `{ "rest": 1 }`, rather than the synthesised form,
-    /// which would nest the passage under `_0` and the rest under `seconds`.
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        if let passage = try container.decodeIfPresent(Passage.self, forKey: .music) {
-            self = .music(passage)
-        } else if let seconds = try container.decodeIfPresent(Double.self, forKey: .rest) {
-            self = .rest(seconds: seconds)
-        } else {
-            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath,
-                                                                    debugDescription: "A segment must be either \"music\" or \"rest\"."))
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        switch self {
-        case .music(let passage):
-            try container.encode(passage, forKey: .music)
-        case .rest(let seconds):
-            try container.encode(seconds, forKey: .rest)
-        }
-    }
-}
-
 /// A passage of music played by some instruments together, for a number of seconds or, without
 /// them, for as long as the part takes to recite.
 ///
 /// A passage without seconds plays only under the part; one before the part is left out.
-struct Passage: Codable, Sendable, Equatable {
+struct Passage: Sendable, Equatable {
     var seconds: Double?
     var instruments: [InstrumentPart]
 
@@ -150,25 +107,6 @@ struct InstrumentPart: Sendable, Equatable {
         self.instrument = instrument
         self.notes = notes
         self.volume = volume
-    }
-}
-
-extension InstrumentPart: Codable {
-    enum CodingKeys: String, CodingKey {
-        case instrument, notes, volume
-    }
-
-    /// The notes may be left out of the score, meaning they are selected in the standard way, and the
-    /// volume may be left out, meaning full volume.
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        instrument = try container.decode(InstrumentName.self, forKey: .instrument)
-        notes = try container.decodeIfPresent(NoteSelection.self, forKey: .notes) ?? .standard
-        volume = try container.decodeIfPresent(Double.self, forKey: .volume) ?? 1
-        guard (0...1).contains(volume) else {
-            throw DecodingError.dataCorruptedError(forKey: .volume, in: container,
-                                                   debugDescription: "The volume of \(instrument) must be between 0 and 1, not \(volume).")
-        }
     }
 }
 

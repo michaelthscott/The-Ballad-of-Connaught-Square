@@ -7,8 +7,8 @@
 
 /// A composer composes an orchestration to be performed.
 struct Composer {
-    /// The ways the tunes' patterns can be combined. The raw values are the names written in the score.
-    enum SetOperation: String, CaseIterable, Codable, Sendable {
+    /// The ways the tunes' patterns can be combined.
+    enum SetOperation: String, CaseIterable, Sendable {
         case union
         case intersection
         case symmetricDifference

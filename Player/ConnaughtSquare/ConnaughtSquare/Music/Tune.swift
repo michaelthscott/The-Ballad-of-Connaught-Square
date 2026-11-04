@@ -184,8 +184,8 @@ struct Tune: Sendable {
     
 }
 
-/// The names of the built-in tunes, as written in the score.
-enum TuneName: String, CaseIterable, Codable, Sendable {
+/// The names of the built-in tunes.
+enum TuneName: String, CaseIterable, Sendable {
     case theSashMyFatherWore
     case theBritishGrenadiers
 

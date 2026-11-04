@@ -73,7 +73,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `decodeAsset` takes a `format`, `.propertyList` or `.json`. It defaults to `.propertyList`.
 
-- `InstrumentName` is `CaseIterable` and `Codable`, and is written by its description, such as "Violin". `TuneName` names the built-in tunes.
+- `InstrumentName` is `CaseIterable`, and is written in the score by its description, such as "Violin". `TuneName` names the built-in tunes.
 
 - The performance can be paused and resumed. `Performance` has a `state` of `.stopped`, `.playing` or `.paused`, replacing `isFinished`, and `play()`, `pause()`, `resume()` and `stop()` methods. Pausing holds the voice at the next word and holds any sounding notes, which play out the rest of their length on resume.
 

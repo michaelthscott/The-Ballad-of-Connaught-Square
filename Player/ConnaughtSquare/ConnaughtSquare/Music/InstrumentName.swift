@@ -404,20 +404,3 @@ extension InstrumentName: CustomStringConvertible {
 
 extension InstrumentName: CaseIterable {
 }
-
-/// An instrument name is written in the score as its description, such as "Violin", rather than its program number.
-extension InstrumentName: Codable {
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        let name = try container.decode(String.self)
-        guard let instrumentName = Self.allCases.first(where: { $0.description == name }) else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "No instrument named \"\(name)\"")
-        }
-        self = instrumentName
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(description)
-    }
-}

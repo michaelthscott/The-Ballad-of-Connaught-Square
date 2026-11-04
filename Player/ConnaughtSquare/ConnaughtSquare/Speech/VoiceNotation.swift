@@ -7,13 +7,13 @@
 
 /// The voices of a score: the roles that recite the ballad, and the rule for which role recites each part.
 /// The roles are numbered from zero. The voice for each role is chosen in Settings.
-struct VoiceNotation: Codable, Sendable, Equatable {
+struct VoiceNotation: Sendable, Equatable {
     var roles: [String]
     var rule: VoiceRule
 }
 
 /// Which role recites each part. A role number outside the roles wraps around them.
-enum VoiceRule: Codable, Sendable, Equatable {
+enum VoiceRule: Sendable, Equatable {
     /// The roles take turns, one part each, starting with the given role.
     case alternate(startingWith: Int)
     /// The role for the first, second, third… part of each line. Later parts take the last role.

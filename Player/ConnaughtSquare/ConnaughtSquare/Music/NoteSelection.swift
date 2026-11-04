@@ -27,17 +27,3 @@ struct NoteSelection: Sendable, Hashable {
     /// Patterns three wide from every tune, combined in every way.
     static let standard = NoteSelection()
 }
-
-extension NoteSelection: Codable {
-    enum CodingKeys: String, CodingKey {
-        case tunes, vectorWidth, operations
-    }
-
-    /// Anything left out of the score is selected in the standard way.
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        tunes = try container.decodeIfPresent([TuneName].self, forKey: .tunes) ?? Self.standard.tunes
-        vectorWidth = try container.decodeIfPresent(UInt.self, forKey: .vectorWidth) ?? Self.standard.vectorWidth
-        operations = try container.decodeIfPresent([Composer.SetOperation].self, forKey: .operations) ?? Self.standard.operations
-    }
-}
