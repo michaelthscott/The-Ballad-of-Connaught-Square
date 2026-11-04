@@ -12,13 +12,27 @@ import AVFoundation
 ///
 /// `AVSpeechSynthesizer` has no asynchronous API, so `speak(_:in:)` wraps a single utterance
 /// in a continuation that is resumed when the synthesizer either finishes or is cancelled.
+///
+/// Each voice speaks through a synthesizer of its own, so the voices taking turns don't make one
+/// synthesizer switch voice for every utterance, which can leave its audio stuttering as it starts.
+/// Only one utterance is spoken at a time, whichever synthesizer speaks it.
 @MainActor
 final class SpeechSynthesizer {
-    private let synthesizer = AVSpeechSynthesizer()
+    /// The synthesizer for each voice that has spoken, by the voice's identifier.
+    private var synthesizers: [String: AVSpeechSynthesizer] = [:]
+    /// The synthesizer that spoke last, which pausing, resuming and stopping act on.
+    private var current: AVSpeechSynthesizer?
     private let coordinator = Coordinator()
 
-    init() {
+    /// The voice's synthesizer, made the first time the voice speaks.
+    private func synthesizer(for voice: AVSpeechSynthesisVoice) -> AVSpeechSynthesizer {
+        if let synthesizer = synthesizers[voice.identifier] {
+            return synthesizer
+        }
+        let synthesizer = AVSpeechSynthesizer()
         synthesizer.delegate = coordinator
+        synthesizers[voice.identifier] = synthesizer
+        return synthesizer
     }
 
     /// Speaks the attributed string in the given voice, returning once speech has finished.
@@ -29,9 +43,15 @@ final class SpeechSynthesizer {
     ///   - attributedString: The text to speak, including any IPA pronunciation attributes.
     ///   - voice: The voice to speak in.
     func speak(_ attributedString: NSAttributedString, in voice: AVSpeechSynthesisVoice) async {
+        if let current, current.isSpeaking {
+            current.stopSpeaking(at: .immediate)
+        }
+        let synthesizer = synthesizer(for: voice)
+        // A warm-up still speaking would hold this utterance back until it finished.
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
+        current = synthesizer
         let utterance = AVSpeechUtterance(attributedString: attributedString)
         utterance.voice = voice
         utterance.pitchMultiplier = 1
@@ -54,10 +74,28 @@ final class SpeechSynthesizer {
         }
     }
 
+    /// Synthesizes a few words in each voice without playing them, so that each synthesizer has its
+    /// voice ready before its first utterance rather than starting it stuttering.
+    ///
+    /// The words are written to audio buffers that are thrown away, rather than spoken at no volume,
+    /// which can still be faintly heard. This returns straight away, leaving the warm-ups to finish
+    /// on their own. Nothing waits for them, and an utterance spoken in the same voice cuts its
+    /// warm-up short.
+    func warmUp(_ voices: [AVSpeechSynthesisVoice]) {
+        for voice in voices {
+            let synthesizer = synthesizer(for: voice)
+            guard !synthesizer.isSpeaking else { continue }
+            let utterance = AVSpeechUtterance(string: "Connaught Square")
+            utterance.voice = voice
+            // The buffers arrive off the main actor, so the callback mustn't be isolated to it.
+            synthesizer.write(utterance) { @Sendable _ in }
+        }
+    }
+
     /// Stops any speech in progress at the next word boundary, or immediately if speech is paused.
     func stop() {
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: synthesizer.isPaused ? .immediate : .word)
+        if let current, current.isSpeaking {
+            current.stopSpeaking(at: current.isPaused ? .immediate : .word)
         }
     }
 
@@ -65,15 +103,15 @@ final class SpeechSynthesizer {
     ///
     /// A paused utterance hasn't finished, so `speak(_:in:)` keeps waiting until it is resumed or stopped.
     func pause() {
-        if synthesizer.isSpeaking {
-            synthesizer.pauseSpeaking(at: .word)
+        if let current, current.isSpeaking {
+            current.pauseSpeaking(at: .word)
         }
     }
 
     /// Continues speech from where it was paused.
     func resume() {
-        if synthesizer.isPaused {
-            synthesizer.continueSpeaking()
+        if let current, current.isPaused {
+            current.continueSpeaking()
         }
     }
 }

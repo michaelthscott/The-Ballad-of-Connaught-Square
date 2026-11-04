@@ -126,6 +126,8 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // The accompaniment starts the engine itself, outside the queue of engine changes, so let
         // the last performance's stop take effect first; otherwise it could stop this one's engine.
         await engineControlTask?.value
+        // Ready the voices while the introduction plays, so that none starts its first part stuttering.
+        speech.warmUp(speakers.voices.map(\.voice))
         var events = EventsSequence(performance: self)
         // Where each instrument's melody stopped in the last part, for the next to carry on.
         var melodies: [InstrumentName: Cycle<Note>] = [:]
