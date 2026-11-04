@@ -26,7 +26,7 @@ struct EventsSequence {
 
     /// The cue for the next part of the ballad, or `nil` once every part has been recited.
     mutating func next() -> Cue? {
-        guard let part = balladCursorSequence.currentPart, let cursor = balladCursorSequence.cursor else { return nil }
+        guard let part = balladCursorSequence.currentPart else { return nil }
         let intermission = currentIntermission
         let interlude = currentInterlude
         let arranger = performance.arranger
