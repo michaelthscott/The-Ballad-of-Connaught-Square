@@ -21,25 +21,29 @@ struct EventsSequence {
     init(performance: Performance) {
         self.performance = performance
         balladCursorSequence = BalladCursorSequence(ballad: performance.ballad)
-        voiceTurns = VoiceTurns(notation: performance.score.voices)
+        voiceTurns = VoiceTurns(notation: VoiceNotation(roles: performance.speakers.roles))
     }
 
     /// The cue for the next part of the ballad, or `nil` once every part has been recited.
     mutating func next() -> Cue? {
         guard let part = balladCursorSequence.currentPart, let cursor = balladCursorSequence.cursor else { return nil }
+        let intermission = currentIntermission
         let interlude = currentInterlude
         let arranger = performance.arranger
         let role = voiceTurns.nextRole()
-        let cue = Cue(before: interlude.before.compactMap { arranger.event(for: $0, under: nil) },
-                      under: interlude.under.compactMap { arranger.event(for: $0, under: part.duration) },
+        let cue = Cue(intermission: intermission.map { arranger.events(for: $0.interlude, partDuration: .zero) } ?? [],
+                      intermissionLength: .seconds(intermission?.seconds ?? 0),
+                      recitationStart: .seconds(interlude.recitationStart),
+                      events: arranger.events(for: interlude, partDuration: part.duration),
                       part: part,
                       speaker: performance.speakers.speaker(forRole: role))
         _ = balladCursorSequence.next()
         return cue
     }
 
-    /// The interlude for the largest division of the ballad that begins with the current part.
-    private var currentInterlude: Interlude {
+    /// The intermission for the largest division of the ballad that begins with the current part,
+    /// or `nil` if the part doesn't begin a stanza.
+    private var currentIntermission: Intermission? {
         let score = performance.score
         if balladCursorSequence.isStartOfBallad {
             return score.introduction
@@ -47,10 +51,13 @@ struct EventsSequence {
             return score.canto
         } else if balladCursorSequence.isStartOfStanza {
             return score.stanza
-        } else if balladCursorSequence.isStartOfLine {
-            return score.line
         } else {
-            return score.part
+            return nil
         }
+    }
+
+    /// The interlude that opens the current part: the line's if it begins one, otherwise the part's.
+    private var currentInterlude: Interlude {
+        balladCursorSequence.isStartOfLine ? performance.score.line : performance.score.part
     }
 }

@@ -16,24 +16,20 @@ struct PerformanceTests {
         var events = EventsSequence(performance: performance)
         let firstCue = events.next()
         let cue = try #require(firstCue)
-        #expect(cue.before.isEmpty == false)
+        #expect(cue.events.isEmpty == false)
     }
 
-    /// By default the performance follows the bundled score, with a voice for each of its roles.
+    /// By default the performance follows the bundled score, with a voice for each of the standard roles.
     @Test func testDefaultScore() async throws {
         let performance = Performance(ballad: Ballad(lines: []))
         #expect(performance.score == Score.bundled)
-        #expect(performance.speakers.roles == Score.bundled.voices.roles)
+        #expect(performance.speakers.roles == VoiceNotation.standard.roles)
     }
 
-    @Test func testOrchestration() async throws {
+    @Test func testEvents() async throws {
         let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers())
-        let passage = Passage(seconds: 1, instruments: [InstrumentPart(instrument: .violin),
-                                                        InstrumentPart(instrument: .viola),
-                                                        InstrumentPart(instrument: .cello)])
-        let orchestration = performance.arranger.orchestration(for: passage, lasting: .seconds(1))
-        #expect(orchestration.title == "The Ballad of Connaught Square")
-        #expect(orchestration.assignments.count == 3)
+        let events = performance.arranger.events(for: Score.standard.line, partDuration: .seconds(1))
+        #expect(events.map(\.instrument.name) == [.violin, .viola, .cello])
     }
 
     /// A performance on a sound bank of its own, so pausing it doesn't pause other tests' notes.
@@ -82,38 +78,68 @@ struct PerformanceTests {
         #expect(performance.ballad.isRecited == false)
     }
 
-    /// A viola that lasts as long as the part.
-    private func violaAccompaniment() -> Orchestration {
-        let composer = Composer()
-        return Orchestration(title: "Accompaniment", assignments: [composer.composeAssignment(instrument: Instrument(name: .viola), duration: .seconds(1))])
+    /// The viola playing quavers through the stretches.
+    private func viola(_ stretches: [Stretch]) -> Event {
+        Event(instrument: Instrument(name: .viola),
+              notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver)]),
+              stretches: stretches)
     }
 
-    /// Accompaniment lasting as long as the part stops when the recitation finishes.
-    @Test func testAccompanimentStopsWithTheRecitation() async throws {
+    /// How long the viola takes to play alongside a recitation of the given length, on a sound bank
+    /// of its own. The viola is loaded first, so the time doesn't include loading it.
+    private func timePlaying(_ stretches: [Stretch], recitation length: Duration = .zero) async throws -> Duration {
         let soundBank = try SoundBank()
-        let recitation = Task<Void, Never> {
-            try? await Task.sleep(for: .milliseconds(500))
-        }
-        let clock = ContinuousClock()
-        let elapsed = await clock.measure {
-            await Performance.accompany(recitation, with: violaAccompaniment(), on: soundBank)
-        }
-        // It plays through the recitation, and stops within a note of its end.
-        #expect(elapsed >= .milliseconds(500))
-        #expect(elapsed < .seconds(2))
-        await soundBank.stopEngine()
-    }
-
-    /// Accompaniment for a recitation that has already finished doesn't hold the performance up.
-    @Test func testAccompanimentAfterTheRecitation() async throws {
-        let soundBank = try SoundBank()
-        let recitation = Task {}
-        await recitation.value
+        try await soundBank.loadInstrument(.viola)
+        try await soundBank.startEngine()
         let elapsed = await ContinuousClock().measure {
-            await Performance.accompany(recitation, with: violaAccompaniment(), on: soundBank)
+            let recitation = Task<Void, Never> {
+                try? await Task.sleep(for: length)
+            }
+            await Performance.play([viola(stretches)], on: soundBank, alongside: recitation)
         }
-        #expect(elapsed < .seconds(1))
         await soundBank.stopEngine()
+        return elapsed
+    }
+
+    /// An instrument playing until after the recitation plays through it, then on for the time given.
+    @Test func testInstrumentPlaysOnAfterTheRecitation() async throws {
+        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .afterRecitation(seconds: 0.5))], recitation: .milliseconds(500))
+        // It plays through the recitation and half a second more, each within a note.
+        #expect(elapsed >= .seconds(1))
+        #expect(elapsed < .milliseconds(2500))
+    }
+
+    /// An instrument playing until a time from the start stops then, within a note.
+    @Test func testInstrumentStopsOnTime() async throws {
+        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(1))])
+        #expect(elapsed >= .seconds(1))
+        #expect(elapsed < .seconds(2))
+    }
+
+    /// An instrument rests in a gap between its stretches.
+    @Test func testInstrumentRestsBetweenStretches() async throws {
+        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(0.5)), Stretch(start: .seconds(1), end: .seconds(1.5))])
+        #expect(elapsed >= .milliseconds(1500))
+        #expect(elapsed < .milliseconds(2500))
+    }
+
+    /// An instrument playing until the end of a recitation that has already finished doesn't hold the performance up.
+    @Test func testInstrumentAfterTheRecitation() async throws {
+        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .endOfRecitation)])
+        #expect(elapsed < .seconds(1))
+    }
+
+    /// An intermission lasts for its length, even after its instruments have stopped.
+    @Test func testIntermissionLastsItsLength() async throws {
+        let soundBank = try SoundBank()
+        try await soundBank.loadInstrument(.viola)
+        try await soundBank.startEngine()
+        let elapsed = await ContinuousClock().measure {
+            await Performance.playIntermission([viola([Stretch(start: .seconds(0), end: .seconds(0.5))])], lasting: .milliseconds(1500), on: soundBank)
+        }
+        await soundBank.stopEngine()
+        #expect(elapsed >= .milliseconds(1500))
+        #expect(elapsed < .milliseconds(2500))
     }
 
     /// A performance stops by itself once it has recited every part.

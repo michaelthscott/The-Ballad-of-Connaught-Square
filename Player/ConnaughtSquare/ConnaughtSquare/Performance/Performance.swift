@@ -7,15 +7,16 @@
 
 import Foundation
 import os
+import Synchronization
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ConnaughtSquare", category: "Performance")
 
 /// A performance of the ballad with musical accompaniment.
 ///
 /// The performance runs as a single cancellable task on the main actor, performing one cue for each
-/// part as the score notates it. The accompaniment before the part plays first; then the part is
-/// recited on the main actor while the accompaniment under it plays in a child task off it, and the
-/// cue finishes when both are done.
+/// part as the score notates it. Any intermission plays in full first. Then the part is recited on
+/// the main actor once the cue reaches its recitation, while each instrument plays its stretches in
+/// a child task off it, and the cue finishes when they're all done.
 ///
 /// Pausing closes the sound bank's pause gate, which halts the accompaniment at its next note and
 /// the recitation at its next part, and pauses the voice and the audio engine in place.
@@ -44,7 +45,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     /// - Parameters:
     ///   - score: The score.
     ///   - ballad: The ballad.
-    ///   - speakers: The voices for the score's roles. By default, a voice is chosen for each of its roles.
+    ///   - speakers: The voices for the roles. By default, a voice is chosen for each of the standard roles.
     ///   - soundBank: The sound bank to play on.
     init(score: Score = .bundled,
          ballad: Ballad = Ballad(),
@@ -53,7 +54,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         self.score = score
         arranger = Arranger(score: score)
         self.ballad = ballad
-        self.speakers = speakers ?? Speakers(roles: score.voices.roles)
+        self.speakers = speakers ?? Speakers()
         self.soundBank = soundBank
     }
 
@@ -139,29 +140,27 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         state = .stopped
     }
 
-    /// Performs one cue, returning when both the accompaniment and the recitation have finished.
-    ///
-    /// The accompaniment before the part finishes before it is recited. The accompaniment under
-    /// the part starts as it is recited.
+    /// Performs one cue, returning when the recitation and every instrument have finished.
     private func perform(_ cue: Cue) async {
         logger.debug("\(cue.description)")
         let soundBank = soundBank
-        // The accompaniment is `Sendable`, so it plays off the main actor while the part — which
-        // isn't — is recited on it. Time paused doesn't count towards it.
-        await Self.play(cue.before, on: soundBank, until: nil)
+        await Self.playIntermission(cue.intermission, lasting: cue.intermissionLength, on: soundBank)
         guard !Task.isCancelled else { return }
-        // The recitation is a task of its own, so that accompaniment lasting as long as the part
-        // can wait for it to finish. It runs on the main actor, as this does.
+        // The recitation is a task of its own, so that instruments playing until it finishes can wait
+        // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
         let part = cue.part
         let speaker = cue.speaker
+        let recitationStart = cue.recitationStart
         let recitation = Task {
+            try? await soundBank.pauseGate.sleep(for: recitationStart)
             await soundBank.pauseGate.wait()
             guard !Task.isCancelled else { return }
             await self.recite(part, as: speaker)
         }
-        // Take the events out of the cue first, so the child task doesn't capture its part.
-        let under = cue.under
-        async let played: Void = Self.play(under, on: soundBank, until: recitation)
+        // The events are `Sendable`, so they play off the main actor while the part — which isn't —
+        // is recited on it. Take them out of the cue first, so the child task doesn't capture its part.
+        let events = cue.events
+        async let played: Void = Self.play(events, on: soundBank, alongside: recitation)
         await withTaskCancellationHandler {
             await recitation.value
         } onCancel: {
@@ -179,40 +178,97 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         await speech.speak(part.nsAttributedString, in: speaker.voice)
     }
 
-    /// Plays the accompaniment in order. `nonisolated` so it runs off the main actor.
+    /// Plays an intermission's events together, returning once they've finished and its length has
+    /// passed. Time paused doesn't count towards it. `nonisolated` so it runs off the main actor.
+    nonisolated static func playIntermission(_ events: [Event], lasting length: Duration, on soundBank: SoundBank) async {
+        guard !events.isEmpty || length > .zero else { return }
+        // Nothing is recited in an intermission, so nothing in it waits for a recitation.
+        let noRecitation = Task<Void, Never> {}
+        async let rest: Void = { try? await soundBank.pauseGate.sleep(for: length) }()
+        await play(events, on: soundBank, alongside: noRecitation)
+        await rest
+    }
+
+    /// Plays the events together, from the start of the cue, returning once they've all finished.
+    /// `nonisolated` so it runs off the main actor.
     /// - Parameters:
-    ///   - accompaniment: The events to play.
+    ///   - events: The events to play.
     ///   - soundBank: The sound bank to play on.
-    ///   - recitation: The recitation that accompaniment lasting as long as the part plays until, or
-    ///     `nil` before the part, when there's no such accompaniment.
-    private nonisolated static func play(_ accompaniment: [Event], on soundBank: SoundBank, until recitation: Task<Void, Never>?) async {
-        for event in accompaniment {
-            guard !Task.isCancelled else { return }
-            switch event {
-            case .play(let orchestration, let duration):
-                await orchestration.play(duration: duration, on: soundBank)
-            case .accompany(let orchestration):
-                guard let recitation else { continue }
-                await accompany(recitation, with: orchestration, on: soundBank)
-            case .silence(let duration):
-                try? await soundBank.pauseGate.sleep(for: duration)
+    ///   - recitation: The recitation that times counted from the end of the recitation wait for.
+    nonisolated static func play(_ events: [Event], on soundBank: SoundBank, alongside recitation: Task<Void, Never>) async {
+        let recited = Flag()
+        await withDiscardingTaskGroup { group in
+            group.addTask {
+                await recitation.value
+                recited.set()
+            }
+            for event in events {
+                group.addTask {
+                    await play(event, on: soundBank, alongside: recitation, recited: recited)
+                }
             }
         }
     }
 
-    /// Plays the orchestration until the recitation has finished, stopping its notes then. If the
-    /// recitation has already finished, nothing plays.
-    nonisolated static func accompany(_ recitation: Task<Void, Never>, with orchestration: Orchestration, on soundBank: SoundBank) async {
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask {
-                // Longer than any part, so that it's the recitation that ends the accompaniment.
-                await orchestration.play(duration: .seconds(24 * 60 * 60), on: soundBank)
+    /// Plays the event's stretches in turn, carrying its melody on from one to the next.
+    ///
+    /// Each note is played in full, so a stretch can run past its end by part of a note; the instrument
+    /// makes that up by starting the next stretch, or waiting out the gap before it, that much later.
+    private nonisolated static func play(_ event: Event, on soundBank: SoundBank, alongside recitation: Task<Void, Never>, recited: Flag) async {
+        var notes = event.notes
+        let instrument = event.instrument.name
+        // Where the instrument has reached in the cue, and how far its last note ran past it.
+        var position = Moment.seconds(0)
+        var overrun = Duration.zero
+        do {
+            for stretch in event.stretches {
+                // Wait out any gap since the last stretch.
+                switch (position, stretch.start) {
+                case (.seconds(let from), .seconds(let to)), (.afterRecitation(let from), .afterRecitation(let to)):
+                    let gap = Duration.seconds(to - from)
+                    try await soundBank.pauseGate.sleep(for: gap - overrun)
+                    overrun = max(overrun - gap, .zero)
+                case (.seconds, .afterRecitation(let seconds)):
+                    await recitation.value
+                    overrun = .zero
+                    try await soundBank.pauseGate.sleep(for: .seconds(seconds))
+                case (.afterRecitation, .seconds):
+                    // The score reader doesn't allow a time from the start after one from the end.
+                    break
+                }
+                // Play the stretch.
+                let length: Duration
+                switch (stretch.start, stretch.end) {
+                case (.seconds(let from), .seconds(let to)), (.afterRecitation(let from), .afterRecitation(let to)):
+                    length = .seconds(to - from) - overrun
+                case (.seconds, .afterRecitation(let seconds)):
+                    _ = try await soundBank.play(notes: &notes, instrument: instrument, volume: stretch.volume) { _ in !recited.isSet }
+                    length = .seconds(seconds)
+                case (.afterRecitation, .seconds):
+                    length = .zero
+                }
+                let played = try await soundBank.play(notes: &notes, instrument: instrument, volume: stretch.volume) { $0 < length }
+                overrun = max(played.reduce(Duration.zero) { $0 + $1.duration.duration } - length, .zero)
+                position = stretch.end
+                guard !Task.isCancelled else { return }
             }
-            group.addTask {
-                await recitation.value
-            }
-            await group.next()
-            group.cancelAll()
+        } catch is CancellationError {
+            return
+        } catch {
+            logger.error("Couldn't play \(event.instrument): \(String(describing: error))")
         }
+    }
+}
+
+/// Whether something has happened, which any task can check without waiting for it.
+private final class Flag: Sendable {
+    private let state = Mutex(false)
+
+    var isSet: Bool {
+        state.withLock { $0 }
+    }
+
+    func set() {
+        state.withLock { $0 = true }
     }
 }

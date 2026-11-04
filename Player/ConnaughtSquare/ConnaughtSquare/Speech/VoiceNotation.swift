@@ -5,10 +5,13 @@
 //  Created by Michael Scott on 01/11/2026.
 //
 
-/// The voices of a score: the roles that recite the ballad, taking turns one part each, starting
-/// with the first. The roles are numbered from zero. The voice for each role is chosen in Settings.
+/// The roles that recite the ballad, taking turns one part each, starting with the first. The
+/// roles are numbered from zero. The voice for each role is chosen in Settings.
 struct VoiceNotation: Sendable, Equatable {
     var roles: [String]
+
+    /// The two roles the ballad is recited in.
+    static let standard = VoiceNotation(roles: ["First", "Second"])
 }
 
 /// Keeps track of the roles' turns, part by part.

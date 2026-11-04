@@ -92,6 +92,15 @@ struct SoundBankTests {
         #expect(played.count == 3)
     }
 
+    /// Playing from a cycle in place leaves it at the next note, so the melody can carry on from there.
+    @Test func testPlayNotesCarriesOn() async throws {
+        var cycle = Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .a3, duration: .quaver), Note(value: .b2, duration: .quaver)])
+        let first = try await soundBank.play(notes: &cycle, instrument: .electricPiano1, volume: 0.5) { $0 < NoteDuration.quaver.duration }
+        let second = try await soundBank.play(notes: &cycle, instrument: .electricPiano1) { $0 < NoteDuration.quaver.duration }
+        #expect(first.map(\.value) == [.a2])
+        #expect(second.map(\.value) == [.a3])
+    }
+
     @Test func testPauseAndResumeEngine() async throws {
         // A sound bank of its own, so pausing it doesn't pause other tests' notes.
         let soundBank = try SoundBank()

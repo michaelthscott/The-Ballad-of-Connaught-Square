@@ -197,12 +197,24 @@ extension SoundBank {
     ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
     /// - Returns: The notes played.
     nonisolated func play(notes: Cycle<Note>, duration: Duration, instrument: InstrumentName, volume: Double = 1) async throws -> [Note] {
+        var notes = notes
+        return try await play(notes: &notes, instrument: instrument, volume: volume) { $0 < duration }
+    }
+
+    /// Plays notes from the cycle one after another for as long as the condition holds, leaving the
+    /// cycle at the next note to play, so the melody can carry on from there.
+    /// - Parameters:
+    ///   - notes: A cycle of notes, moved on past the notes played.
+    ///   - instrument: The instrument whose preset the notes are played with.
+    ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
+    ///   - shouldContinue: Whether to play another note, given the length of the notes played so far.
+    /// - Returns: The notes played.
+    nonisolated func play(notes: inout Cycle<Note>, instrument: InstrumentName, volume: Double = 1, while shouldContinue: (Duration) -> Bool) async throws -> [Note] {
         try await loadInstrument(instrument)
         try await startEngine()
-        var notes = notes
         var durationPlayed: Duration = .zero
         var played: [Note] = []
-        while durationPlayed < duration, !Task.isCancelled {
+        while shouldContinue(durationPlayed), !Task.isCancelled {
             await pauseGate.wait()
             guard !Task.isCancelled else { break }
             let note = notes.next()

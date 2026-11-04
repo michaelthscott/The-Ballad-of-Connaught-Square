@@ -10,19 +10,19 @@ import AVFoundation
 
 // This used to be our prefered speakers: ["Daniel", "Oliver", "Arthur", "Kate", "Serena", "Martha"]
 
-/// The voices that recite the ballad, one for each of the score's roles.
+/// The voices that recite the ballad, one for each role.
 @Observable final class Speakers {
     static let language = "en-GB"
 
     let availableSpeakers: [Speaker]
-    /// The names of the score's roles.
+    /// The names of the roles.
     let roles: [String]
     /// The voice for each role, in the same order as the roles.
     var voices: [Speaker]
 
-    /// Creates speakers for the standard score's roles.
+    /// Creates speakers for the standard roles.
     convenience init() {
-        self.init(roles: Score.standard.voices.roles)
+        self.init(roles: VoiceNotation.standard.roles)
     }
 
     /// Creates speakers for the roles, giving them the available voices in turn.

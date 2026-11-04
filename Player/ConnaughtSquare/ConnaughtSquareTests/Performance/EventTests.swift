@@ -10,13 +10,12 @@ import Testing
 
 struct EventTests {
 
-    @Test func testInit() async throws {
-        let instrument = Instrument(name: .accordion)
+    @Test func testDescription() async throws {
         let cycle = Cycle(elements: [Note(value: .a2, duration: .breve), Note(value: .a3, duration: .crotchet)])
-        let assignment = Assignment(instrument: instrument, notes: cycle)
-        let assignments: [Assignment] = [assignment]
-        let orchestration: Orchestration = Orchestration(title: "Test", assignments: assignments)
-        let event: Event = .play(orchestration: orchestration, duration: .seconds(1))
-        #expect(event.description == "play(Test: 1.0 seconds)")
+        let event = Event(instrument: Instrument(name: .viola),
+                          notes: cycle,
+                          stretches: [Stretch(start: .seconds(0), end: .seconds(5)),
+                                      Stretch(start: .seconds(5), end: .afterRecitation(seconds: 1), volume: 0.6)])
+        #expect(event.description == "Viola: 0s–5s, 5s–end+1s at 60%")
     }
 }

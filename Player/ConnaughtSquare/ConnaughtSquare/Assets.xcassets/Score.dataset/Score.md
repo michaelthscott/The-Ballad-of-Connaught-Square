@@ -1,35 +1,29 @@
 # The Ballad of Connaught Square
 
-## Voices
-
-- First
-- Second
-
 ## Introduction
 
-- Violin, Viola, Cello for 13s
-- Rest for 1s
-- Recite, with Viola at 60%
+- Violin: 2s–11s
+- Viola: 1s–12s
+- Cello: 0s–13s
+- Rest: 13s–15s
 
-## Each canto
+## Canto intermission
 
-- Violin, Viola, Cello for 11s
-- Rest for 1s
-- Recite, with Viola at 60%
+- Violin, Viola, Cello: 0s–11s
+- Rest: 11s–12s
 
-## Each stanza
+## Stanza intermission
 
-- Violin, Viola, Cello for 7s
-- Rest for 1s
-- Recite, with Viola at 60%
+- Violin, Viola, Cello: 0s–7s
+- Rest: 7s–8s
 
-## Each line
+## Line, first part
 
-- Violin, Viola, Cello for 5s
-- Rest for 1s
-- Recite, with Viola at 60%
+- Violin, Cello: 0s–5s
+- Viola: 0s–5s, 5s–end+1s at 80%
+- Recite: 5.5s
 
-## Each later part
+## Line, later parts
 
-- Rest for 1s
-- Recite, with Viola at 60%
+- Viola: 0.25s–end at 80%
+- Recite: 0.25s

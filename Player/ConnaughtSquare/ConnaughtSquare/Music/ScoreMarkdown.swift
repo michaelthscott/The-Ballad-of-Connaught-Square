@@ -23,25 +23,33 @@ extension Score {
     ///
     ///     # The Ballad of Connaught Square
     ///
-    ///     ## Voices
+    ///     ## Stanza intermission
     ///
-    ///     - First
-    ///     - Second
+    ///     - Violin, Viola, Cello: 0s–7s
+    ///     - Rest: 7s–8s
     ///
-    ///     ## Each stanza
+    ///     ## Line, first part
     ///
-    ///     - Violin, Viola, Cello for 7s
-    ///     - Rest for 1s
-    ///     - Recite, with Viola at 60%
+    ///     - Violin, Cello: 0s–5s
+    ///     - Viola: 0s–5s, 5s–end+1s at 60%
+    ///     - Recite: 5.5s
     ///
-    /// The title comes first, then the voices, each part being recited by the next of them in turn,
-    /// starting with the first. Then come the introduction, each canto, each stanza, each line and
-    /// each later part, each a list of what plays in turn before the part, ending with `Recite`.
-    /// What follows `Recite, with` plays under the part, its steps separated by `, then`.
+    /// The title comes first. Then come the introduction, the canto and stanza intermissions, the first part
+    /// of each line and its later parts, each a list of what plays when it begins, like a cue sheet.
     ///
-    /// An instrument plays at full volume unless written with a percentage, such as `Viola at 60%`.
-    /// Music plays for the seconds written, such as `for 7s`, or under the part without them, for as
-    /// long as the part takes to recite. Every instrument selects its notes in the standard way.
+    /// The introduction and the canto and stanza intermissions are played in full before the
+    /// division they introduce, with nothing recited in them. An intermission lasts until its last
+    /// instrument stops, or until the end of a rest written after that, such as `Rest: 7s–8s`. The
+    /// first part of the line then follows, as it does in every line.
+    ///
+    /// The first and later parts of a line say once when the part starts being recited, such as
+    /// `Recite: 5.5s`. Every other item names some instruments, then the stretches of time they play, such as `0s–5s`, each at
+    /// full volume unless written with a percentage, such as `at 60%`. A time such as `5s` is counted
+    /// from the start of the division, `end` is when the recitation finishes, and `end+1s` a second
+    /// after that. Each instrument plays one unbroken melody through its stretches, picking it up
+    /// again after a gap, so an instrument is named only once in a division. Every instrument selects
+    /// its notes in the standard way. The part's turn ends once the recitation and every instrument
+    /// have finished.
     init(markdown: String) throws {
         var reader = ScoreReader()
         for (offset, line) in markdown.components(separatedBy: .newlines).enumerated() {
@@ -51,28 +59,37 @@ extension Score {
     }
 }
 
-/// The divisions of the ballad that a score gives an interlude, as their headings are written.
+/// The divisions of the ballad that a score gives an intermission or an interlude, as their headings are written.
 private enum Division: String, CaseIterable {
     case introduction = "Introduction"
-    case canto = "Each canto"
-    case stanza = "Each stanza"
-    case line = "Each line"
-    case part = "Each later part"
+    case canto = "Canto intermission"
+    case stanza = "Stanza intermission"
+    case line = "Line, first part"
+    case part = "Line, later parts"
+
+    /// Whether the division has an intermission, with nothing recited, rather than an interlude.
+    var isIntermission: Bool {
+        switch self {
+        case .introduction, .canto, .stanza:
+            true
+        case .line, .part:
+            false
+        }
+    }
 }
 
-/// Reads a score line by line, keeping track of the section it's in.
+/// Reads a score line by line, keeping track of the division it's in.
 private struct ScoreReader {
-    private enum Section: Equatable {
-        case voices
-        case division(Division)
-    }
-
     private var title: String?
-    private var roles: [String] = []
     private var interludes: [Division: Interlude] = [:]
-    private var sections: [Section] = []
-    /// Whether the current division's list has reached `Recite`.
+    /// The divisions read so far, the current one last.
+    private var divisions: [Division] = []
+    /// Whether the current division says when the part is recited.
     private var isRecited = false
+    /// The instruments already named in the current division.
+    private var instruments: Set<InstrumentName> = []
+    /// The end of the last rest in each intermission.
+    private var rests: [Division: Double] = [:]
     private var lineNumber = 0
 
     mutating func read(_ line: String, at lineNumber: Int) throws {
@@ -85,15 +102,8 @@ private struct ScoreReader {
         } else if let heading = line.dropping(prefix: "## ") {
             try begin(heading)
         } else if let item = line.dropping(prefix: "- ") {
-            switch sections.last {
-            case .voices:
-                guard !roles.contains(item) else { throw error("\"\(item)\" is already a voice") }
-                roles.append(item)
-            case .division(let division):
-                try step(item, in: division)
-            case nil:
-                throw error("A list must follow a heading")
-            }
+            guard let division = divisions.last else { throw error("A list must follow a heading") }
+            try cue(item, in: division)
         } else {
             throw error("Expected a heading or a list item, not \"\(line)\"")
         }
@@ -101,15 +111,13 @@ private struct ScoreReader {
 
     func score() throws -> Score {
         guard let title else { throw ScoreError(line: nil, message: "The score has no title") }
-        guard !roles.isEmpty else { throw ScoreError(line: nil, message: "The score has no voices") }
-        if case .division(let division) = sections.last, !isRecited {
-            throw ScoreError(line: nil, message: "\"\(division.rawValue)\" doesn't end with Recite")
+        if let division = divisions.last, !division.isIntermission, !isRecited {
+            throw ScoreError(line: nil, message: "\"\(division.rawValue)\" doesn't say when to recite, such as \"Recite: 1s\"")
         }
         return Score(title: title,
-                     voices: VoiceNotation(roles: roles),
-                     introduction: try interlude(.introduction),
-                     canto: try interlude(.canto),
-                     stanza: try interlude(.stanza),
+                     introduction: try intermission(.introduction),
+                     canto: try intermission(.canto),
+                     stanza: try intermission(.stanza),
                      line: try interlude(.line),
                      part: try interlude(.part))
     }
@@ -121,88 +129,139 @@ private struct ScoreReader {
         return interlude
     }
 
+    private func intermission(_ division: Division) throws -> Intermission {
+        Intermission(tracks: try interlude(division).tracks, seconds: rests[division])
+    }
+
     private mutating func begin(_ heading: String) throws {
         guard title != nil else { throw error("The score must begin with its title") }
-        if case .division(let division) = sections.last, !isRecited {
-            throw error("\"\(division.rawValue)\" doesn't end with Recite")
+        if let division = divisions.last, !division.isIntermission, !isRecited {
+            throw error("\"\(division.rawValue)\" doesn't say when to recite, such as \"Recite: 1s\"")
         }
-        let section: Section
-        if heading == "Voices" {
-            section = .voices
-        } else if let division = Division(rawValue: heading) {
-            section = .division(division)
-        } else {
-            let headings = ["Voices"] + Division.allCases.map(\.rawValue)
-            throw error("\"\(heading)\" isn't one of \(headings.map { "\"\($0)\"" }.joined(separator: ", "))")
+        guard let division = Division(rawValue: heading) else {
+            let headings = Division.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: ", ")
+            throw error("\"\(heading)\" isn't one of \(headings)")
         }
-        guard !sections.contains(section) else { throw error("The score already has \"\(heading)\"") }
-        sections.append(section)
-        if case .division(let division) = section {
-            interludes[division] = Interlude()
-            isRecited = false
-        }
+        guard !divisions.contains(division) else { throw error("The score already has \"\(heading)\"") }
+        divisions.append(division)
+        interludes[division] = Interlude()
+        isRecited = false
+        instruments = []
     }
 
-    /// Reads a step of a division: what plays before the part, or the part's recitation and what plays under it.
-    private mutating func step(_ item: String, in division: Division) throws {
-        guard !isRecited else {
-            throw error("Nothing follows Recite; write what plays under the part after \"Recite, with\"")
+    /// Reads a cue in a division: when the part is recited, such as `Recite: 5.5s`, a rest in an
+    /// intermission, such as `Rest: 7s–8s`, or what some instruments play, such as
+    /// `Viola: 0s–5s, 5s–end+1s at 60%`.
+    private mutating func cue(_ item: String, in division: Division) throws {
+        guard let colon = item.range(of: ": ") else {
+            throw error("Expected \"Recite: 1s\" or instruments and when they play, such as \"Viola: 0s–5s\", not \"\(item)\"")
         }
-        if item == "Recite" {
+        let label = String(item[..<colon.lowerBound])
+        let times = String(item[colon.upperBound...])
+        if label == "Recite" {
+            guard !division.isIntermission else {
+                throw error("Nothing is recited in \"\(division.rawValue)\", an intermission; \"Line, first part\" opens the part after it")
+            }
+            guard !isRecited else { throw error("\"\(division.rawValue)\" already says when to recite") }
+            guard case .seconds(let seconds) = try moment(times) else {
+                throw error("The recitation starts at a time from the start of the division, such as \"Recite: 1s\"")
+            }
+            interludes[division]?.recitationStart = seconds
             isRecited = true
-        } else if let under = item.dropping(prefix: "Recite, with ") {
-            let segments = try under.components(separatedBy: ", then ").map { try segment($0, isBefore: false) }
-            interludes[division]?.under = segments
-            isRecited = true
+        } else if label == "Rest" {
+            guard division.isIntermission else {
+                throw error("A rest is written only in an intermission; \"\(division.rawValue)\" lasts until its part and instruments have finished")
+            }
+            for text in times.components(separatedBy: ", ") {
+                let rest = try stretch(text)
+                guard rest.volume == 1 else { throw error("A rest has no volume") }
+                try checkIntermission(rest, in: division)
+                if case .seconds(let end) = rest.end {
+                    rests[division] = max(rests[division] ?? 0, end)
+                }
+            }
         } else {
-            let segment = try segment(item, isBefore: true)
-            interludes[division]?.before.append(segment)
+            let names = try label.components(separatedBy: ", ").map(instrument)
+            for name in names {
+                guard instruments.insert(name).inserted else {
+                    throw error("\(name) already plays in \"\(division.rawValue)\"; give it all its times on one line")
+                }
+            }
+            var stretches: [Stretch] = []
+            for text in times.components(separatedBy: ", ") {
+                let stretch = try stretch(text)
+                try checkIntermission(stretch, in: division)
+                if let previous = stretches.last, previous.end != stretch.start, !previous.end.isBefore(stretch.start) {
+                    throw error("\"\(text)\" must start after the time before it ends, \(previous.end)")
+                }
+                stretches.append(stretch)
+            }
+            interludes[division]?.tracks.append(Track(instruments: names, stretches: stretches))
         }
     }
 
-    /// Reads `Rest for 1s`, or instruments such as `Violin, Viola at 60% for 5s`.
-    private func segment(_ text: String, isBefore: Bool) throws -> Segment {
-        var body = text
-        var seconds: Double?
-        if let range = text.range(of: " for ", options: .backwards) {
-            body = String(text[..<range.lowerBound])
-            seconds = try length(String(text[range.upperBound...]))
+    /// Checks that a stretch in an intermission doesn't count from the end of a recitation, as there's none.
+    private func checkIntermission(_ stretch: Stretch, in division: Division) throws {
+        guard division.isIntermission else { return }
+        if case .afterRecitation = stretch.end {
+            throw error("Nothing is recited in \"\(division.rawValue)\", an intermission, so its times are from its start, not \"\(stretch.end)\"")
         }
-        if body == "Rest" {
-            guard let seconds else { throw error("A rest needs a length, such as \"Rest for 1s\"") }
-            return .rest(seconds: seconds)
-        }
-        if isBefore && seconds == nil {
-            throw error("Music before the part needs a length, such as \"\(body) for 5s\"")
-        }
-        let instruments = try body.components(separatedBy: ", ").map(instrumentPart)
-        return .music(Passage(seconds: seconds, instruments: instruments))
     }
 
-    /// Reads a length such as `7s` or `0.5s`.
-    private func length(_ text: String) throws -> Double {
-        guard let number = text.dropping(suffix: "s"), let seconds = Double(number), seconds.isFinite, seconds > 0 else {
-            throw error("\"\(text)\" isn't a length in seconds, such as \"5s\"")
+    /// Reads a stretch such as `0s–5s` or `5s–end+1s at 60%`.
+    private func stretch(_ text: String) throws -> Stretch {
+        var range = text
+        var volume = 1.0
+        if let at = text.range(of: " at ", options: .backwards) {
+            range = String(text[..<at.lowerBound])
+            volume = try self.volume(String(text[at.upperBound...]))
+        }
+        let ends = range.components(separatedBy: CharacterSet(charactersIn: "–-"))
+        guard ends.count == 2 else {
+            throw error("\"\(range)\" isn't a stretch of time, such as \"0s–5s\"")
+        }
+        let start = try moment(ends[0])
+        let end = try moment(ends[1])
+        guard start.isBefore(end) else {
+            throw error("\"\(range)\" must end after it starts")
+        }
+        return Stretch(start: start, end: end, volume: volume)
+    }
+
+    /// Reads a time such as `5.5s`, counted from the start of the division, or `end` or `end+1s`,
+    /// counted from the end of the recitation.
+    private func moment(_ text: String) throws -> Moment {
+        if text == "end" {
+            return .endOfRecitation
+        } else if let after = text.dropping(prefix: "end+") {
+            return .afterRecitation(seconds: try seconds(after))
+        } else {
+            return .seconds(try seconds(text))
+        }
+    }
+
+    /// Reads a number of seconds such as `7s` or `0.5s`.
+    private func seconds(_ text: String) throws -> Double {
+        guard let number = text.dropping(suffix: "s"), let seconds = Double(number), seconds.isFinite, seconds >= 0 else {
+            throw error("\"\(text)\" isn't a time in seconds, such as \"5s\", \"end\" or \"end+1s\"")
         }
         return seconds
     }
 
-    /// Reads an instrument such as `Viola` or `Viola at 60%`.
-    private func instrumentPart(_ text: String) throws -> InstrumentPart {
-        var name = text
-        var volume = 1.0
-        if let range = text.range(of: " at ", options: .backwards) {
-            name = String(text[..<range.lowerBound])
-            let percentage = String(text[range.upperBound...])
-            guard let number = percentage.dropping(suffix: "%"), let percent = Double(number), (0...100).contains(percent) else {
-                throw error("The volume of \(name) must be a percentage from 0% to 100%, not \"\(percentage)\"")
-            }
-            volume = percent / 100
+    /// Reads a volume such as `60%`.
+    private func volume(_ text: String) throws -> Double {
+        guard let number = text.dropping(suffix: "%"), let percent = Double(number), (0...100).contains(percent) else {
+            throw error("A volume must be a percentage from 0% to 100%, not \"\(text)\"")
         }
+        return percent / 100
+    }
+
+    /// Reads an instrument such as `Viola`.
+    private func instrument(_ name: String) throws -> InstrumentName {
         guard let instrument = InstrumentName.allCases.first(where: { $0.description == name }) else {
             throw error("No instrument named \"\(name)\"")
         }
-        return InstrumentPart(instrument: instrument, volume: volume)
+        return instrument
     }
 
     private func error(_ message: String) -> ScoreError {

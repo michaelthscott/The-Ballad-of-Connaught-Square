@@ -5,7 +5,7 @@
 //  Created by Michael Scott on 01/11/2026.
 //
 
-/// Turns the score's segments into events, composing an orchestration for each passage of music.
+/// Turns the score's interludes into events, composing a melody for each instrument.
 struct Arranger {
     let title: String
     /// A composer for each way the score selects notes. Composers take a while to prepare, so they
@@ -21,36 +21,24 @@ struct Arranger {
         self.composers = composers
     }
 
-    /// Composes the passage for the duration, giving each instrument notes selected as the score notates.
-    /// Notes composed for the duration repeat if the passage plays for longer.
-    func orchestration(for passage: Passage, lasting duration: Duration) -> Orchestration {
-        let assignments = passage.instruments.map { part in
-            composer(for: part.notes).composeAssignment(instrument: Instrument(name: part.instrument), duration: duration, volume: part.volume)
-        }
-        return Orchestration(title: title, assignments: assignments)
-    }
-
-    /// The event that performs the segment, or `nil` if there's nothing to perform.
+    /// The events that play the interlude, one for each instrument of each track.
+    ///
+    /// Each instrument's melody is composed for as long as its stretches are expected to last, taking
+    /// the part as long as it's expected to take to recite. The melody repeats if they last longer.
     /// - Parameters:
-    ///   - segment: A segment of the score.
-    ///   - partDuration: The expected length of the part the segment plays under, or `nil` before the part.
-    ///     A passage that lasts as long as the part is composed for this length, and is left out before the part.
-    func event(for segment: Segment, under partDuration: Duration?) -> Event? {
-        switch segment {
-        case .music(let passage):
-            switch (passage.duration, partDuration) {
-            case (let duration?, _) where passage.instruments.isEmpty:
-                // An orchestration without assignments would finish at once, so this is a rest of the same length.
-                .silence(duration: duration)
-            case (let duration?, _):
-                .play(orchestration: orchestration(for: passage, lasting: duration), duration: duration)
-            case (nil, let partDuration?) where !passage.instruments.isEmpty:
-                .accompany(orchestration: orchestration(for: passage, lasting: partDuration))
-            case (nil, _):
-                nil
+    ///   - interlude: An interlude of the score.
+    ///   - partDuration: The expected length of the part recited in the interlude.
+    func events(for interlude: Interlude, partDuration: Duration) -> [Event] {
+        let recitationEnd = .seconds(interlude.recitationStart) + partDuration
+        return interlude.tracks.flatMap { track in
+            let duration = track.stretches.reduce(Duration.zero) { total, stretch in
+                total + max(stretch.end.expected(recitationEnd: recitationEnd) - stretch.start.expected(recitationEnd: recitationEnd), .zero)
             }
-        case .rest(let seconds):
-            .silence(duration: .seconds(seconds))
+            return track.instruments.map { name in
+                let instrument = Instrument(name: name)
+                let assignment = composer(for: track.notes).composeAssignment(instrument: instrument, duration: duration)
+                return Event(instrument: instrument, notes: assignment.notes, stretches: track.stretches)
+            }
         }
     }
 
