@@ -28,6 +28,9 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     }
 
     var spokenPartCount: Int = 0
+    /// The number of cantos whose titles have been shown, which happens as each canto's first
+    /// stanza starts, before it's recited.
+    private(set) var announcedCantoCount: Int = 0
     let ballad: Ballad
     let speakers: Speakers
     let score: Score
@@ -65,6 +68,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         case .stopped:
             ballad.isRecited = false
             spokenPartCount = 0
+            announcedCantoCount = 0
             soundBank.pauseGate.resume()
             state = .playing
             performanceTask = Task { [weak self] in
@@ -162,6 +166,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         let soundBank = soundBank
         await Self.playIntermission(cue.intermission, lasting: cue.intermissionLength, on: soundBank)
         guard !Task.isCancelled else { return [:] }
+        // Show the canto's title as its first stanza's music comes in, before the stanza is recited.
+        if let cantoIndex = cue.cantoIndex {
+            announcedCantoCount = max(announcedCantoCount, cantoIndex + 1)
+        }
         // The recitation is a task of its own, so that instruments playing until it finishes can wait
         // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
         let part = cue.part

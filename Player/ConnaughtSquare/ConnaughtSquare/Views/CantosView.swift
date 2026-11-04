@@ -10,11 +10,13 @@ import SwiftUI
 struct CantosView: View {
 	@Environment(Ballad.self) var ballad
 	let cantos: [Canto]
+	/// Whether the titles are shown before any of their cantos have been recited.
+	var showsTitles = false
 	
     var body: some View {
         VStack(alignment: .leading) {
             ForEach(cantos) { canto in
-				CantoView(canto: canto)
+				CantoView(canto: canto, showsTitle: showsTitles)
 				Spacer()
             }
 		}

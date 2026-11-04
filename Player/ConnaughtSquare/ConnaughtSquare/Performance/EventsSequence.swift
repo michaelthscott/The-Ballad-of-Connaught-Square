@@ -39,7 +39,8 @@ struct EventsSequence {
                       events: arranger.events(for: interlude, partDuration: part.duration,
                                               continuing: intermission == nil ? melodies : [:]),
                       part: part,
-                      speaker: performance.speakers.speaker(forRole: role))
+                      speaker: performance.speakers.speaker(forRole: role),
+                      cantoIndex: balladCursorSequence.isStartOfCanto ? balladCursorSequence.cursor?.cantoIndex : nil)
         _ = balladCursorSequence.next()
         return cue
     }

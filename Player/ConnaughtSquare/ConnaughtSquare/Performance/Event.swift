@@ -35,6 +35,8 @@ struct Cue {
     let events: [Event]
     let part: Part
     let speaker: Speaker
+    /// The index of the canto the part begins, or `nil` if it doesn't begin a canto.
+    var cantoIndex: Int? = nil
 }
 
 extension Cue: CustomStringConvertible {

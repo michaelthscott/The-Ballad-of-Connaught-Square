@@ -74,6 +74,13 @@ struct EventsSequenceTests {
         #expect(cue.events.isEmpty)
     }
 
+    /// Only the cue for a canto's first part says which canto it begins, so that its title can be
+    /// shown before the stanza is recited.
+    @Test func testOnlyTheFirstCueOfACantoBeginsIt() throws {
+        let cues = try cues(partsInFirstLine: 2)
+        #expect(cues.map(\.cantoIndex) == [0, nil, nil])
+    }
+
     /// A new line in the same stanza opens with five seconds of music, with no intermission, and its
     /// part is recited a second after the music stops.
     @Test func testNewLineOpensWithMusic() throws {

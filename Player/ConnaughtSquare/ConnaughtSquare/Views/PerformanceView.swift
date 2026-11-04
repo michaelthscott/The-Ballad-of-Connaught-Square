@@ -21,13 +21,16 @@ struct PerformanceView: View {
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     HStack(alignment: .top) {
-                        CantosView(cantos: ballad.recitedCantos)
+                        CantosView(cantos: Array(ballad.cantos.prefix(performance.announcedCantoCount)), showsTitles: true)
                             .id(scrollPosition)
                         Spacer()
                     }
                 }
                 .frame(width: 350.0)
                 .onChange(of: performance.spokenPartCount) {
+                     proxy.scrollTo(scrollPosition, anchor: .bottom)
+                }
+                .onChange(of: performance.announcedCantoCount) {
                      proxy.scrollTo(scrollPosition, anchor: .bottom)
                 }
             }

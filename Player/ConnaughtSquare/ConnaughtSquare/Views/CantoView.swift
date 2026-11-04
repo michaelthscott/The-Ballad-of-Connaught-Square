@@ -11,10 +11,12 @@ import SwiftUI
 
 struct CantoView: View {
     let canto: Canto
+    /// Whether the title is shown before any of the canto has been recited.
+    var showsTitle = false
 
     var body: some View {
         VStack(alignment: .leading) {
-            if canto.isRecited {
+            if showsTitle || canto.isRecited {
                 Text(canto.title).bold()
             } else {
                 Text(canto.title).bold().hidden()
