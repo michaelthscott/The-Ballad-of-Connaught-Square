@@ -34,15 +34,17 @@ extension Score {
     ///     - Viola: 0s–5s, 5s–end+1s at 60%
     ///     - Recite: 5.5s
     ///
-    /// The title comes first. Then come the introduction, the canto and stanza intermissions, the first part
-    /// of each line and its later parts, each a list of what plays when it begins, like a cue sheet.
+    /// The title comes first. Then come the introduction, the canto and stanza intermissions, the
+    /// first line of each stanza, the first part of each later line and its later parts, each a list
+    /// of what plays when it begins, like a cue sheet.
     ///
-    /// The introduction and the canto and stanza intermissions are played in full before the
-    /// division they introduce, with nothing recited in them. An intermission lasts until its last
+    /// The introduction is played before the ballad, a canto intermission after each canto before the
+    /// next, and a stanza intermission after each stanza before the next in the same canto, each in
+    /// full with nothing recited in it. An intermission lasts until its last
     /// instrument stops, or until the end of a rest written after that, such as `Rest: 7s–8s`. The
-    /// first part of the line then follows, as it does in every line.
+    /// stanza's first line then follows.
     ///
-    /// The first and later parts of a line say once when the part starts being recited, such as
+    /// Each of the others says once when the part starts being recited, such as
     /// `Recite: 5.5s`. Every other item names some instruments, then the stretches of time they play, such as `0s–5s`, each at
     /// full volume unless written with a percentage, such as `at 60%`. A time such as `5s` is counted
     /// from the start of the division, `end` is when the recitation finishes, and `end+1s` a second
@@ -64,6 +66,7 @@ private enum Division: String, CaseIterable {
     case introduction = "Introduction"
     case canto = "Canto intermission"
     case stanza = "Stanza intermission"
+    case firstLine = "Stanza, first line"
     case line = "Line, first part"
     case part = "Line, later parts"
 
@@ -72,7 +75,7 @@ private enum Division: String, CaseIterable {
         switch self {
         case .introduction, .canto, .stanza:
             true
-        case .line, .part:
+        case .firstLine, .line, .part:
             false
         }
     }
@@ -118,6 +121,7 @@ private struct ScoreReader {
                      introduction: try intermission(.introduction),
                      canto: try intermission(.canto),
                      stanza: try intermission(.stanza),
+                     firstLine: try interlude(.firstLine),
                      line: try interlude(.line),
                      part: try interlude(.part))
     }
@@ -160,7 +164,7 @@ private struct ScoreReader {
         let times = String(item[colon.upperBound...])
         if label == "Recite" {
             guard !division.isIntermission else {
-                throw error("Nothing is recited in \"\(division.rawValue)\", an intermission; \"Line, first part\" opens the part after it")
+                throw error("Nothing is recited in \"\(division.rawValue)\", an intermission; \"Stanza, first line\" opens the part after it")
             }
             guard !isRecited else { throw error("\"\(division.rawValue)\" already says when to recite") }
             guard case .seconds(let seconds) = try moment(times) else {

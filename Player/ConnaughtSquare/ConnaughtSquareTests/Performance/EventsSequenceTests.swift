@@ -63,15 +63,15 @@ struct EventsSequenceTests {
     }
 
     /// The ballad is introduced by the string trio playing for thirteen seconds and a second's rest,
-    /// and then the first part is opened as every line is.
+    /// and then the first part, opening the first stanza, is recited straight away.
     @Test func testFirstCueIntroducesTheBallad() throws {
         var sequence = makeSequence()
         let cue = try nextCue(of: &sequence)
         #expect(cue.intermissionLength == .seconds(14))
         #expect(cue.intermission.map(\.instrument.name) == [.violin, .viola, .cello])
         #expect(cue.intermission.allSatisfy { $0.stretches == [Stretch(start: .seconds(0), end: .seconds(13))] })
-        #expect(cue.recitationStart == .seconds(6))
-        #expect(cue.events.allSatisfy { $0.stretches == [Stretch(start: .seconds(0), end: .seconds(5))] })
+        #expect(cue.recitationStart == .zero)
+        #expect(cue.events.isEmpty)
     }
 
     /// A new line in the same stanza opens with five seconds of music, with no intermission, and its
@@ -146,7 +146,7 @@ struct EventsSequenceTests {
         var score = Score.standard
         let stretches = [Stretch(start: .seconds(0), end: .seconds(5)),
                          Stretch(start: .seconds(5), end: .afterRecitation(seconds: 1), volume: 0.6)]
-        score.line = Interlude(recitationStart: 5.5,
+        score.firstLine = Interlude(recitationStart: 5.5,
                                        tracks: [track([.acousticGrandPiano, .harpsichord], seconds: 2),
                                                 Track(instruments: [.viola], stretches: stretches)])
         var sequence = makeSequence(score: score)
@@ -160,7 +160,7 @@ struct EventsSequenceTests {
     /// the part is expected to take, so it doesn't need to repeat.
     @Test func testMelodyLastsAsLongAsThePart() throws {
         var score = Score.standard
-        score.line = Interlude(recitationStart: 2,
+        score.firstLine = Interlude(recitationStart: 2,
                                        tracks: [Track(instruments: [.viola], stretches: [Stretch(start: .seconds(1), end: .endOfRecitation)])])
         let ballad = makeBallad()
         var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers()))
@@ -170,20 +170,22 @@ struct EventsSequenceTests {
         #expect(length >= .seconds(1) + cue.part.duration)
     }
 
-    /// The introduction plays before the ballad only, and each line and part is opened by its own interlude.
+    /// The introduction plays before the ballad only, and the stanza's first line, each later line and
+    /// each part are opened by their own interludes.
     @Test func testIntroductionPlaysOnlyBeforeTheBallad() throws {
         var score = Score.standard
         score.introduction = Intermission(seconds: 3)
         score.canto = Intermission(seconds: 4)
         score.stanza = Intermission(seconds: 5)
+        score.firstLine = Interlude(recitationStart: 8)
         score.line = Interlude(recitationStart: 6)
         score.part = Interlude(recitationStart: 7)
         let cues = try cues(partsInFirstLine: 2, score: score)
         // Three parts: the first opens the ballad, the second follows in the same line, and the third opens a line.
         #expect(cues.map(\.intermissionLength).sorted() == [.zero, .zero, .seconds(3)])
         #expect(cues.first?.intermissionLength == .seconds(3))
-        #expect(cues.first?.recitationStart == .seconds(6))
-        #expect(cues.map(\.recitationStart).sorted() == [.seconds(6), .seconds(6), .seconds(7)])
+        #expect(cues.first?.recitationStart == .seconds(8))
+        #expect(cues.map(\.recitationStart).sorted() == [.seconds(6), .seconds(7), .seconds(8)])
     }
 
     /// Once the last part has been recited the sequence finishes rather than starting the ballad over.

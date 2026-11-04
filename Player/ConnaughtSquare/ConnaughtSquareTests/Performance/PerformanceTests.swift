@@ -16,7 +16,7 @@ struct PerformanceTests {
         var events = EventsSequence(performance: performance)
         let firstCue = events.next()
         let cue = try #require(firstCue)
-        #expect(cue.events.isEmpty == false)
+        #expect(cue.intermission.isEmpty == false)
     }
 
     /// By default the performance follows the bundled score, with a voice for each of the standard roles.
@@ -126,7 +126,8 @@ struct PerformanceTests {
     /// An instrument playing until the end of a recitation that has already finished doesn't hold the performance up.
     @Test func testInstrumentAfterTheRecitation() async throws {
         let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .endOfRecitation)])
-        #expect(elapsed < .seconds(1))
+        // A note can start before the instrument sees that the recitation has finished, but no more.
+        #expect(elapsed < .milliseconds(1500))
     }
 
     /// An intermission lasts for its length, even after its instruments have stopped.

@@ -41,7 +41,8 @@ struct EventsSequence {
         return cue
     }
 
-    /// The intermission for the largest division of the ballad that begins with the current part,
+    /// The introduction before the ballad, or the intermission after the canto or stanza that ends
+    /// before the current part, the canto's taking the place of the stanza's,
     /// or `nil` if the part doesn't begin a stanza.
     private var currentIntermission: Intermission? {
         let score = performance.score
@@ -56,8 +57,16 @@ struct EventsSequence {
         }
     }
 
-    /// The interlude that opens the current part: the line's if it begins one, otherwise the part's.
+    /// The interlude that opens the current part: the stanza's first line's if it begins a stanza,
+    /// the line's if it begins a later line, otherwise the part's.
     private var currentInterlude: Interlude {
-        balladCursorSequence.isStartOfLine ? performance.score.line : performance.score.part
+        let score = performance.score
+        if balladCursorSequence.isStartOfStanza {
+            return score.firstLine
+        } else if balladCursorSequence.isStartOfLine {
+            return score.line
+        } else {
+            return score.part
+        }
     }
 }

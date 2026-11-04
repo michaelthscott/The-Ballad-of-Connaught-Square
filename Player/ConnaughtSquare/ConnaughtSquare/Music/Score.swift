@@ -7,21 +7,24 @@
 
 import Foundation
 
-/// The score of a performance: the intermissions played before the ballad and between its cantos
-/// and stanzas, and the interludes that open each line and part, played every time one begins.
+/// The score of a performance: the introduction played before the ballad, the short intermissions
+/// played between its cantos and between its stanzas, and the interludes that open each line and
+/// part, played every time one begins.
 ///
-/// Only the intermission for the largest division that begins is played, so the introduction
-/// replaces the first canto's intermission, and a canto's intermission replaces its first stanza's.
-/// After an intermission, the line's interlude opens the first part as it does every line.
+/// Where one canto ends and the next begins, only the canto intermission is played, not the stanza
+/// intermission as well. Nothing is played after the last canto. After the introduction or an
+/// intermission, the stanza's first line has an interlude of its own.
 struct Score: Sendable, Equatable {
     var title: String
     /// Played before the ballad.
     var introduction: Intermission
-    /// Played before each later canto.
+    /// Played after each canto, before the next.
     var canto: Intermission
-    /// Played before each later stanza of a canto.
+    /// Played after each stanza, before the next in the same canto.
     var stanza: Intermission
-    /// Opens the first part of each line.
+    /// Opens the first part of the first line of each stanza, after the introduction or an intermission.
+    var firstLine: Interlude
+    /// Opens the first part of each later line of a stanza.
     var line: Interlude
     /// The interlude before each later part of a line.
     var part: Interlude
@@ -46,9 +49,9 @@ struct Score: Sendable, Equatable {
         [introduction, canto, stanza]
     }
 
-    /// Every interlude in the score, the line's first.
+    /// Every interlude in the score, the stanza's first line's first.
     var interludes: [Interlude] {
-        [line, part]
+        [firstLine, line, part]
     }
 
     /// Every distinct way the score selects notes, so that each can be prepared once.
@@ -184,12 +187,13 @@ extension Stretch: CustomStringConvertible {
 
 extension Score {
     /// The score as the performance was first written: the string trio, followed by a second's rest,
-    /// introduces the ballad, comes between its cantos and stanzas, and opens each line before its
-    /// first part is recited.
+    /// introduces the ballad and comes between its cantos and stanzas, and opens each later line of a
+    /// stanza, before its first part is recited.
     static let standard = Score(title: "The Ballad of Connaught Square",
                                 introduction: Intermission(tracks: [.stringTrio(seconds: 13)], seconds: 14),
                                 canto: Intermission(tracks: [.stringTrio(seconds: 11)], seconds: 12),
                                 stanza: Intermission(tracks: [.stringTrio(seconds: 7)], seconds: 8),
+                                firstLine: Interlude(),
                                 line: Interlude(recitationStart: 6, tracks: [.stringTrio(seconds: 5)]),
                                 part: Interlude(recitationStart: 1))
 }

@@ -23,6 +23,16 @@ struct ScoreTests {
         #expect(score.line.recitationStart > 0)
     }
 
+    /// The score as written in the source folder reads, so a mistake in it is caught even when the
+    /// app's assets were built from an earlier copy.
+    @Test func testScoreSourceReads() throws {
+        let url = URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .appending(path: "../../ConnaughtSquare/Assets.xcassets/Score.dataset/Score.md")
+        let markdown = try String(contentsOf: url, encoding: .utf8)
+        #expect(throws: Never.self) { try Score(markdown: markdown) }
+    }
+
     /// An intermission lasts until its last stretch ends, or longer if it's given a length.
     @Test func testIntermissionLength() {
         let tracks = [Track(instruments: [.viola], stretches: [Stretch(start: .seconds(0), end: .seconds(5))])]
@@ -77,7 +87,7 @@ struct ScoreTests {
     // MARK: - Markdown
 
     /// A score in Markdown, with the later parts' cues given, each intermission a second's rest, and
-    /// each line simply recited.
+    /// each other line simply recited.
     func markdown(laterPart cues: [String] = ["- Recite: 0s"]) -> String {
         """
         # Test
@@ -93,6 +103,10 @@ struct ScoreTests {
         ## Stanza intermission
 
         - Rest: 0s–1s
+
+        ## Stanza, first line
+
+        - Recite: 0s
 
         ## Line, first part
 
@@ -135,23 +149,23 @@ struct ScoreTests {
 
     /// Mistakes in a division's cues, each with the line it's on.
     static let mistakes: [([String], Int)] = [
-        (["- Kazoo: 0s–1s", "- Recite: 0s"], 21),                  // No such instrument.
-        (["- Viola: 0s–1s at 120%", "- Recite: 0s"], 21),          // Too loud.
-        (["- Viola: 0s–1", "- Recite: 0s"], 21),                   // A time without seconds.
-        (["- Viola: 0s", "- Recite: 0s"], 21),                     // A time rather than a stretch.
-        (["- Viola: 2s–1s", "- Recite: 0s"], 21),                  // A stretch that ends before it starts.
-        (["- Viola: 1s–1s", "- Recite: 0s"], 21),                  // A stretch that ends as it starts.
-        (["- Viola: 0s–2s, 1s–3s", "- Recite: 0s"], 21),           // Overlapping stretches.
-        (["- Viola: end–end+1s, 1s–2s", "- Recite: 0s"], 21),      // A time from the start after the end.
-        (["- Viola: end–2s", "- Recite: 0s"], 21),                 // A stretch from the end to a time from the start.
-        (["- Viola: 0s–1s", "- Viola, Cello: 2s–3s", "- Recite: 0s"], 22), // An instrument named twice.
-        (["- Viola 0s–1s", "- Recite: 0s"], 21),                   // No colon.
-        (["- Recite: end"], 21),                                   // Recited from the end of the recitation.
-        (["- Recite: 0s", "- Recite: 1s"], 22),                    // Recited twice.
-        (["- Rest: 0s–1s", "- Recite: 0s"], 21),                   // A rest outside an intermission.
-        (["Recite: 0s"], 21),                                      // Not a list item.
-        (["- Recite: 0s", "## Line, first part"], 22),                    // A division twice.
-        (["- Recite: 0s", "## Coda"], 22),                         // No such division.
+        (["- Kazoo: 0s–1s", "- Recite: 0s"], 25),                  // No such instrument.
+        (["- Viola: 0s–1s at 120%", "- Recite: 0s"], 25),          // Too loud.
+        (["- Viola: 0s–1", "- Recite: 0s"], 25),                   // A time without seconds.
+        (["- Viola: 0s", "- Recite: 0s"], 25),                     // A time rather than a stretch.
+        (["- Viola: 2s–1s", "- Recite: 0s"], 25),                  // A stretch that ends before it starts.
+        (["- Viola: 1s–1s", "- Recite: 0s"], 25),                  // A stretch that ends as it starts.
+        (["- Viola: 0s–2s, 1s–3s", "- Recite: 0s"], 25),           // Overlapping stretches.
+        (["- Viola: end–end+1s, 1s–2s", "- Recite: 0s"], 25),      // A time from the start after the end.
+        (["- Viola: end–2s", "- Recite: 0s"], 25),                 // A stretch from the end to a time from the start.
+        (["- Viola: 0s–1s", "- Viola, Cello: 2s–3s", "- Recite: 0s"], 26), // An instrument named twice.
+        (["- Viola 0s–1s", "- Recite: 0s"], 25),                   // No colon.
+        (["- Recite: end"], 25),                                   // Recited from the end of the recitation.
+        (["- Recite: 0s", "- Recite: 1s"], 26),                    // Recited twice.
+        (["- Rest: 0s–1s", "- Recite: 0s"], 25),                   // A rest outside an intermission.
+        (["Recite: 0s"], 25),                                      // Not a list item.
+        (["- Recite: 0s", "## Line, first part"], 26),                    // A division twice.
+        (["- Recite: 0s", "## Coda"], 26),                         // No such division.
     ]
 
     @Test(arguments: mistakes)
