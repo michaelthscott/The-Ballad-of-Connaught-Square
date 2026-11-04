@@ -21,9 +21,9 @@ struct EventsSequenceTests {
     /// Both lines start with a determiner so that they are gathered into a canto.
     func makeBallad(partsInFirstLine: Int = 2) -> Ballad {
         let firstLine = makeLine(parts: (0..<partsInFirstLine).map {
-            Part(speaker: $0, string: "The cat sat on mat number \($0).")
+            Part(string: "The cat sat on mat number \($0).")
         })
-        let secondLine = makeLine(parts: [Part(speaker: 0, string: "The dog barked loudly.")])
+        let secondLine = makeLine(parts: [Part(string: "The dog barked loudly.")])
         return Ballad(lines: [firstLine, secondLine],
                       tags: LinguisticTagOrder(tags: [.determiner(weight: 1)]))
     }

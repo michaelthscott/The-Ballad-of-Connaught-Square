@@ -15,8 +15,8 @@ final class CantoTests {
 		let tagger = LinguisticTagger()
 		let string1 = "The number one."
 		let string2 = "The number two."
-		let part1 = Part(speaker: 0, string: string1)
-		let part2 = Part(speaker: 1, string: string2)
+		let part1 = Part(string: string1)
+		let part2 = Part(string: string2)
 		let lineString1 = "\(string1) \(string2)"
 		let lineString2 = "\(string2) \(string1)"
 		let line1 = Line(parts: [part1, part2], tags: try tagger.linguisticTagsArray(string: lineString1))

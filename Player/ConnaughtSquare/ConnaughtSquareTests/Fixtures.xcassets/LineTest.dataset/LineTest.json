@@ -1,11 +1,9 @@
 {
   "parts" : [
     {
-      "speaker" : 0,
       "string" : "Won't get me out."
     },
     {
-      "speaker" : 1,
       "string" : "You don't drink, you're a weirdo."
     }
   ],

@@ -17,18 +17,16 @@ import UIKit
 final class PartTests {
     
     @Test func testInit() {
-        let part = Part(speaker: 0, string: "")
+        let part = Part(string: "")
         #expect(part.string == "")
     }
     
     @Test func testEquatable() {
-        let part1 = Part(speaker: 0, string: "")
-        let part2 = Part(speaker: 0, string: "")
-        let part3 = Part(speaker: 0, string: "x")
-        let part4 = Part(speaker: 1, string: "x")
+        let part1 = Part(string: "")
+        let part2 = Part(string: "")
+        let part3 = Part(string: "x")
         #expect(part1 == part2)
         #expect(part1 != part3)
-        #expect(part3 != part4)
     }
     
     @Test func testAssetWithoutPronunciations() {
@@ -71,7 +69,7 @@ final class PartTests {
         
     @Test func testCodable() {
         
-        let part = Part(speaker: 0, string: "Keeping records.", pronunciations: [
+        let part = Part(string: "Keeping records.", pronunciations: [
             CorrectPronunciation(ipa: "ˈkiːpɪŋ", location: 0, length: 7),
             CorrectPronunciation(ipa: "ˈɻɛ.ˈkɔɻts", location: 8, length: 7)])
         let encoder = JSONEncoder()
@@ -93,7 +91,7 @@ final class PartTests {
 	
     /// The pronunciation is applied at its location, not to the first occurrence of the same text.
     @Test func testAttributedStringMarksTheLocatedOccurrence() {
-        let part = Part(speaker: 0, string: "read and read", pronunciations: [
+        let part = Part(string: "read and read", pronunciations: [
             CorrectPronunciation(ipa: "ɹɛd", location: 9, length: 4)])
         let attributedString = part.attributedString
         let marked = attributedString.runs.compactMap { run in
@@ -107,7 +105,7 @@ final class PartTests {
 
     /// A pronunciation outside the string is ignored rather than discarding the string.
     @Test func testAttributedStringIgnoresAPronunciationOutsideTheString() {
-        let part = Part(speaker: 0, string: "Woah.", pronunciations: [
+        let part = Part(string: "Woah.", pronunciations: [
             CorrectPronunciation(ipa: "wəʊ", location: 3, length: 10)])
         let attributedString = part.attributedString
         #expect(String(attributedString.characters) == "Woah.")
@@ -117,7 +115,7 @@ final class PartTests {
     @Test func testDuration() {
 		let words = Lexicon.shared.words
 		let text = words[0..<183].map({ $0.string }).joined(separator: " ")
-		let part = Part(speaker: 0, string: text)
+		let part = Part(string: text)
 		let seconds = part.duration.components.seconds
 		print(part.duration.components.seconds)
         #expect(seconds == 60)

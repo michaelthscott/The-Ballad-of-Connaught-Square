@@ -2,7 +2,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "I liked him, he was."
       }
     ],
@@ -17,7 +16,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "He is isn't he, he's over thirty."
       }
     ],
@@ -36,7 +34,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "I feel like I'm radioactive anyway."
       }
     ],
@@ -53,7 +50,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "I can't do it to you."
       }
     ],
@@ -70,7 +66,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "It was probably the first, because I dipped on the first."
       }
     ],
@@ -91,7 +86,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "Is it five series seven?"
       }
     ],
@@ -106,7 +100,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "See this coming."
       }
     ],
@@ -119,7 +112,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "If you were."
       }
     ],
@@ -132,7 +124,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "Ok, why's that?"
       }
     ],
@@ -146,7 +137,6 @@
   {
     "parts" : [
       {
-        "speaker" : 0,
         "string" : "Yeah, we do."
       }
     ],

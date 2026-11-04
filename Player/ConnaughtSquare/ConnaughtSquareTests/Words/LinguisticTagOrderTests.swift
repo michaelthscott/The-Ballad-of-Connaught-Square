@@ -132,8 +132,8 @@ final class LinguisticTagOrderTests {
     /// Counts each tag across the lines, heaviest first, leaving out tags that don't appear.
     @Test func testInitFromLines() {
         let lines = [
-            Line(parts: [Part(speaker: 0, string: "Dogs chase dogs")], tags: [.noun, .verb, .noun]),
-            Line(parts: [Part(speaker: 0, string: "Run home")], tags: [.verb, .noun]),
+            Line(parts: [Part(string: "Dogs chase dogs")], tags: [.noun, .verb, .noun]),
+            Line(parts: [Part(string: "Run home")], tags: [.verb, .noun]),
         ]
         let order = LinguisticTagOrder(lines: lines)
         #expect(order.map { "\($0.name)=\($0.weight)" } == ["Noun=3", "Verb=2"])

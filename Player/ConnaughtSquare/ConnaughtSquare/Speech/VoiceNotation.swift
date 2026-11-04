@@ -18,8 +18,6 @@ enum VoiceRule: Sendable, Equatable {
     case alternate(startingWith: Int)
     /// The role for the first, second, third… part of each line. Later parts take the last role.
     case byPartIndex(roles: [Int])
-    /// The speaker written with each part in the ballad's lines.
-    case asWritten
 }
 
 /// Works through a voice rule, part by part, keeping track of the turns.
@@ -32,8 +30,8 @@ struct VoiceTurns {
         self.notation = notation
     }
 
-    /// The role that recites the part, given its position in its line.
-    mutating func role(for part: Part, at partIndex: Int) -> Int {
+    /// The role that recites the next part, given its position in its line.
+    mutating func role(at partIndex: Int) -> Int {
         defer { turns += 1 }
         let role: Int
         switch notation.rule {
@@ -41,8 +39,6 @@ struct VoiceTurns {
             role = first + turns
         case .byPartIndex(let roles):
             role = roles.indices.contains(partIndex) ? roles[partIndex] : roles.last ?? 0
-        case .asWritten:
-            role = part.speaker
         }
         return wrapped(role)
     }

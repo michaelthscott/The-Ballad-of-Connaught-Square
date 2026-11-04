@@ -32,7 +32,7 @@ final class BalladTests {
     /// Every part is in a canto, even when the ballad's tag order doesn't hold the tag a stanza starts with.
     @Test(.enabled(if: LinguisticTagger().isTagSchemeAvailable)) func testCantosHoldEveryStanza() throws {
         func line(_ string: String) throws -> Line {
-            try Line(parts: [Part(speaker: 0, string: string)])
+            try Line(parts: [Part(string: string)])
         }
         // Lines without tags count as other words.
         let lines = [try line("Run home now."), try line("The cat sat."), try line("Go on."), try line("A dog ran."), try line("...")]

@@ -19,7 +19,7 @@ import UIKit
 
 final class LineTests {
     func parts(_ speakers: [String]) -> [Part] {
-        speakers.indices.map { Part(speaker: Int($0), string: speakers[$0]) }
+        speakers.map { Part(string: $0) }
     }
 
     /// A line that isn't tagged, for tests that don't depend on the tags.

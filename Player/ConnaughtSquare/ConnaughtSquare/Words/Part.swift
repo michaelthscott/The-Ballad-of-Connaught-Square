@@ -9,10 +9,8 @@ import Foundation
 import AVFoundation
 import Accessibility
 
-/// Each part of a line is associated with a speaker.
+/// A part of a line, recited by whichever voice's turn it is.
 @Observable final class Part {
-    /// The speaker written with the part. A score whose voices are recited as written gives the part to this role.
-    let speaker: Int
     var string: String
     var pronunciations: [CorrectPronunciation]
     var isRecited: Bool
@@ -48,8 +46,7 @@ import Accessibility
         return attrString
     }
     
-    init(speaker: Int, string: String, pronunciations: [CorrectPronunciation] = [], isRecited: Bool = false) {
-        self.speaker = speaker
+    init(string: String, pronunciations: [CorrectPronunciation] = [], isRecited: Bool = false) {
         self.string = string
         self.pronunciations = pronunciations
         self.isRecited = isRecited
@@ -62,14 +59,14 @@ import Accessibility
 
 // MARK: Equatable
 extension Part: Equatable {
-    /// The line parts are equal when their strings and speakers are equal.
+    /// The line parts are equal when their strings are equal.
     /// Note that this assumes the pronunciations are the same.
     /// - Parameters:
     ///   - lhs: The left hand side line part.
     ///   - rhs: The right hand side line part.
     /// - Returns: The result of the comparison.
     static func == (lhs: Part, rhs: Part) -> Bool {
-        lhs.string == rhs.string && lhs.speaker == rhs.speaker
+        lhs.string == rhs.string
     }
 }
 
@@ -88,14 +85,13 @@ extension Part: Comparable {
 // MARK: - Codable
 extension Part: Codable {
     enum CodingKeys: String, CodingKey {
-        case speaker, string, pronunciations
+        case string, pronunciations
     }
     
     /// Encodes the line part. The IPA notation is encoded as an array of `CorrectPronunciation`s.
     /// - Parameter encoder: The encoder.
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(speaker, forKey: .speaker)
         try container.encode(string, forKey: .string)
         if pronunciations.count > 0 {
             try container.encode(pronunciations, forKey: .pronunciations)
@@ -106,13 +102,12 @@ extension Part: Codable {
     /// - Parameter decoder: The decoder.
     convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let speaker = try container.decode(Int.self, forKey: .speaker)
         let string = try container.decode(String.self, forKey: .string)
         if container.contains(.pronunciations) {
             let pronunciations = try container.decode(Array<CorrectPronunciation>.self, forKey: .pronunciations)
-            self.init(speaker: speaker, string: string, pronunciations: pronunciations)
+            self.init(string: string, pronunciations: pronunciations)
         } else {
-            self.init(speaker: speaker, string: string)
+            self.init(string: string)
         }
     }
 }

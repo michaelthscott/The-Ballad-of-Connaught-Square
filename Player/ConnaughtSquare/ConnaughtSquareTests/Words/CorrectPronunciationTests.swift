@@ -29,7 +29,7 @@ struct CorrectPronunciationTests {
 
     /// The location and length address a range of the part's string, and are applied as written.
     @Test func testAppliedToAPart() {
-        let part = Part(speaker: 0, string: "The Connaught Square", pronunciations: [connaught])
+        let part = Part(string: "The Connaught Square", pronunciations: [connaught])
         let key = NSAttributedString.Key(rawValue: AVSpeechSynthesisIPANotationAttribute)
         let range = NSRange(location: 0, length: part.nsAttributedString.length)
         var found: [String] = []
