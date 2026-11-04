@@ -58,6 +58,11 @@ struct Score: Sendable, Equatable {
     var noteSelections: Set<NoteSelection> {
         Set((intermissions.flatMap(\.tracks) + interludes.flatMap(\.tracks)).map(\.notes))
     }
+
+    /// Every instrument the score plays, so that each can be loaded before the performance starts.
+    var instruments: Set<InstrumentName> {
+        Set((intermissions.flatMap(\.tracks) + interludes.flatMap(\.tracks)).flatMap(\.instruments))
+    }
 }
 
 /// Music played in full between divisions of the ballad, with nothing recited.

@@ -89,6 +89,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The instruments coming in during the introduction no longer interrupt those already playing. Each instrument used to load its preset as it first played, while the others sounded; now, before the introduction, `SoundBank.warmUp(_:)` loads every instrument in `Score.instruments` and starts the engine. The warm-up is queued with the performance's other engine changes, so stopping during it still leaves the engine stopped.
+
 - Speech should stutter less as the voices take turns. `SpeechSynthesizer` now speaks each voice through an `AVSpeechSynthesizer` of its own, rather than switching one synthesizer's voice for every part, which could leave its audio queue running dry and filling the gaps with silence. Pausing, resuming and stopping act on whichever synthesizer spoke last. As the performance starts, `SpeechSynthesizer.warmUp(_:)` synthesizes a few words in each role's voice to audio buffers that are thrown away, rather than speaking them, so that each is ready by the end of the introduction; an utterance in the same voice cuts its warm-up short.
 
 - Playing again after stopping the performance now uses the score's instruments, such as the violin, viola and cello, rather than the sampler's default sound. Stopping the audio engine empties the samplers' presets, so `SoundBank.stopEngine()` now releases the samplers, and each instrument is loaded afresh when it next plays. Presets are also loaded one at a time across every `SoundBank`, as Core Audio aborts when two sound banks load them at once.

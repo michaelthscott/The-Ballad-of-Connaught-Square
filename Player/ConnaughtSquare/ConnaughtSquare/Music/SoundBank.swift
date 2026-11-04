@@ -115,6 +115,17 @@ actor SoundBank {
         samplers[name] = sampler
     }
 
+    /// Loads the instruments and starts the engine, so that they're ready before the first note.
+    ///
+    /// Otherwise each instrument loads its preset as it first plays, which can interrupt the
+    /// instruments already playing and hold back its own first note.
+    func warmUp(_ instruments: some Sequence<InstrumentName>) throws {
+        for instrument in instruments {
+            try loadInstrument(instrument)
+        }
+        try startEngine()
+    }
+
     var isEngineRunning: Bool {
         engine.isRunning
     }

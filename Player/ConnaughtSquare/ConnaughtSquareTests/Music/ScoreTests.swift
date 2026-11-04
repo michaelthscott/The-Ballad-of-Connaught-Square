@@ -84,6 +84,13 @@ struct ScoreTests {
         #expect(score.noteSelections == [.standard, intersection])
     }
 
+    @Test func testInstruments() {
+        #expect(Score.standard.instruments == [.violin, .viola, .cello])
+        var score = Score.standard
+        score.part = Interlude(tracks: [Track(instruments: [.flute], stretches: [Stretch(start: .seconds(0), end: .seconds(1))])])
+        #expect(score.instruments == [.violin, .viola, .cello, .flute])
+    }
+
     // MARK: - Markdown
 
     /// A score in Markdown, with the later parts' cues given, each intermission a second's rest, and

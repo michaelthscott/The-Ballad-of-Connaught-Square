@@ -128,6 +128,17 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         await engineControlTask?.value
         // Ready the voices while the introduction plays, so that none starts its first part stuttering.
         speech.warmUp(speakers.voices.map(\.voice))
+        // Load every instrument before the introduction, so that none loads its preset while others
+        // play. It's queued with the engine changes, so a stop meanwhile takes effect after it.
+        let instruments = score.instruments
+        controlEngine { soundBank in
+            do {
+                try await soundBank.warmUp(instruments)
+            } catch {
+                logger.error("Couldn't warm up the instruments: \(String(describing: error))")
+            }
+        }
+        await engineControlTask?.value
         var events = EventsSequence(performance: self)
         // Where each instrument's melody stopped in the last part, for the next to carry on.
         var melodies: [InstrumentName: Cycle<Note>] = [:]

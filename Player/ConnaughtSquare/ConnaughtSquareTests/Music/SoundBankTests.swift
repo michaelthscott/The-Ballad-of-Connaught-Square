@@ -51,6 +51,15 @@ struct SoundBankTests {
         await soundBank.stopEngine()
     }
 
+    /// Warming up loads every instrument and starts the engine before anything plays.
+    @Test func testWarmUp() async throws {
+        let soundBank = try SoundBank()
+        try await soundBank.warmUp([.violin, .cello])
+        #expect(await soundBank.loadedInstruments == [.violin, .cello])
+        #expect(await soundBank.isEngineRunning)
+        await soundBank.stopEngine()
+    }
+
     @Test func testPlayNote() async throws {
         try await soundBank.loadInstrument(.electricPiano1)
         await soundBank.play(note: Note(value: .a2, on: .f, duration: .crotchet), instrument: .electricPiano1)
