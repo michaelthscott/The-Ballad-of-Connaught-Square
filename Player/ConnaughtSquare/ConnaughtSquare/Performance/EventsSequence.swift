@@ -29,7 +29,7 @@ struct EventsSequence {
         guard let part = balladCursorSequence.currentPart, let cursor = balladCursorSequence.cursor else { return nil }
         let interlude = currentInterlude
         let arranger = performance.arranger
-        let role = voiceTurns.role(at: cursor.partIndex)
+        let role = voiceTurns.nextRole()
         let cue = Cue(before: interlude.before.compactMap { arranger.event(for: $0, under: nil) },
                       under: interlude.under.compactMap { arranger.event(for: $0, under: part.duration) },
                       part: part,

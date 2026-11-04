@@ -243,21 +243,6 @@ struct EventsSequenceTests {
         #expect(rests.contains(.seconds(4)) == false)
     }
 
-    /// Parts can be given to roles by their position in the line.
-    @Test func testVoicesByPartIndex() throws {
-        var score = Score.standard
-        score.voices.rule = .byPartIndex(roles: [0, 1])
-        let speakers = Speakers()
-        let ballad = makeBallad(partsInFirstLine: 2)
-        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: speakers))
-        for _ in 1...ballad.parts.count {
-            let cue = try nextCue(of: &sequence)
-            let line = try #require(ballad.cantos.flatMap(\.stanzas).flatMap(\.lines).first { $0.parts.contains(cue.part) })
-            let index = try #require(line.parts.firstIndex(of: cue.part))
-            #expect(cue.speaker == speakers.speaker(forRole: index))
-        }
-    }
-
     /// Once the last part has been recited the sequence finishes rather than starting the ballad over.
     @Test func testSequenceFinishesAfterTheLastPart() throws {
         let ballad = makeBallad()
