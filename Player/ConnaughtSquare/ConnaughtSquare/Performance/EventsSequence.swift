@@ -25,7 +25,9 @@ struct EventsSequence {
     }
 
     /// The cue for the next part of the ballad, or `nil` once every part has been recited.
-    mutating func next() -> Cue? {
+    /// - Parameter melodies: Where each instrument's melody stopped in the part before, for the
+    ///   instruments that continue theirs. An intermission starts them all afresh.
+    mutating func next(continuing melodies: [InstrumentName: Cycle<Note>] = [:]) -> Cue? {
         guard let part = balladCursorSequence.currentPart else { return nil }
         let intermission = currentIntermission
         let interlude = currentInterlude
@@ -34,7 +36,8 @@ struct EventsSequence {
         let cue = Cue(intermission: intermission.map { arranger.events(for: $0.interlude, partDuration: .zero) } ?? [],
                       intermissionLength: .seconds(intermission?.seconds ?? 0),
                       recitationStart: .seconds(interlude.recitationStart),
-                      events: arranger.events(for: interlude, partDuration: part.duration),
+                      events: arranger.events(for: interlude, partDuration: part.duration,
+                                              continuing: intermission == nil ? melodies : [:]),
                       part: part,
                       speaker: performance.speakers.speaker(forRole: role))
         _ = balladCursorSequence.next()

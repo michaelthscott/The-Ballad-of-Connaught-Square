@@ -170,6 +170,39 @@ struct EventsSequenceTests {
         #expect(length >= .seconds(1) + cue.part.duration)
     }
 
+    /// An instrument that continues carries on the melody it stopped at in the part before, and one
+    /// that doesn't, or that the part before didn't play, starts a new one.
+    @Test func testInstrumentContinuesItsMelody() throws {
+        var score = Score.standard
+        let stretches = [Stretch(start: .seconds(0), end: .endOfRecitation)]
+        score.part = Interlude(tracks: [Track(instruments: [.viola, .cello], stretches: stretches, continues: true),
+                                        Track(instruments: [.violin], stretches: stretches)])
+        var sequence = makeSequence(partsInFirstLine: 2, score: score)
+        _ = sequence.next()
+        var melody = Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver)])
+        _ = melody.next()
+        let next = sequence.next(continuing: [.viola: melody, .violin: melody])
+        let cue = try #require(next)
+        let notes = Dictionary(uniqueKeysWithValues: cue.events.map { ($0.instrument.name, $0.notes) })
+        #expect(notes[.viola]?.elements == melody.elements)
+        #expect(notes[.viola]?.currentIndex == melody.currentIndex)
+        // The cello didn't play in the part before, and the violin doesn't continue.
+        #expect(notes[.cello]?.elements != melody.elements)
+        #expect(notes[.violin]?.elements != melody.elements)
+    }
+
+    /// An intermission starts every melody afresh, even for an instrument that continues.
+    @Test func testIntermissionStartsMelodiesAfresh() throws {
+        var score = Score.standard
+        score.firstLine = Interlude(tracks: [Track(instruments: [.viola], stretches: [Stretch(start: .seconds(0), end: .endOfRecitation)], continues: true)])
+        var sequence = makeSequence(score: score)
+        let melody = Cycle(elements: [Note(value: .a2, duration: .quaver)])
+        let next = sequence.next(continuing: [.viola: melody])
+        let cue = try #require(next)
+        #expect(cue.intermission.isEmpty == false)
+        #expect(cue.events.first?.notes.elements != melody.elements)
+    }
+
     /// The introduction plays before the ballad only, and the stanza's first line, each later line and
     /// each part are opened by their own interludes.
     @Test func testIntroductionPlaysOnlyBeforeTheBallad() throws {

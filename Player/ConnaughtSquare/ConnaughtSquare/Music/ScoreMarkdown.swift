@@ -28,7 +28,7 @@ extension Score {
     ///     - Violin, Viola, Cello: 0s–7s
     ///     - Rest: 7s–8s
     ///
-    ///     ## Line, first part
+    ///     ## Stanza, later line
     ///
     ///     - Violin, Cello: 0s–5s
     ///     - Viola: 0s–5s, 5s–end+1s at 60%
@@ -49,7 +49,9 @@ extension Score {
     /// full volume unless written with a percentage, such as `at 60%`. A time such as `5s` is counted
     /// from the start of the division, `end` is when the recitation finishes, and `end+1s` a second
     /// after that. Each instrument plays one unbroken melody through its stretches, picking it up
-    /// again after a gap, so an instrument is named only once in a division. Every instrument selects
+    /// again after a gap, so an instrument is named only once in a division. Written with
+    /// `continues`, such as `Viola continues: 0s–end`, the instruments carry on the melodies they
+    /// played in the part before, unless an intermission came between. Every instrument selects
     /// its notes in the standard way. The part's turn ends once the recitation and every instrument
     /// have finished.
     init(markdown: String) throws {
@@ -67,7 +69,7 @@ private enum Division: String, CaseIterable {
     case canto = "Canto intermission"
     case stanza = "Stanza intermission"
     case firstLine = "Stanza, first line"
-    case line = "Line, first part"
+    case line = "Stanza, later line"
     case part = "Line, later parts"
 
     /// Whether the division has an intermission, with nothing recited, rather than an interlude.
@@ -185,6 +187,15 @@ private struct ScoreReader {
                 }
             }
         } else {
+            var label = label
+            var continues = false
+            if let names = label.dropping(suffix: " continues") {
+                guard !division.isIntermission else {
+                    throw error("An intermission always starts its melodies afresh, so nothing in \"\(division.rawValue)\" continues")
+                }
+                label = names
+                continues = true
+            }
             let names = try label.components(separatedBy: ", ").map(instrument)
             for name in names {
                 guard instruments.insert(name).inserted else {
@@ -200,7 +211,7 @@ private struct ScoreReader {
                 }
                 stretches.append(stretch)
             }
-            interludes[division]?.tracks.append(Track(instruments: names, stretches: stretches))
+            interludes[division]?.tracks.append(Track(instruments: names, stretches: stretches, continues: continues))
         }
     }
 

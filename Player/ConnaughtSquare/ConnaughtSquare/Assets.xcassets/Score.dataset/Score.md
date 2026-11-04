@@ -23,13 +23,13 @@
 - Viola: 0s–1s, 1s–end+1s at 90%
 - Recite: 1s
 
-## Line, first part
+## Stanza, later line
 
 - Violin, Cello: 0s–5s
 - Viola: 0s–5s, 5s–end+1s at 90%
-- Recite: 5.5s
+- Recite: 5s
 
 ## Line, later parts
 
-- Viola: 0.25s–end at 90%
+- Viola continues: 0s–end at 90%
 - Recite: 0.25s

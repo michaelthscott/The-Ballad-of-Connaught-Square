@@ -104,11 +104,16 @@ struct Track: Sendable, Equatable {
     var notes: NoteSelection
     /// The stretches in the order they're played, none overlapping the one before.
     var stretches: [Stretch]
+    /// Whether each instrument carries on the melody it played in the part before, rather than
+    /// starting a new one. An instrument that didn't play in the part before, or that an
+    /// intermission came after, starts a new melody all the same.
+    var continues: Bool
 
-    init(instruments: [InstrumentName], notes: NoteSelection = .standard, stretches: [Stretch]) {
+    init(instruments: [InstrumentName], notes: NoteSelection = .standard, stretches: [Stretch], continues: Bool = false) {
         self.instruments = instruments
         self.notes = notes
         self.stretches = stretches
+        self.continues = continues
     }
 }
 

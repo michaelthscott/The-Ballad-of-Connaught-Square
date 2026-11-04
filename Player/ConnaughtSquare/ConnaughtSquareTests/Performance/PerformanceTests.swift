@@ -123,6 +123,21 @@ struct PerformanceTests {
         #expect(elapsed < .milliseconds(2500))
     }
 
+    /// Playing the events gives back where each instrument's melody stopped, for the next part to carry on.
+    @Test func testPlayingGivesBackTheMelodies() async throws {
+        let soundBank = try SoundBank()
+        try await soundBank.loadInstrument(.viola)
+        try await soundBank.startEngine()
+        let event = Event(instrument: Instrument(name: .viola),
+                          notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver), Note(value: .e3, duration: .quaver)]),
+                          stretches: [Stretch(start: .seconds(0), end: .seconds(1))])
+        let recitation = Task<Void, Never> {}
+        var melodies = await Performance.play([event], on: soundBank, alongside: recitation)
+        await soundBank.stopEngine()
+        // A second of quavers is two notes, so the melody carries on from the third.
+        #expect(melodies[.viola]?.next().value == .e3)
+    }
+
     /// An instrument playing until the end of a recitation that has already finished doesn't hold the performance up.
     @Test func testInstrumentAfterTheRecitation() async throws {
         let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .endOfRecitation)])

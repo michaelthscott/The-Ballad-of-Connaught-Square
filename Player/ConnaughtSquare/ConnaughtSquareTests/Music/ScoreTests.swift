@@ -108,7 +108,7 @@ struct ScoreTests {
 
         - Recite: 0s
 
-        ## Line, first part
+        ## Stanza, later line
 
         - Recite: 0s
 
@@ -160,11 +160,12 @@ struct ScoreTests {
         (["- Viola: end–2s", "- Recite: 0s"], 25),                 // A stretch from the end to a time from the start.
         (["- Viola: 0s–1s", "- Viola, Cello: 2s–3s", "- Recite: 0s"], 26), // An instrument named twice.
         (["- Viola 0s–1s", "- Recite: 0s"], 25),                   // No colon.
+        (["- Kazoo continues: 0s–1s", "- Recite: 0s"], 25),        // No such instrument to continue.
         (["- Recite: end"], 25),                                   // Recited from the end of the recitation.
         (["- Recite: 0s", "- Recite: 1s"], 26),                    // Recited twice.
         (["- Rest: 0s–1s", "- Recite: 0s"], 25),                   // A rest outside an intermission.
         (["Recite: 0s"], 25),                                      // Not a list item.
-        (["- Recite: 0s", "## Line, first part"], 26),                    // A division twice.
+        (["- Recite: 0s", "## Stanza, later line"], 26),                    // A division twice.
         (["- Recite: 0s", "## Coda"], 26),                         // No such division.
     ]
 
@@ -185,11 +186,22 @@ struct ScoreTests {
         #expect(score.canto == expected)
     }
 
+    /// An instrument written with `continues` carries on its melody from the part before.
+    @Test func testReadMarkdownContinues() throws {
+        let score = try Score(markdown: markdown(laterPart: ["- Viola continues: 0s–end at 90%", "- Recite: 0.25s"]))
+        let expected = Interlude(recitationStart: 0.25,
+                                 tracks: [Track(instruments: [.viola],
+                                                stretches: [Stretch(start: .seconds(0), end: .endOfRecitation, volume: 0.9)],
+                                                continues: true)])
+        #expect(score.part == expected)
+    }
+
     /// Mistakes in an intermission, which has nothing recited in it, each on line 9.
     @Test(arguments: ["- Recite: 0s",              // A recitation.
                       "- Viola: 0s–end",           // A time from the end of a recitation.
                       "- Rest: 0s–end+1s",         // A rest until after a recitation.
-                      "- Rest: 0s–1s at 50%"])     // A rest with a volume.
+                      "- Rest: 0s–1s at 50%",      // A rest with a volume.
+                      "- Viola continues: 0s–1s"]) // A melody carried on into an intermission.
     func testMarkdownIntermissionMistakes(cue: String) {
         let markdown = markdown().replacingOccurrences(of: "## Canto intermission\n\n- Rest: 0s–1s", with: "## Canto intermission\n\n\(cue)")
         let error = #expect(throws: ScoreError.self) { try Score(markdown: markdown) }

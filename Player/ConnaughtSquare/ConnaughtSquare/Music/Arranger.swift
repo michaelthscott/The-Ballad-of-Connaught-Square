@@ -25,10 +25,12 @@ struct Arranger {
     ///
     /// Each instrument's melody is composed for as long as its stretches are expected to last, taking
     /// the part as long as it's expected to take to recite. The melody repeats if they last longer.
+    /// An instrument in a track that continues carries on its melody from the part before instead.
     /// - Parameters:
     ///   - interlude: An interlude of the score.
     ///   - partDuration: The expected length of the part recited in the interlude.
-    func events(for interlude: Interlude, partDuration: Duration) -> [Event] {
+    ///   - melodies: Where each instrument's melody stopped in the part before.
+    func events(for interlude: Interlude, partDuration: Duration, continuing melodies: [InstrumentName: Cycle<Note>] = [:]) -> [Event] {
         let recitationEnd = .seconds(interlude.recitationStart) + partDuration
         return interlude.tracks.flatMap { track in
             let duration = track.stretches.reduce(Duration.zero) { total, stretch in
@@ -36,6 +38,9 @@ struct Arranger {
             }
             return track.instruments.map { name in
                 let instrument = Instrument(name: name)
+                if track.continues, let melody = melodies[name] {
+                    return Event(instrument: instrument, notes: melody, stretches: track.stretches)
+                }
                 let assignment = composer(for: track.notes).composeAssignment(instrument: instrument, duration: duration)
                 return Event(instrument: instrument, notes: assignment.notes, stretches: track.stretches)
             }

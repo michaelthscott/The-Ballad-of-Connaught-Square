@@ -127,10 +127,12 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // the last performance's stop take effect first; otherwise it could stop this one's engine.
         await engineControlTask?.value
         var events = EventsSequence(performance: self)
-        while !Task.isCancelled, let cue = events.next() {
+        // Where each instrument's melody stopped in the last part, for the next to carry on.
+        var melodies: [InstrumentName: Cycle<Note>] = [:]
+        while !Task.isCancelled, let cue = events.next(continuing: melodies) {
             await soundBank.pauseGate.wait()
             guard !Task.isCancelled else { break }
-            await perform(cue)
+            melodies = await perform(cue)
         }
         // A cancelled performance was stopped, and `stop()` has already tidied up — possibly
         // before a new performance started, which this mustn't disturb.
@@ -141,11 +143,12 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     }
 
     /// Performs one cue, returning when the recitation and every instrument have finished.
-    private func perform(_ cue: Cue) async {
+    /// - Returns: Where each instrument's melody stopped, not counting the intermission's.
+    private func perform(_ cue: Cue) async -> [InstrumentName: Cycle<Note>] {
         logger.debug("\(cue.description)")
         let soundBank = soundBank
         await Self.playIntermission(cue.intermission, lasting: cue.intermissionLength, on: soundBank)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else { return [:] }
         // The recitation is a task of its own, so that instruments playing until it finishes can wait
         // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
         let part = cue.part
@@ -160,13 +163,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // The events are `Sendable`, so they play off the main actor while the part — which isn't —
         // is recited on it. Take them out of the cue first, so the child task doesn't capture its part.
         let events = cue.events
-        async let played: Void = Self.play(events, on: soundBank, alongside: recitation)
+        async let melodies = Self.play(events, on: soundBank, alongside: recitation)
         await withTaskCancellationHandler {
             await recitation.value
         } onCancel: {
             recitation.cancel()
         }
-        await played
+        return await melodies
     }
 
     /// Recites the part in the speaker's voice.
@@ -185,7 +188,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // Nothing is recited in an intermission, so nothing in it waits for a recitation.
         let noRecitation = Task<Void, Never> {}
         async let rest: Void = { try? await soundBank.pauseGate.sleep(for: length) }()
-        await play(events, on: soundBank, alongside: noRecitation)
+        _ = await play(events, on: soundBank, alongside: noRecitation)
         await rest
     }
 
@@ -195,18 +198,25 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     ///   - events: The events to play.
     ///   - soundBank: The sound bank to play on.
     ///   - recitation: The recitation that times counted from the end of the recitation wait for.
-    nonisolated static func play(_ events: [Event], on soundBank: SoundBank, alongside recitation: Task<Void, Never>) async {
+    /// - Returns: Where each instrument's melody stopped, so that the next part can carry it on.
+    nonisolated static func play(_ events: [Event], on soundBank: SoundBank, alongside recitation: Task<Void, Never>) async -> [InstrumentName: Cycle<Note>] {
         let recited = Flag()
-        await withDiscardingTaskGroup { group in
+        return await withTaskGroup(of: (InstrumentName, Cycle<Note>)?.self) { group in
             group.addTask {
                 await recitation.value
                 recited.set()
+                return nil
             }
             for event in events {
                 group.addTask {
-                    await play(event, on: soundBank, alongside: recitation, recited: recited)
+                    (event.instrument.name, await play(event, on: soundBank, alongside: recitation, recited: recited))
                 }
             }
+            var melodies: [InstrumentName: Cycle<Note>] = [:]
+            for await case let (instrument, melody)? in group {
+                melodies[instrument] = melody
+            }
+            return melodies
         }
     }
 
@@ -214,7 +224,8 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     ///
     /// Each note is played in full, so a stretch can run past its end by part of a note; the instrument
     /// makes that up by starting the next stretch, or waiting out the gap before it, that much later.
-    private nonisolated static func play(_ event: Event, on soundBank: SoundBank, alongside recitation: Task<Void, Never>, recited: Flag) async {
+    /// - Returns: The melody, moved on past the notes played.
+    private nonisolated static func play(_ event: Event, on soundBank: SoundBank, alongside recitation: Task<Void, Never>, recited: Flag) async -> Cycle<Note> {
         var notes = event.notes
         let instrument = event.instrument.name
         // Where the instrument has reached in the cue, and how far its last note ran past it.
@@ -250,13 +261,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
                 let played = try await soundBank.play(notes: &notes, instrument: instrument, volume: stretch.volume) { $0 < length }
                 overrun = max(played.reduce(Duration.zero) { $0 + $1.duration.duration } - length, .zero)
                 position = stretch.end
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else { break }
             }
         } catch is CancellationError {
-            return
         } catch {
             logger.error("Couldn't play \(event.instrument): \(String(describing: error))")
         }
+        return notes
     }
 }
 
