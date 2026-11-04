@@ -14,8 +14,8 @@
 
 ## Stanza intermission
 
-- Violin, Viola, Cello: 0s–7s
-- Rest: 7s–8s
+- Violin, Viola, Cello: 0s–5s
+- Rest: 5s–7s
 
 ## Stanza, first line
 
@@ -25,9 +25,9 @@
 
 ## Stanza, later line
 
-- Violin, Cello: 0s–5s
-- Viola: 0s–5s, 5s–end+1s at 90%
-- Recite: 5s
+- Violin, Cello: 0s–3s
+- Viola: 0s–3s, 3s–end+1s at 90%
+- Recite: 3s
 
 ## Line, later parts
 
