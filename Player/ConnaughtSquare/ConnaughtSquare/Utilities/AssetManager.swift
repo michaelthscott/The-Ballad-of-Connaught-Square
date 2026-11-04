@@ -24,6 +24,15 @@ enum AssetError: Error, CustomStringConvertible {
     }
 }
 
+/// The data held in a data asset.
+/// - Throws: `AssetError.missing` if there's no such asset.
+func assetData(_ name: String, from bundle: Bundle) throws -> Data {
+    guard let asset = NSDataAsset(name: name, bundle: bundle) else {
+        throw AssetError.missing(name: name)
+    }
+    return asset.data
+}
+
 /// Decodes the JSON held in a data asset.
 /// - Parameters:
 ///   - name: The name of the data asset.
@@ -31,8 +40,5 @@ enum AssetError: Error, CustomStringConvertible {
 /// - Returns: The decoded value. To decode an array, give an array type.
 /// - Throws: `AssetError.missing` if there's no such asset, or the `DecodingError` if it can't be decoded.
 func decodeAsset<Asset: Decodable>(_ name: String, from bundle: Bundle) throws -> Asset {
-    guard let asset = NSDataAsset(name: name, bundle: bundle) else {
-        throw AssetError.missing(name: name)
-    }
-    return try JSONDecoder().decode(Asset.self, from: asset.data)
+    try JSONDecoder().decode(Asset.self, from: assetData(name, from: bundle))
 }

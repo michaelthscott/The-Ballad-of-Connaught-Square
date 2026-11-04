@@ -28,13 +28,14 @@ struct Score: Codable, Sendable, Equatable {
         do {
             return try asset()
         } catch {
-            fatalError("Failed to decode the score: \(error)")
+            fatalError("Failed to read the score: \(error)")
         }
     }()
 
-    /// Decodes a score held as JSON in a data asset.
+    /// Reads a score written in Markdown in a data asset.
+    /// - Throws: `AssetError.missing` if there's no such asset, or a `ScoreError` if it's written wrongly.
     static func asset(named name: String = "Score", from bundle: Bundle = .main) throws -> Score {
-        try decodeAsset(name, from: bundle)
+        try Score(markdown: String(decoding: assetData(name, from: bundle), as: UTF8.self))
     }
 
     /// Every interlude in the score, introduction first.
@@ -176,9 +177,9 @@ extension InstrumentPart: Codable {
 extension Score {
     /// The score as the performance was first written: the string trio, followed by a second's rest,
     /// introduces the ballad and opens each canto, stanza and line before its first part is recited.
-    /// The voices take turns starting with the second.
+    /// The voices take turns starting with the first.
     static let standard = Score(title: "The Ballad of Connaught Square",
-                                voices: VoiceNotation(roles: ["First", "Second"], rule: .alternate(startingWith: 1)),
+                                voices: VoiceNotation(roles: ["First", "Second"], rule: .alternate(startingWith: 0)),
                                 introduction: Interlude(before: .stringTrio(seconds: 13)),
                                 canto: Interlude(before: .stringTrio(seconds: 11)),
                                 stanza: Interlude(before: .stringTrio(seconds: 7)),

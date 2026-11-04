@@ -1,9 +1,9 @@
 {
   "data" : [
     {
-      "filename" : "Score.json",
+      "filename" : "Score.md",
       "idiom" : "universal",
-      "universal-type-identifier" : "public.json"
+      "universal-type-identifier" : "net.daringfireball.markdown"
     }
   ],
   "info" : {

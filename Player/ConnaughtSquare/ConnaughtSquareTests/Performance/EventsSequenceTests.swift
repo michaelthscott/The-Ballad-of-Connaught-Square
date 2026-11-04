@@ -122,7 +122,7 @@ struct EventsSequenceTests {
         #expect(recited == ballad.parts.map { $0.string })
     }
 
-    /// In the standard score the speakers take turns, starting with the second speaker.
+    /// In the standard score the speakers take turns, starting with the first speaker.
     @Test func testSpeakersAlternate() throws {
         let speakers = Speakers()
         let first = speakers.speaker(forRole: 0)
@@ -133,18 +133,18 @@ struct EventsSequenceTests {
         for _ in 1...3 {
             names.append(try nextCue(of: &sequence).speaker.name)
         }
-        #expect(names == [second.name, first.name, second.name])
+        #expect(names == [first.name, second.name, first.name])
     }
 
     /// Each sequence starts the turns afresh, so a performance stopped after an odd number of
-    /// parts still starts the next one with the second speaker.
+    /// parts still starts the next one with the first speaker.
     @Test func testEachSequenceStartsTheTurnsAfresh() throws {
         let speakers = Speakers()
         let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
         var first = EventsSequence(performance: performance)
         _ = try nextCue(of: &first)
         var second = EventsSequence(performance: performance)
-        #expect(try nextCue(of: &second).speaker == speakers.speaker(forRole: 1))
+        #expect(try nextCue(of: &second).speaker == speakers.speaker(forRole: 0))
     }
 
     /// A score can notate music before the part, which the part waits for, as well as under it.
