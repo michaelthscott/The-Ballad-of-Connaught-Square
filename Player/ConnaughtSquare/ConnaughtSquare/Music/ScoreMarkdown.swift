@@ -106,7 +106,7 @@ private struct ScoreReader {
             throw ScoreError(line: nil, message: "\"\(division.rawValue)\" doesn't end with Recite")
         }
         return Score(title: title,
-                     voices: VoiceNotation(roles: roles, rule: .alternate(startingWith: 0)),
+                     voices: VoiceNotation(roles: roles),
                      introduction: try interlude(.introduction),
                      canto: try interlude(.canto),
                      stanza: try interlude(.stanza),

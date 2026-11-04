@@ -86,7 +86,7 @@ struct ScoreTests {
     @Test func testReadMarkdown() throws {
         let score = try Score(markdown: markdown())
         #expect(score.title == "Test")
-        #expect(score.voices == VoiceNotation(roles: ["First", "Second"], rule: .alternate(startingWith: 0)))
+        #expect(score.voices == VoiceNotation(roles: ["First", "Second"]))
         for interlude in score.interludes {
             #expect(interlude == Interlude())
         }

@@ -117,7 +117,7 @@ extension Score {
     /// introduces the ballad and opens each canto, stanza and line before its first part is recited.
     /// The voices take turns starting with the first.
     static let standard = Score(title: "The Ballad of Connaught Square",
-                                voices: VoiceNotation(roles: ["First", "Second"], rule: .alternate(startingWith: 0)),
+                                voices: VoiceNotation(roles: ["First", "Second"]),
                                 introduction: Interlude(before: .stringTrio(seconds: 13)),
                                 canto: Interlude(before: .stringTrio(seconds: 11)),
                                 stanza: Interlude(before: .stringTrio(seconds: 7)),

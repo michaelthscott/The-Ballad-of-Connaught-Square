@@ -5,20 +5,13 @@
 //  Created by Michael Scott on 01/11/2026.
 //
 
-/// The voices of a score: the roles that recite the ballad, and the rule for which role recites each part.
-/// The roles are numbered from zero. The voice for each role is chosen in Settings.
+/// The voices of a score: the roles that recite the ballad, taking turns one part each, starting
+/// with the first. The roles are numbered from zero. The voice for each role is chosen in Settings.
 struct VoiceNotation: Sendable, Equatable {
     var roles: [String]
-    var rule: VoiceRule
 }
 
-/// Which role recites each part. A role number outside the roles wraps around them.
-enum VoiceRule: Sendable, Equatable {
-    /// The roles take turns, one part each, starting with the given role.
-    case alternate(startingWith: Int)
-}
-
-/// Works through a voice rule, part by part, keeping track of the turns.
+/// Keeps track of the roles' turns, part by part.
 struct VoiceTurns {
     let notation: VoiceNotation
     /// The number of parts that have taken a turn.
@@ -28,21 +21,11 @@ struct VoiceTurns {
         self.notation = notation
     }
 
-    /// The role that recites the next part.
+    /// The role that recites the next part, after the last role going back to the first, or zero
+    /// when there are no roles.
     mutating func nextRole() -> Int {
         defer { turns += 1 }
-        let role: Int
-        switch notation.rule {
-        case .alternate(let first):
-            role = first + turns
-        }
-        return wrapped(role)
-    }
-
-    /// The role wrapped into the score's roles, or zero when there are none.
-    private func wrapped(_ role: Int) -> Int {
         let count = notation.roles.count
-        guard count > 0 else { return 0 }
-        return (role % count + count) % count
+        return count > 0 ? turns % count : 0
     }
 }
