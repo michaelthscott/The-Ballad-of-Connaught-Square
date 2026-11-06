@@ -21,10 +21,8 @@ struct ComposerTests {
     }
 
     @Test func testAssignmentsOpenOnTheInitialNote() throws {
-        let orchestration = composer.composeOrchestration("Test",
-                                                          instruments: [Instrument(name: .violin), Instrument(name: .viola), Instrument(name: .cello)],
-                                                          duration: .seconds(10))
-        for assignment in orchestration.assignments {
+        for name in [InstrumentName.violin, .viola, .cello] {
+            let assignment = composer.composeAssignment(instrument: Instrument(name: name), duration: .seconds(10))
             let first = try #require(assignment.notes.elements.first)
             #expect(first.value == composer.initialNote.value)
         }

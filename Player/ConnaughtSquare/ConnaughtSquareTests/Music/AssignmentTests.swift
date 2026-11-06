@@ -23,13 +23,5 @@ struct AssignmentTests {
         #expect(assignment.instrument == instrument)
         #expect(assignment.notes == cycle)
     }
-    
-    @Test func testPlay() async throws {
-        let total = NoteDuration.quaver.duration + NoteDuration.crotchet.duration + NoteDuration.quaver.duration
-        #expect(await assignment.play(duration: NoteDuration.quaver.duration).count == 1)
-        #expect(await assignment.play(duration: total).count == 3)
-        #expect(await assignment.play(duration: total * 2 + NoteDuration.quaver.duration).count == 7)
-        #expect(await assignment.play(duration: total * 3 + NoteDuration.quaver.duration + NoteDuration.crotchet.duration).count == 11)
-    }
-    
+
 }

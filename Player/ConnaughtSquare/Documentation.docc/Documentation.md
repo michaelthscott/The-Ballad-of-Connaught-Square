@@ -30,8 +30,8 @@ The ``Composer`` writes new music from two traditional tunes, The Sash My Father
 The British Grenadiers. It breaks each ``Tune`` into short sequences of note intervals and
 durations, held in ``WeightedSet``s that count how often each sequence occurs. It then combines
 the tunes' sets by union, intersection or symmetric difference, and draws from the result with a
-probability proportional to each sequence's weight. The music it composes is an
-``Orchestration`` for violin, viola and cello, played through the ``SoundBank``'s samplers.
+probability proportional to each sequence's weight. The ``Arranger`` has it compose a melody for
+each instrument the ``Score`` names, played through the ``SoundBank``'s samplers.
 
 ### Performing the ballad
 
@@ -72,7 +72,8 @@ accompaniment in place, and time spent paused doesn't count towards any note or 
 
 - ``Composer``
 - ``Tune``
-- ``Orchestration``
+- ``Score``
+- ``Arranger``
 - ``Instrument``
 - ``Note``
 - ``SoundBank``

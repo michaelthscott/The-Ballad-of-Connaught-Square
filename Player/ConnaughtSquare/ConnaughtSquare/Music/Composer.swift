@@ -5,7 +5,7 @@
 //  Created by Michael Scott on 05/12/2023.
 //
 
-/// A composer composes an orchestration to be performed.
+/// A composer composes melodies from the patterns in its tunes.
 struct Composer {
     /// The ways the tunes' patterns can be combined.
     enum SetOperation: String, CaseIterable, Sendable {
@@ -139,32 +139,14 @@ struct Composer {
 	/// The lowest note across all the tunes, so that the range spans every tune as the ceiling does.
 	let floorNote: Note
 
-	// TODO: Variations for multiple instruments. Permutations of combinations of union, intersection and symmetric difference.
-    
-    /// Composes an orchestration for the specified instruments and duration.
-    /// - Parameters:
-    ///   - title: The title of the orchestration.
-    ///   - instruments: A non empty array of instruments.
-    ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned to the instruments.
-    /// - Returns: The orchestration.
-	func composeOrchestration(_ title: String, instruments: [Instrument], duration: Duration) -> Orchestration {
-        precondition(instruments.count > 0, "No instruments specified")
-        var assignments: [Assignment] = []
-		for instrument in instruments {
-            assignments.append(composeAssignment(instrument: instrument, duration: duration))
-		}
-		return Orchestration(title: title, assignments: assignments)
-	}
-    
     /// Composes an assignment for the specified instrument and duration.
     ///
     /// The assignment opens on the pitch of the initial note, so every instrument begins in unison, then moves by intervals drawn from the tunes.
     /// - Parameters:
     ///   - instrument: An instrument.
     ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned.
-    ///   - volume: The volume between 0 and 1 that the notes' velocities are scaled by.
     /// - Returns: The assignment.
-    func composeAssignment(instrument: Instrument, duration: Duration, volume: Double = 1) -> Assignment {
+    func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
         let openingDuration = randomDurationVector.first ?? initialNote.duration
         let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), duration: openingDuration)
         var previousNote = opening
@@ -179,6 +161,6 @@ struct Composer {
             }
         }
         precondition(notes.count > 0, "No notes assigned to \(instrument)")
-        return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes), volume: volume)
+        return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes))
     }
 }
