@@ -5,13 +5,11 @@
 //  Created by Michael Scott on 12/12/2023.
 //
 
-// TODO: What do we need Element: Codable for?
-// TODO: What do we need Element: Hashable for?
-
 import Foundation
 import SwiftUI
 
-typealias WeightedSetElement = Weighted & Comparable & Hashable & Codable
+/// The set finds elements by `==` and keeps them in order by `<`, neither of which looks at the weight.
+typealias WeightedSetElement = Weighted & Comparable
 
 struct WeightedSet<Element: WeightedSetElement>: RandomAccessCollection {
     private(set) var elements: [Element]
@@ -168,26 +166,8 @@ extension WeightedSet: Equatable {
     }
 }
 
-// MARK: - Codable
-extension WeightedSet: Codable {
-    enum CodingKeys: String, CodingKey {
-        case elements
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(elements, forKey: .elements)
-    }
-    
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let elements = try container.decode([Element].self, forKey: .elements)
-		self.init(elements)
-    }
-}
-
-// MARK - Hashable
-extension WeightedSet: Hashable {
+// MARK: - Hashable
+extension WeightedSet: Hashable where Element: Hashable {
     /// Hashes each weighted element with its weight, in order, to match `==`.
     func hash(into hasher: inout Hasher) {
         for element in weightedElements.sorted() {
