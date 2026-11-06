@@ -44,8 +44,8 @@ final class LexiconTests {
         #expect(lexicon.words.count == 3)
 	}
 	
-    @Test(.enabled(if: Lexicon.shared.word("BELL") == nil)) func testWordsRhymingWith() throws {
-        let word = Lexicon.shared.word("BELL")!
+    @Test func testWordsRhymingWith() throws {
+        let word = try #require(Lexicon.shared.word("BELL"))
 		// [HELL, HOTEL, SMELL, SPELL, TELL, THEY'LL, WELL]
         #expect(Lexicon.shared.wordsRhyming(with: word) == [
 			Lexicon.shared.word("HELL"),
