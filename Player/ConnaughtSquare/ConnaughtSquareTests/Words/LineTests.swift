@@ -15,8 +15,6 @@ import UIKit
 #endif
 @testable import ConnaughtSquare
 
-// TODO: Redo these tests so that they don't require tag parsing in Line().
-
 final class LineTests {
     func parts(_ speakers: [String]) -> [Part] {
         speakers.map { Part(string: $0) }

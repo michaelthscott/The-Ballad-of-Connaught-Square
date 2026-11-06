@@ -149,7 +149,6 @@ actor SoundBank {
     func stopEngine() {
         isEnginePaused = false
         if engine.isRunning {
-            //TODO: How long does it take the engine to stop?
             engine.stop()
         }
         for sampler in samplers.values {

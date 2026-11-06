@@ -14,8 +14,6 @@ import UIKit
 #endif
 @testable import ConnaughtSquare
 
-// TODO: Convert these tests to use words from the lexicon.
-
 final class PronunciationTests {
 	var lexicon: Lexicon!
 	

@@ -45,20 +45,6 @@ final class Lexicon {
         return word
     }
     
-    // TODO: legalOnsets().sorted(by: { return $0 < $1 })
-    
-    /// The Legality Principle is a language agnostic principle maintaining that syllable onsets and codas (the beginning and ends of syllables not including the vowel) are only legal if they are found as word onsets or codas in the language. The English word ‘’admit’’ must then be syllabified as ‘’ad-mit’’ since ‘’dm’’ is not found word-initially in the English language. This principle was first proposed in Daniel Kahn’s 1976 dissertation, ‘’Syllable-based generalizations in English phonology’’.
-    var legalOnsets: Set<ArraySlice<Phoneme>> {
-        var onsets: Set<ArraySlice<Phoneme>> = []
-        for word in wordsDict.values {
-			let onset = word.pronunciation.phonemes.prefix(while: {$0.isConsonant})
-            if onset.count > 0 {
-                onsets.insert(onset)
-            }
-        }
-        return onsets
-    }
-    	
 	/// The words in the lexicon.
 	var words: [Word] {
 		Array(wordsDict.values)

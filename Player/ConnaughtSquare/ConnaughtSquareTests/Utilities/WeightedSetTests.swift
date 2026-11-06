@@ -187,7 +187,6 @@ struct WeightedSetTests {
         #expect(Set(set.elements.map(\.description)) == ["A(1)", "B(2)", "C(3)", "D(4)"])
 	}
 
-	// TODO: More tests.
     @Test func testCompareSetWeightAndMove() {
 		// Adding a missing element puts it at the end; moving it puts it where it's wanted.
 		var x = C3B2A1

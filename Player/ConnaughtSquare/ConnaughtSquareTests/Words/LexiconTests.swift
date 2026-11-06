@@ -40,11 +40,6 @@ final class LexiconTests {
         }
     }
     
-    @Test func testLegalOnsets() {
-        // [[B]]
-        #expect(lexicon.legalOnsets.count == 1)
-    }
-    
     @Test func testWords() {
         #expect(lexicon.words.count == 3)
 	}

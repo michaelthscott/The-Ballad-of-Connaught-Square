@@ -11,7 +11,6 @@ import Testing
 struct VectorTests {
 
     @Test func testComparable() {
-		// TODO: This needs to be more thought out and comprehensive.
         #expect(Vector<String>(["A"]) < Vector<String>(["A", "B"]))
         #expect(Vector<String>(["A", "B"]) == Vector<String>(["A", "B"]))
         #expect(Vector<String>(["A", "B"]) < Vector<String>(["A", "C"]))

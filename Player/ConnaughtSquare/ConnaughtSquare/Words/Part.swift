@@ -7,7 +7,6 @@
 
 import Foundation
 import AVFoundation
-import Accessibility
 
 /// A part of a line, recited by whichever voice's turn it is.
 @Observable final class Part {
@@ -18,8 +17,6 @@ import Accessibility
     var quotedString: String {
         return "\"\(string)\""
     }
-    
-    // TODO: These produce different results.
     
     /// The NSAttributedString has AVSpeechSynthesisIPANotationAttribute attributes with \U encoded values.
     var nsAttributedString: NSAttributedString {
@@ -32,20 +29,7 @@ import Accessibility
 
         return NSAttributedString(attributedString: mutableAttributedString)
     }
-    
-    /// AttributedString has AXIPANotation with unencoded values.
-    var attributedString: AttributedString {
-        var attrString = AttributedString(string)
-        for pronunciation in pronunciations {
-            // The location and length are UTF-16 offsets, as in `nsAttributedString`. Converting them directly,
-            // rather than searching for the text, marks the right occurrence of a word that appears more than once.
-            let nsRange = NSRange(location: pronunciation.location, length: pronunciation.length)
-            guard let range = Range(nsRange, in: attrString) else { continue }
-            attrString[range].accessibilitySpeechPhoneticNotation = pronunciation.ipa
-        }
-        return attrString
-    }
-    
+
     init(string: String, pronunciations: [CorrectPronunciation] = [], isRecited: Bool = false) {
         self.string = string
         self.pronunciations = pronunciations
