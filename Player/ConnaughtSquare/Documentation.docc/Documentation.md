@@ -21,25 +21,45 @@ so that they rhyme as much as possible, aiming for the ABAB pattern of a ballad'
 The lines are grouped four at a time into ``Stanza``s, and the stanzas are grouped into
 ``Canto``s by the tag their first line starts with.
 
-Because the arrangement follows the tag order, reordering the tags in the Settings tab
-rearranges the whole ballad.
+Because the arrangement follows the tag order, choosing a different tag order or reordering the
+tags in the Settings tab rearranges the whole ballad.
 
-### Composing the accompaniment
+### Scoring the accompaniment
+
+The music is written in a ``Score``, read from a Markdown asset laid out like a cue sheet. It has
+an introduction played before the ballad, and intermissions played between cantos and between the
+stanzas of a canto, each in full with nothing recited. It also says what happens as each part
+begins: one passage for the first line of a stanza, one for the first part of each later line, and
+one for each later part of a line. Each of these says when the part starts being recited, and lists
+the instruments and the stretches of time they play, at a volume. A time can be counted from the
+start of the passage or from when the recitation finishes, so the music can play under a part for
+as long as it takes to recite. An instrument can also carry on the melody it played in the part
+before.
+
+### Composing the melodies
 
 The ``Composer`` writes new music from two traditional tunes, The Sash My Father Wore and
 The British Grenadiers. It breaks each ``Tune`` into short sequences of note intervals and
 durations, held in ``WeightedSet``s that count how often each sequence occurs. It then combines
 the tunes' sets by union, intersection or symmetric difference, and draws from the result with a
-probability proportional to each sequence's weight. The ``Arranger`` has it compose a melody for
-each instrument the ``Score`` names, played through the ``SoundBank``'s samplers.
+probability proportional to each sequence's weight. A ``NoteSelection`` says which tunes, which
+sequence length and which combinations an instrument's notes are drawn from.
+
+The ``Arranger`` turns the score's passages into ``Event``s, one for each ``Instrument``, having a
+composer write each one a melody long enough for its stretches, or carrying on the melody it
+played in the part before.
 
 ### Performing the ballad
 
-A ``Performance`` walks through the ballad part by part. An ``EventsSequence`` produces the
-``Event``s for each part: a passage of music whose length depends on whether the part begins the
-ballad, a canto, a stanza or a line, a short silence, and the part itself. Two ``Speakers`` take
-turns to recite the parts using the system's British English voices, and the text appears in the
-Performance tab as it is spoken.
+A ``Performance`` walks through the ballad part by part. Before it starts, it loads every
+instrument in the score into the ``SoundBank`` and readies the voices. An ``EventsSequence`` then
+produces a ``Cue`` for each part: any intermission that comes before it, the events that play
+around it, when its recitation starts, and the ``Speaker`` who recites it. The voices take turns
+to recite the parts, one part each, in the roles the voices are chosen for in the Settings tab. Each
+cue's intermission plays in full first, then the part is recited while the instruments play their
+stretches through the ``SoundBank``'s samplers, and the cue ends once the recitation and every
+instrument have finished. Each canto's title, and the text of each part as it is spoken, appear in
+the Performance tab.
 
 The performance can be paused and resumed. A ``PauseGate`` holds the voices and the
 accompaniment in place, and time spent paused doesn't count towards any note or silence.
@@ -50,9 +70,11 @@ accompaniment in place, and time spent paused doesn't count towards any note or 
 
 - ``Performance``
 - ``EventsSequence``
+- ``Cue``
 - ``Event``
 - ``Speakers``
 - ``Speaker``
+- ``VoiceNotation``
 - ``SpeechSynthesizer``
 - ``PauseGate``
 
@@ -70,10 +92,11 @@ accompaniment in place, and time spent paused doesn't count towards any note or 
 
 ### Music
 
-- ``Composer``
-- ``Tune``
 - ``Score``
 - ``Arranger``
+- ``Composer``
+- ``NoteSelection``
+- ``Tune``
 - ``Instrument``
 - ``Note``
 - ``SoundBank``
