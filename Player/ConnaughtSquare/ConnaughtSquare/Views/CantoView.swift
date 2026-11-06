@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-// TODO: Canto XII - Some appropriate title
-
 struct CantoView: View {
     let canto: Canto
     /// Whether the title is shown before any of the canto has been recited.
