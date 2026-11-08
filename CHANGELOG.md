@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0] - 2026-11-08
+
 ### Added
 
 - The score can describe what each entry does with lines written as quotes, such as `> Plays before the ballad.`, which go anywhere and are otherwise skipped. In the Score asset, each division now says when it plays.
@@ -176,3 +178,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `Tune.mostFrequentNote` now counts notes by pitch alone, ignoring duration and velocity, and returns the first note in the tune with that pitch.
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
+
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.0...HEAD
+[1.0]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/releases/tag/v1.0
