@@ -35,8 +35,14 @@ struct Cue {
     let events: [Event]
     let part: Part
     let speaker: Speaker
+    /// Whether the part begins the ballad, so its title appears before anything else, even the intermission.
+    var beginsBallad = false
+    /// The rest after the ballad's title appears, before the intermission.
+    var balladTitleRest: Duration = .zero
     /// The index of the canto the part begins, or `nil` if it doesn't begin a canto.
     var cantoIndex: Int? = nil
+    /// The rest after the canto's title appears, before the rest of the cue starts.
+    var cantoTitleRest: Duration = .zero
 }
 
 extension Cue: CustomStringConvertible {

@@ -19,30 +19,40 @@ struct ScoreError: Error, CustomStringConvertible, Equatable {
 }
 
 extension Score {
-    /// Reads a score written in Markdown, in the order it's performed:
+    /// Reads a score written in Markdown, with its divisions grouped by the part of the ballad they
+    /// belong to:
     ///
     ///     # The Ballad of Connaught Square
     ///
-    ///     ## Stanza intermission
+    ///     ## Stanza
     ///
-    ///     - Violin, Viola, Cello: 0s–7s
-    ///     - Rest: 7s–8s
-    ///
-    ///     ## Stanza, later line
+    ///     ### Later line
     ///
     ///     - Violin, Cello: 0s–5s
     ///     - Viola: 0s–5s, 5s–end+1s at 60%
     ///     - Recite: 5.5s
     ///
-    /// The title comes first. Then come the introduction, the canto and stanza intermissions, the
-    /// first line of each stanza, the first part of each later line and its later parts, each a list
-    /// of what plays when it begins, like a cue sheet.
+    ///     ### Intermission
+    ///
+    ///     - Violin, Viola, Cello: 0s–7s
+    ///     - Rest: 7s–8s
+    ///
+    /// The title comes first. Then come the groups, each a `##` heading: `Ballad`, with its `Title`
+    /// and `Introduction`; `Canto`, with its `Title` and `Intermission`; `Stanza`, with its
+    /// `First line`, `Later line` and `Intermission`; and `Line`, with its `Later parts`. Each
+    /// division is a `###` heading under its group, and a list of what plays when it begins, like a
+    /// cue sheet. The groups and their divisions can come in any order. A line starting with `>`,
+    /// such as `> Plays before the ballad.`, describes what's around it and is otherwise skipped,
+    /// so it can go anywhere.
     ///
     /// The introduction is played before the ballad, a canto intermission after each canto before the
     /// next, and a stanza intermission after each stanza before the next in the same canto, each in
     /// full with nothing recited in it. An intermission lasts until its last
     /// instrument stops, or until the end of a rest written after that, such as `Rest: 7s–8s`. The
-    /// stanza's first line then follows.
+    /// stanza's first line then follows. The ballad's title appears as the performance starts,
+    /// before the introduction, and where a canto begins its title appears after any intermission,
+    /// before the first line. Each title can rest after it with a `Title` that lists only rests,
+    /// such as `Rest: 0s–2s`. Without one, what comes next follows the title straight away.
     ///
     /// Each of the others says once when the part starts being recited, such as
     /// `Recite: 5.5s`. Every other item names some instruments, then the stretches of time they play, such as `0s–5s`, each at
@@ -63,32 +73,73 @@ extension Score {
     }
 }
 
-/// The divisions of the ballad that a score gives an intermission or an interlude, as their headings are written.
-private enum Division: String, CaseIterable {
-    case introduction = "Introduction"
-    case canto = "Canto intermission"
-    case stanza = "Stanza intermission"
-    case firstLine = "Stanza, first line"
-    case line = "Stanza, later line"
-    case part = "Line, later parts"
+/// The divisions of the ballad that a score gives an intermission or an interlude, in the order
+/// they're written.
+private enum Division: CaseIterable {
+    case balladTitle
+    case introduction
+    case cantoTitle
+    case canto
+    case firstLine
+    case line
+    case stanza
+    case part
+
+    /// The groups the divisions are written under, as their `##` headings are written.
+    static let groups = ["Ballad", "Canto", "Stanza", "Line"]
+
+    /// The group the division is written under.
+    var group: String {
+        switch self {
+        case .balladTitle, .introduction: "Ballad"
+        case .cantoTitle, .canto: "Canto"
+        case .firstLine, .line, .stanza: "Stanza"
+        case .part: "Line"
+        }
+    }
+
+    /// The division's `###` heading, under its group.
+    var heading: String {
+        switch self {
+        case .balladTitle, .cantoTitle: "Title"
+        case .introduction: "Introduction"
+        case .canto, .stanza: "Intermission"
+        case .firstLine: "First line"
+        case .line: "Later line"
+        case .part: "Later parts"
+        }
+    }
+
+    /// The division's name in messages, such as `Stanza first line`.
+    var name: String {
+        "\(group) \(heading.lowercased())"
+    }
 
     /// Whether the division has an intermission, with nothing recited, rather than an interlude.
+    /// A title counts as one, though it only rests.
     var isIntermission: Bool {
         switch self {
-        case .introduction, .canto, .stanza:
+        case .introduction, .balladTitle, .canto, .cantoTitle, .stanza:
             true
         case .firstLine, .line, .part:
             false
         }
     }
+
+    /// Whether the division is the rest after a title appears, so it has only rests.
+    var isTitle: Bool {
+        self == .balladTitle || self == .cantoTitle
+    }
 }
 
-/// Reads a score line by line, keeping track of the division it's in.
+/// Reads a score line by line, keeping track of the group and division it's in.
 private struct ScoreReader {
     private var title: String?
     private var interludes: [Division: Interlude] = [:]
-    /// The divisions read so far, the current one last.
-    private var divisions: [Division] = []
+    /// The groups read so far, the current one last.
+    private var groups: [String] = []
+    /// The division being read, or `nil` before the current group's first.
+    private var division: Division?
     /// Whether the current division says when the part is recited.
     private var isRecited = false
     /// The instruments already named in the current division.
@@ -99,15 +150,18 @@ private struct ScoreReader {
 
     mutating func read(_ line: String, at lineNumber: Int) throws {
         self.lineNumber = lineNumber
-        if line.isEmpty {
+        if line.isEmpty || line.hasPrefix(">") {
+            // A blank line, or a description written as a quote, which the reader skips.
             return
         } else if let title = line.dropping(prefix: "# ") {
             guard self.title == nil else { throw error("The score has only one title") }
             self.title = title
-        } else if let heading = line.dropping(prefix: "## ") {
+        } else if let heading = line.dropping(prefix: "### ") {
             try begin(heading)
+        } else if let group = line.dropping(prefix: "## ") {
+            try beginGroup(group)
         } else if let item = line.dropping(prefix: "- ") {
-            guard let division = divisions.last else { throw error("A list must follow a heading") }
+            guard let division else { throw error("A list must follow a \"###\" heading") }
             try cue(item, in: division)
         } else {
             throw error("Expected a heading or a list item, not \"\(line)\"")
@@ -116,12 +170,14 @@ private struct ScoreReader {
 
     func score() throws -> Score {
         guard let title else { throw ScoreError(line: nil, message: "The score has no title") }
-        if let division = divisions.last, !division.isIntermission, !isRecited {
-            throw ScoreError(line: nil, message: "\"\(division.rawValue)\" doesn't say when to recite, such as \"Recite: 1s\"")
+        if let division, !division.isIntermission, !isRecited {
+            throw ScoreError(line: nil, message: "\"\(division.name)\" doesn't say when to recite, such as \"Recite: 1s\"")
         }
         return Score(title: title,
+                     balladTitleRest: rests[.balladTitle] ?? 0,
                      introduction: try intermission(.introduction),
                      canto: try intermission(.canto),
+                     cantoTitleRest: rests[.cantoTitle] ?? 0,
                      stanza: try intermission(.stanza),
                      firstLine: try interlude(.firstLine),
                      line: try interlude(.line),
@@ -130,7 +186,7 @@ private struct ScoreReader {
 
     private func interlude(_ division: Division) throws -> Interlude {
         guard let interlude = interludes[division] else {
-            throw ScoreError(line: nil, message: "The score has no \"\(division.rawValue)\"")
+            throw ScoreError(line: nil, message: "The score has no \"\(division.heading)\" under \"\(division.group)\"")
         }
         return interlude
     }
@@ -139,20 +195,42 @@ private struct ScoreReader {
         Intermission(tracks: try interlude(division).tracks, seconds: rests[division])
     }
 
-    private mutating func begin(_ heading: String) throws {
+    /// Begins a group of divisions, such as `## Stanza`.
+    private mutating func beginGroup(_ group: String) throws {
         guard title != nil else { throw error("The score must begin with its title") }
-        if let division = divisions.last, !division.isIntermission, !isRecited {
-            throw error("\"\(division.rawValue)\" doesn't say when to recite, such as \"Recite: 1s\"")
+        try finishDivision()
+        guard Division.groups.contains(group) else {
+            let groups = Division.groups.map { "\"\($0)\"" }.joined(separator: ", ")
+            throw error("\"\(group)\" isn't one of \(groups)")
         }
-        guard let division = Division(rawValue: heading) else {
-            let headings = Division.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: ", ")
-            throw error("\"\(heading)\" isn't one of \(headings)")
+        guard !groups.contains(group) else { throw error("The score already has \"\(group)\"") }
+        groups.append(group)
+        division = nil
+    }
+
+    /// Begins a division in the current group, such as `### First line`.
+    private mutating func begin(_ heading: String) throws {
+        guard let group = groups.last else {
+            throw error("\"\(heading)\" must come under a group, such as \"## Stanza\"")
         }
-        guard !divisions.contains(division) else { throw error("The score already has \"\(heading)\"") }
-        divisions.append(division)
+        try finishDivision()
+        let divisions = Division.allCases.filter { $0.group == group }
+        guard let division = divisions.first(where: { $0.heading == heading }) else {
+            let headings = divisions.map { "\"\($0.heading)\"" }.joined(separator: ", ")
+            throw error("\"\(heading)\" isn't one of \(headings) under \"\(group)\"")
+        }
+        guard interludes[division] == nil else { throw error("\"\(group)\" already has \"\(heading)\"") }
+        self.division = division
         interludes[division] = Interlude()
         isRecited = false
         instruments = []
+    }
+
+    /// Checks that the division being read says when to recite, if it's recited.
+    private func finishDivision() throws {
+        if let division, !division.isIntermission, !isRecited {
+            throw error("\"\(division.name)\" doesn't say when to recite, such as \"Recite: 1s\"")
+        }
     }
 
     /// Reads a cue in a division: when the part is recited, such as `Recite: 5.5s`, a rest in an
@@ -166,9 +244,9 @@ private struct ScoreReader {
         let times = String(item[colon.upperBound...])
         if label == "Recite" {
             guard !division.isIntermission else {
-                throw error("Nothing is recited in \"\(division.rawValue)\", an intermission; \"Stanza, first line\" opens the part after it")
+                throw error("Nothing is recited in \"\(division.name)\", an intermission; \"Stanza first line\" opens the part after it")
             }
-            guard !isRecited else { throw error("\"\(division.rawValue)\" already says when to recite") }
+            guard !isRecited else { throw error("\"\(division.name)\" already says when to recite") }
             guard case .seconds(let seconds) = try moment(times) else {
                 throw error("The recitation starts at a time from the start of the division, such as \"Recite: 1s\"")
             }
@@ -176,7 +254,7 @@ private struct ScoreReader {
             isRecited = true
         } else if label == "Rest" {
             guard division.isIntermission else {
-                throw error("A rest is written only in an intermission; \"\(division.rawValue)\" lasts until its part and instruments have finished")
+                throw error("A rest is written only in an intermission; \"\(division.name)\" lasts until its part and instruments have finished")
             }
             for text in times.components(separatedBy: ", ") {
                 let rest = try stretch(text)
@@ -191,15 +269,18 @@ private struct ScoreReader {
             var continues = false
             if let names = label.dropping(suffix: " continues") {
                 guard !division.isIntermission else {
-                    throw error("An intermission always starts its melodies afresh, so nothing in \"\(division.rawValue)\" continues")
+                    throw error("An intermission always starts its melodies afresh, so nothing in \"\(division.name)\" continues")
                 }
                 label = names
                 continues = true
             }
+            guard !division.isTitle else {
+                throw error("Only rests are written in \"\(division.name)\", such as \"Rest: 0s–2s\"")
+            }
             let names = try label.components(separatedBy: ", ").map(instrument)
             for name in names {
                 guard instruments.insert(name).inserted else {
-                    throw error("\(name) already plays in \"\(division.rawValue)\"; give it all its times on one line")
+                    throw error("\(name) already plays in \"\(division.name)\"; give it all its times on one line")
                 }
             }
             var stretches: [Stretch] = []
@@ -219,7 +300,7 @@ private struct ScoreReader {
     private func checkIntermission(_ stretch: Stretch, in division: Division) throws {
         guard division.isIntermission else { return }
         if case .afterRecitation = stretch.end {
-            throw error("Nothing is recited in \"\(division.rawValue)\", an intermission, so its times are from its start, not \"\(stretch.end)\"")
+            throw error("Nothing is recited in \"\(division.name)\", an intermission, so its times are from its start, not \"\(stretch.end)\"")
         }
     }
 

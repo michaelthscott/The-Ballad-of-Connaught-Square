@@ -78,6 +78,33 @@ struct PerformanceTests {
         #expect(performance.ballad.isRecited == false)
     }
 
+    /// Waits until the condition holds, checking every 50ms, or until the time runs out.
+    /// - Returns: Whether the condition held.
+    private func waitUntil(within limit: Duration = .seconds(5), _ condition: () -> Bool) async throws -> Bool {
+        let deadline = ContinuousClock.now + limit
+        while !condition() {
+            guard ContinuousClock.now < deadline else { return false }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        return true
+    }
+
+    /// The ballad's title shows as the performance starts, and performing again after stopping clears
+    /// it for a moment before it shows again.
+    @Test func testPlayAgainClearsTheTitle() async throws {
+        let performance = try makePerformance()
+        performance.play()
+        #expect(try await waitUntil { performance.isTitleAnnounced })
+        performance.stop()
+        #expect(performance.isTitleAnnounced)
+        performance.play()
+        #expect(!performance.isTitleAnnounced)
+        try await Task.sleep(for: Performance.titleClearing / 2)
+        #expect(!performance.isTitleAnnounced)
+        #expect(try await waitUntil { performance.isTitleAnnounced })
+        performance.stop()
+    }
+
     /// The viola playing quavers through the stretches.
     private func viola(_ stretches: [Stretch]) -> Event {
         Event(instrument: Instrument(name: .viola),

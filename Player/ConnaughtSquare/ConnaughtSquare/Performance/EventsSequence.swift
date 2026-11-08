@@ -33,6 +33,8 @@ struct EventsSequence {
         let interlude = currentInterlude
         let arranger = performance.arranger
         let role = voiceTurns.nextRole()
+        let isStartOfBallad = balladCursorSequence.isStartOfBallad
+        let isStartOfCanto = balladCursorSequence.isStartOfCanto
         let cue = Cue(intermission: intermission.map { arranger.events(for: $0.interlude, partDuration: .zero) } ?? [],
                       intermissionLength: .seconds(intermission?.seconds ?? 0),
                       recitationStart: .seconds(interlude.recitationStart),
@@ -40,7 +42,10 @@ struct EventsSequence {
                                               continuing: intermission == nil ? melodies : [:]),
                       part: part,
                       speaker: performance.speakers.speaker(forRole: role),
-                      cantoIndex: balladCursorSequence.isStartOfCanto ? balladCursorSequence.cursor?.cantoIndex : nil)
+                      beginsBallad: isStartOfBallad,
+                      balladTitleRest: isStartOfBallad ? .seconds(performance.score.balladTitleRest) : .zero,
+                      cantoIndex: isStartOfCanto ? balladCursorSequence.cursor?.cantoIndex : nil,
+                      cantoTitleRest: isStartOfCanto ? .seconds(performance.score.cantoTitleRest) : .zero)
         _ = balladCursorSequence.next()
         return cue
     }

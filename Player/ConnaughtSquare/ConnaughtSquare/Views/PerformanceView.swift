@@ -16,8 +16,10 @@ struct PerformanceView: View {
 
     var body: some View {
         VStack {
+            // Hidden rather than left out until it's announced, so the layout doesn't move when it appears.
             Text(ballad.title)
                 .font(.title)
+                .opacity(performance.isTitleAnnounced ? 1 : 0)
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     HStack(alignment: .top) {

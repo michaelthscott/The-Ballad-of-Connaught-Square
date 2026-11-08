@@ -81,6 +81,24 @@ struct EventsSequenceTests {
         #expect(cues.map(\.cantoIndex) == [0, nil, nil])
     }
 
+    /// Only the cue for a canto's first part rests after the canto's title, for as long as the score says.
+    @Test func testCantoTitleRest() throws {
+        var score = Score.standard
+        score.cantoTitleRest = 2
+        let cues = try cues(partsInFirstLine: 2, score: score)
+        #expect(cues.map(\.cantoTitleRest) == [.seconds(2), .zero, .zero])
+    }
+
+    /// Only the cue for the ballad's first part shows its title and rests after it, before the
+    /// introduction, for as long as the score says.
+    @Test func testBalladTitleRest() throws {
+        var score = Score.standard
+        score.balladTitleRest = 2
+        let cues = try cues(partsInFirstLine: 2, score: score)
+        #expect(cues.map(\.beginsBallad) == [true, false, false])
+        #expect(cues.map(\.balladTitleRest) == [.seconds(2), .zero, .zero])
+    }
+
     /// A new line in the same stanza opens with five seconds of music, with no intermission, and its
     /// part is recited a second after the music stops.
     @Test func testNewLineOpensWithMusic() throws {

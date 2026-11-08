@@ -99,27 +99,35 @@ struct ScoreTests {
         """
         # Test
 
-        ## Introduction
+        ## Ballad
+
+        ### Introduction
 
         - Rest: 0s–1s
 
-        ## Canto intermission
+        ## Canto
+
+        ### Intermission
 
         - Rest: 0s–1s
 
-        ## Stanza intermission
+        ## Stanza
 
-        - Rest: 0s–1s
-
-        ## Stanza, first line
+        ### First line
 
         - Recite: 0s
 
-        ## Stanza, later line
+        ### Later line
 
         - Recite: 0s
 
-        ## Line, later parts
+        ### Intermission
+
+        - Rest: 0s–1s
+
+        ## Line
+
+        ### Later parts
 
         \(cues.joined(separator: "\n"))
         """
@@ -134,6 +142,16 @@ struct ScoreTests {
         for interlude in score.interludes {
             #expect(interlude == Interlude())
         }
+    }
+
+    /// A description, written as a quote, is skipped wherever it goes, so the score reads the same.
+    @Test func testReadMarkdownDescriptions() throws {
+        let described = markdown()
+            .replacingOccurrences(of: "# Test\n", with: "> A score for testing.\n# Test\n>\n")
+            .replacingOccurrences(of: "## Canto\n", with: "## Canto\n\n> After each canto.\n")
+            .replacingOccurrences(of: "### Introduction\n", with: "### Introduction\n\n>Before the ballad.\n")
+            .replacingOccurrences(of: "- Recite: 0s\n", with: "- Recite: 0s\n  > Straight away.\n")
+        #expect(try Score(markdown: described) == Score(markdown: markdown()))
     }
 
     /// Each instrument line gives its instruments' stretches, and Recite says when the part starts,
@@ -156,24 +174,27 @@ struct ScoreTests {
 
     /// Mistakes in a division's cues, each with the line it's on.
     static let mistakes: [([String], Int)] = [
-        (["- Kazoo: 0s–1s", "- Recite: 0s"], 25),                  // No such instrument.
-        (["- Viola: 0s–1s at 120%", "- Recite: 0s"], 25),          // Too loud.
-        (["- Viola: 0s–1", "- Recite: 0s"], 25),                   // A time without seconds.
-        (["- Viola: 0s", "- Recite: 0s"], 25),                     // A time rather than a stretch.
-        (["- Viola: 2s–1s", "- Recite: 0s"], 25),                  // A stretch that ends before it starts.
-        (["- Viola: 1s–1s", "- Recite: 0s"], 25),                  // A stretch that ends as it starts.
-        (["- Viola: 0s–2s, 1s–3s", "- Recite: 0s"], 25),           // Overlapping stretches.
-        (["- Viola: end–end+1s, 1s–2s", "- Recite: 0s"], 25),      // A time from the start after the end.
-        (["- Viola: end–2s", "- Recite: 0s"], 25),                 // A stretch from the end to a time from the start.
-        (["- Viola: 0s–1s", "- Viola, Cello: 2s–3s", "- Recite: 0s"], 26), // An instrument named twice.
-        (["- Viola 0s–1s", "- Recite: 0s"], 25),                   // No colon.
-        (["- Kazoo continues: 0s–1s", "- Recite: 0s"], 25),        // No such instrument to continue.
-        (["- Recite: end"], 25),                                   // Recited from the end of the recitation.
-        (["- Recite: 0s", "- Recite: 1s"], 26),                    // Recited twice.
-        (["- Rest: 0s–1s", "- Recite: 0s"], 25),                   // A rest outside an intermission.
-        (["Recite: 0s"], 25),                                      // Not a list item.
-        (["- Recite: 0s", "## Stanza, later line"], 26),                    // A division twice.
-        (["- Recite: 0s", "## Coda"], 26),                         // No such division.
+        (["- Kazoo: 0s–1s", "- Recite: 0s"], 33),                  // No such instrument.
+        (["- Viola: 0s–1s at 120%", "- Recite: 0s"], 33),          // Too loud.
+        (["- Viola: 0s–1", "- Recite: 0s"], 33),                   // A time without seconds.
+        (["- Viola: 0s", "- Recite: 0s"], 33),                     // A time rather than a stretch.
+        (["- Viola: 2s–1s", "- Recite: 0s"], 33),                  // A stretch that ends before it starts.
+        (["- Viola: 1s–1s", "- Recite: 0s"], 33),                  // A stretch that ends as it starts.
+        (["- Viola: 0s–2s, 1s–3s", "- Recite: 0s"], 33),           // Overlapping stretches.
+        (["- Viola: end–end+1s, 1s–2s", "- Recite: 0s"], 33),      // A time from the start after the end.
+        (["- Viola: end–2s", "- Recite: 0s"], 33),                 // A stretch from the end to a time from the start.
+        (["- Viola: 0s–1s", "- Viola, Cello: 2s–3s", "- Recite: 0s"], 34), // An instrument named twice.
+        (["- Viola 0s–1s", "- Recite: 0s"], 33),                   // No colon.
+        (["- Kazoo continues: 0s–1s", "- Recite: 0s"], 33),        // No such instrument to continue.
+        (["- Recite: end"], 33),                                   // Recited from the end of the recitation.
+        (["- Recite: 0s", "- Recite: 1s"], 34),                    // Recited twice.
+        (["- Rest: 0s–1s", "- Recite: 0s"], 33),                   // A rest outside an intermission.
+        (["Recite: 0s"], 33),                                      // Not a list item.
+        (["- Viola: 0s–1s", "### Title"], 34),                     // A division without Recite before the next.
+        (["- Recite: 0s", "### Later parts"], 34),                 // A division twice.
+        (["- Recite: 0s", "### Title"], 34),                       // A division its group doesn't have.
+        (["- Recite: 0s", "## Coda"], 34),                         // No such group.
+        (["- Recite: 0s", "## Stanza"], 34),                       // A group twice.
     ]
 
     @Test(arguments: mistakes)
@@ -184,13 +205,48 @@ struct ScoreTests {
 
     /// An intermission's instruments and rests, which together give its length.
     @Test func testReadMarkdownIntermission() throws {
-        let markdown = markdown().replacingOccurrences(of: "## Canto intermission\n\n- Rest: 0s–1s",
-                                                       with: "## Canto intermission\n\n- Violin: 2s–11s\n- Cello: 0s–13s at 50%\n- Rest: 13s–15s")
+        let markdown = markdown().replacingOccurrences(of: "## Canto\n\n### Intermission\n\n- Rest: 0s–1s",
+                                                       with: "## Canto\n\n### Intermission\n\n- Violin: 2s–11s\n- Cello: 0s–13s at 50%\n- Rest: 13s–15s")
         let score = try Score(markdown: markdown)
         let expected = Intermission(tracks: [Track(instruments: [.violin], stretches: [Stretch(start: .seconds(2), end: .seconds(11))]),
                                              Track(instruments: [.cello], stretches: [Stretch(start: .seconds(0), end: .seconds(13), volume: 0.5)])],
                                     seconds: 15)
         #expect(score.canto == expected)
+    }
+
+    /// A canto title rests until its last rest ends, and a score without one doesn't rest.
+    @Test func testReadMarkdownCantoTitle() throws {
+        #expect(try Score(markdown: markdown()).cantoTitleRest == 0)
+        let markdown = markdown().replacingOccurrences(of: "## Canto\n\n",
+                                                       with: "## Canto\n\n### Title\n\n- Rest: 0s–2s, 2s–2.5s\n\n")
+        #expect(try Score(markdown: markdown).cantoTitleRest == 2.5)
+    }
+
+    /// A ballad title rests until its last rest ends, and a score without one doesn't rest.
+    @Test func testReadMarkdownBalladTitle() throws {
+        #expect(try Score(markdown: markdown()).balladTitleRest == 0)
+        let markdown = markdown().replacingOccurrences(of: "## Ballad\n\n",
+                                                       with: "## Ballad\n\n### Title\n\n- Rest: 0s–2s\n\n")
+        #expect(try Score(markdown: markdown).balladTitleRest == 2)
+    }
+
+    /// Instruments can't play in a ballad title, which only rests.
+    @Test func testMarkdownBalladTitleMistake() {
+        let markdown = markdown().replacingOccurrences(of: "## Ballad\n\n",
+                                                       with: "## Ballad\n\n### Title\n\n- Viola: 0s–1s\n\n")
+        let error = #expect(throws: ScoreError.self) { try Score(markdown: markdown) }
+        #expect(error?.line == 7, "\(String(describing: error))")
+    }
+
+    /// Mistakes in a canto title, which only rests, each on line 13.
+    @Test(arguments: ["- Viola: 0s–1s",     // An instrument.
+                      "- Recite: 0s",       // A recitation.
+                      "- Rest: 0s–end"])    // A rest until the end of a recitation.
+    func testMarkdownCantoTitleMistakes(cue: String) {
+        let markdown = markdown().replacingOccurrences(of: "## Canto\n\n",
+                                                       with: "## Canto\n\n### Title\n\n\(cue)\n\n")
+        let error = #expect(throws: ScoreError.self) { try Score(markdown: markdown) }
+        #expect(error?.line == 13, "\(String(describing: error))")
     }
 
     /// An instrument written with `continues` carries on its melody from the part before.
@@ -203,25 +259,28 @@ struct ScoreTests {
         #expect(score.part == expected)
     }
 
-    /// Mistakes in an intermission, which has nothing recited in it, each on line 9.
+    /// Mistakes in an intermission, which has nothing recited in it, each on line 13.
     @Test(arguments: ["- Recite: 0s",              // A recitation.
                       "- Viola: 0s–end",           // A time from the end of a recitation.
                       "- Rest: 0s–end+1s",         // A rest until after a recitation.
                       "- Rest: 0s–1s at 50%",      // A rest with a volume.
                       "- Viola continues: 0s–1s"]) // A melody carried on into an intermission.
     func testMarkdownIntermissionMistakes(cue: String) {
-        let markdown = markdown().replacingOccurrences(of: "## Canto intermission\n\n- Rest: 0s–1s", with: "## Canto intermission\n\n\(cue)")
+        let markdown = markdown().replacingOccurrences(of: "## Canto\n\n### Intermission\n\n- Rest: 0s–1s",
+                                                       with: "## Canto\n\n### Intermission\n\n\(cue)")
         let error = #expect(throws: ScoreError.self) { try Score(markdown: markdown) }
-        #expect(error?.line == 9, "\(String(describing: error))")
+        #expect(error?.line == 13, "\(String(describing: error))")
     }
 
     /// Mistakes in the score as a whole.
     @Test func testMarkdownScoreMistakes() {
         let mistakes = [
-            markdown(laterPart: ["- Viola: 0s–1s"]),                                        // A division without Recite.
-            markdown().replacingOccurrences(of: "## Canto intermission\n\n- Rest: 0s–1s\n\n", with: ""),  // A division left out.
-            markdown().replacingOccurrences(of: "## Introduction", with: "## Voices"),       // No such division.
-            markdown().replacingOccurrences(of: "# Test\n\n", with: ""),                   // No title.
+            markdown(laterPart: ["- Viola: 0s–1s"]),                                            // A division without Recite.
+            markdown().replacingOccurrences(of: "### Intermission\n\n- Rest: 0s–1s\n\n## Line", with: "## Line"), // A division left out.
+            markdown().replacingOccurrences(of: "### Introduction", with: "### Voices"),         // No such division.
+            markdown().replacingOccurrences(of: "## Ballad\n\n", with: ""),                     // A division under no group.
+            markdown().replacingOccurrences(of: "### Introduction\n\n", with: ""),              // A list under a group, not a division.
+            markdown().replacingOccurrences(of: "# Test\n\n", with: ""),                        // No title.
         ]
         for mistake in mistakes {
             #expect(throws: ScoreError.self) { try Score(markdown: mistake) }

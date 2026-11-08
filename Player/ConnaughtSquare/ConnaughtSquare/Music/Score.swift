@@ -13,13 +13,19 @@ import Foundation
 ///
 /// Where one canto ends and the next begins, only the canto intermission is played, not the stanza
 /// intermission as well. Nothing is played after the last canto. After the introduction or an
-/// intermission, the stanza's first line has an interlude of its own.
+/// intermission, the stanza's first line has an interlude of its own. The ballad's title appears
+/// as the performance starts, before the introduction, and each canto's title after any
+/// intermission before it, each followed by its rest.
 struct Score: Sendable, Equatable {
     var title: String
+    /// The seconds of rest after the ballad's title appears, before the introduction.
+    var balladTitleRest: Double = 0
     /// Played before the ballad.
     var introduction: Intermission
     /// Played after each canto, before the next.
     var canto: Intermission
+    /// The seconds of rest after each canto's title appears, before its first stanza's music comes in.
+    var cantoTitleRest: Double = 0
     /// Played after each stanza, before the next in the same canto.
     var stanza: Intermission
     /// Opens the first part of the first line of each stanza, after the introduction or an intermission.

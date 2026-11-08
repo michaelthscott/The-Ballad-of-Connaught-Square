@@ -28,6 +28,10 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     }
 
     var spokenPartCount: Int = 0
+    /// Whether the ballad's title has been shown, which happens as the performance starts, before the introduction.
+    private(set) var isTitleAnnounced = false
+    /// How long the last performance's title stays cleared when the ballad is performed again.
+    static let titleClearing: Duration = .seconds(1)
     /// The number of cantos whose titles have been shown, which happens as each canto's first
     /// stanza starts, before it's recited.
     private(set) var announcedCantoCount: Int = 0
@@ -66,13 +70,15 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     func play() {
         switch state {
         case .stopped:
+            let clearsTitle = isTitleAnnounced
             ballad.isRecited = false
             spokenPartCount = 0
+            isTitleAnnounced = false
             announcedCantoCount = 0
             soundBank.pauseGate.resume()
             state = .playing
             performanceTask = Task { [weak self] in
-                await self?.run()
+                await self?.run(clearingTitle: clearsTitle)
             }
         case .paused:
             resume()
@@ -126,7 +132,16 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         }
     }
 
-    private func run() async {
+    /// Performs the ballad from the beginning.
+    /// - Parameter clearingTitle: Whether the last performance's title was showing, so it's left
+    ///   cleared for a moment, while the performance gets ready, to be seen to go before it appears again.
+    private func run(clearingTitle: Bool = false) async {
+        let soundBank = soundBank
+        async let titleCleared: Void = {
+            if clearingTitle {
+                try? await soundBank.pauseGate.sleep(for: Self.titleClearing)
+            }
+        }()
         // The accompaniment starts the engine itself, outside the queue of engine changes, so let
         // the last performance's stop take effect first; otherwise it could stop this one's engine.
         await engineControlTask?.value
@@ -143,6 +158,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
             }
         }
         await engineControlTask?.value
+        await titleCleared
         var events = EventsSequence(performance: self)
         // Where each instrument's melody stopped in the last part, for the next to carry on.
         var melodies: [InstrumentName: Cycle<Note>] = [:]
@@ -164,11 +180,25 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     private func perform(_ cue: Cue) async -> [InstrumentName: Cycle<Note>] {
         logger.debug("\(cue.description)")
         let soundBank = soundBank
+        // Show the ballad's title as the performance starts, and rest after it as the score says
+        // before the introduction. Time paused doesn't count towards a rest.
+        if cue.beginsBallad {
+            isTitleAnnounced = true
+            if cue.balladTitleRest > .zero {
+                try? await soundBank.pauseGate.sleep(for: cue.balladTitleRest)
+                guard !Task.isCancelled else { return [:] }
+            }
+        }
         await Self.playIntermission(cue.intermission, lasting: cue.intermissionLength, on: soundBank)
         guard !Task.isCancelled else { return [:] }
-        // Show the canto's title as its first stanza's music comes in, before the stanza is recited.
+        // Show the canto's title before its first stanza is recited, and rest after it as the
+        // score says before the stanza's music comes in.
         if let cantoIndex = cue.cantoIndex {
             announcedCantoCount = max(announcedCantoCount, cantoIndex + 1)
+            if cue.cantoTitleRest > .zero {
+                try? await soundBank.pauseGate.sleep(for: cue.cantoTitleRest)
+                guard !Task.isCancelled else { return [:] }
+            }
         }
         // The recitation is a task of its own, so that instruments playing until it finishes can wait
         // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
