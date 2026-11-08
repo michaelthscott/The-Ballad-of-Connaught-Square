@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Releases a version of the app: dates its changelog entries, sets its version, commits and tags it.
+
+Usage: scripts/release VERSION [--skip-tests]
+
+    scripts/release 1.0
+
+The release is made from a clean main branch with entries under Unreleased in CHANGELOG.md. The
+unit tests are run on this Mac first, unless --skip-tests is given. Then:
+
+- Unreleased in CHANGELOG.md becomes the version with today's date, under a new, empty
+  Unreleased, and the links to each version's changes at the bottom are brought up to date.
+- MARKETING_VERSION becomes the version, and CURRENT_PROJECT_VERSION, the build number, goes up
+  by one, in every target.
+- The changes are committed as "Release VERSION" and tagged vVERSION, with the version's
+  changelog entries as the tag's message.
+
+Nothing is pushed; the script prints the command to push the release.
+"""
+
+# The Python that comes with macOS is older, so annotations are left unevaluated.
+from __future__ import annotations
+
+import datetime
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CHANGELOG = ROOT / "CHANGELOG.md"
+PROJECT_DIR = ROOT / "Player" / "ConnaughtSquare"
+PROJECT_FILE = PROJECT_DIR / "ConnaughtSquare.xcodeproj" / "project.xcproj"
+SCHEME = "ConnaughtSquare"
+TEST_TARGET = "ConnaughtSquareTests"
+UNRELEASED = "## [Unreleased]"
+
+
+def fail(message: str) -> None:
+    sys.exit(f"release: {message}")
+
+
+def git(*args: str) -> str:
+    result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def check_repository(version: str) -> None:
+    """Checks that the release is made from a clean main branch, under a tag not yet used."""
+    if git("rev-parse", "--abbrev-ref", "HEAD") != "main":
+        fail("releases are made from main")
+    if git("status", "--porcelain"):
+        fail("the working tree has uncommitted changes")
+    if git("tag", "--list", f"v{version}"):
+        fail(f"v{version} has already been released")
+
+
+def unreleased_notes(changelog: str) -> str:
+    """The entries under Unreleased, without its heading."""
+    start = changelog.find(UNRELEASED)
+    if start == -1:
+        fail(f"CHANGELOG.md has no \"{UNRELEASED}\" heading")
+    body_start = start + len(UNRELEASED)
+    following = re.search(r"^## \[", changelog[body_start:], re.MULTILINE)
+    body_end = body_start + following.start() if following else len(changelog)
+    # Stop at the links at the bottom, if this is the last section.
+    links = re.search(r"^\[[^\]]+\]: ", changelog[body_start:body_end], re.MULTILINE)
+    if links:
+        body_end = body_start + links.start()
+    return changelog[body_start:body_end].strip()
+
+
+def released_versions(changelog: str) -> list[str]:
+    """The versions already in the changelog, newest first."""
+    return re.findall(r"^## \[(?!Unreleased\])([^\]]+)\]", changelog, re.MULTILINE)
+
+
+def repository_url() -> str | None:
+    """The GitHub address of the origin remote, for the changelog's links, if it has one."""
+    url = git("remote", "get-url", "origin")
+    match = re.match(r"(?:https://github\.com/|git@github\.com:)(.+?)(?:\.git)?$", url)
+    return f"https://github.com/{match.group(1)}" if match else None
+
+
+def release_changelog(changelog: str, version: str, date: str) -> str:
+    """The changelog with Unreleased released as the version, and its links brought up to date."""
+    previous = released_versions(changelog)
+    changelog = changelog.replace(UNRELEASED, f"{UNRELEASED}\n\n## [{version}] - {date}", 1)
+    url = repository_url()
+    if url is None:
+        return changelog
+    # Each version links to its changes since the one before; Unreleased to those since this one.
+    changelog = re.sub(r"^\[Unreleased\]: .*\n?", "", changelog, flags=re.MULTILINE).rstrip("\n")
+    release_link = (f"[{version}]: {url}/compare/v{previous[0]}...v{version}" if previous
+                    else f"[{version}]: {url}/releases/tag/v{version}")
+    unreleased_link = f"[Unreleased]: {url}/compare/v{version}...HEAD"
+    existing_links = re.search(r"^\[[^\]]+\]: ", changelog, re.MULTILINE)
+    if existing_links:
+        # The newest links go first, above the older versions'.
+        head, tail = changelog[:existing_links.start()], changelog[existing_links.start():]
+        return f"{head}{unreleased_link}\n{release_link}\n{tail}\n"
+    return f"{changelog}\n\n{unreleased_link}\n{release_link}\n"
+
+
+def set_project_version(project: str, version: str) -> tuple[str, int]:
+    """The project with every target's version set and build number raised, and the new build number."""
+    builds = [int(build) for build in re.findall(r'"CURRENT_PROJECT_VERSION": "(\d+)"', project)]
+    if not builds:
+        fail("the project has no CURRENT_PROJECT_VERSION")
+    if not re.search(r'"MARKETING_VERSION": "[^"]*"', project):
+        fail("the project has no MARKETING_VERSION")
+    build = max(builds) + 1
+    project = re.sub(r'"MARKETING_VERSION": "[^"]*"', f'"MARKETING_VERSION": "{version}"', project)
+    project = re.sub(r'"CURRENT_PROJECT_VERSION": "\d+"', f'"CURRENT_PROJECT_VERSION": "{build}"', project)
+    return project, build
+
+
+def run_tests() -> None:
+    """Runs the unit tests on this Mac, stopping the release if any fail."""
+    print("release: running the unit tests on this Mac…", flush=True)
+    result = subprocess.run(["xcodebuild", "test", "-quiet",
+                             "-project", str(PROJECT_FILE.parent),
+                             "-scheme", SCHEME,
+                             "-destination", "platform=macOS",
+                             f"-only-testing:{TEST_TARGET}"],
+                            cwd=PROJECT_DIR)
+    if result.returncode != 0:
+        fail("the tests failed, so nothing was released")
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    skip_tests = "--skip-tests" in args
+    versions = [arg for arg in args if arg != "--skip-tests"]
+    if len(versions) != 1 or any(arg.startswith("-") for arg in versions):
+        fail("usage: scripts/release VERSION [--skip-tests]")
+    version = versions[0]
+    if not re.fullmatch(r"\d+\.\d+(\.\d+)?", version):
+        fail(f"\"{version}\" isn't a version such as 1.0 or 1.0.1")
+
+    check_repository(version)
+    changelog = CHANGELOG.read_text(encoding="utf-8")
+    notes = unreleased_notes(changelog)
+    if not notes:
+        fail("there's nothing under Unreleased in CHANGELOG.md to release")
+    if version in released_versions(changelog):
+        fail(f"CHANGELOG.md already has {version}")
+    if not skip_tests:
+        run_tests()
+
+    date = datetime.date.today().isoformat()
+    CHANGELOG.write_text(release_changelog(changelog, version, date), encoding="utf-8")
+    project, build = set_project_version(PROJECT_FILE.read_text(encoding="utf-8"), version)
+    PROJECT_FILE.write_text(project, encoding="utf-8")
+
+    git("add", str(CHANGELOG), str(PROJECT_FILE))
+    git("commit", "--quiet", "--message", f"Release {version}")
+    # Verbatim, so that the "###" headings aren't taken for comments and dropped.
+    git("tag", "--annotate", "--cleanup=verbatim", f"v{version}", "--message", f"Release {version}\n\n{notes}\n")
+    print(f"release: released {version}, build {build}, as v{version}.")
+    print("release: to publish it, run: git push origin main --follow-tags")
+
+
+if __name__ == "__main__":
+    main()
