@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The app icon is now an Icon Composer icon, `AppIcon.icon`, in place of the `AppIcon` image set in the asset catalog. It uses the same artwork, so the system can render it in the light, dark, tinted and clear appearances.
+
 ## [1.0] - 2026-11-08
 
 ### Added
