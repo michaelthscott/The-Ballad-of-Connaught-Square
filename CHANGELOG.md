@@ -6,7 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/testflight` archives the released version for iOS and macOS and uploads it to TestFlight, so it can be installed on iPhone, iPad and Mac. `scripts/release` runs it after tagging, unless `--skip-upload` is given. The app now declares that it uses no non-exempt encryption, so uploads skip the export compliance question, and that its category is Music, which the Mac App Store requires.
+
 ### Changed
+
+- The app's name under its icon is now "Connaught Square" rather than "ConnaughtSquare".
 
 - The app icon is now an Icon Composer icon, `AppIcon.icon`, in place of the `AppIcon` image set in the asset catalog. It uses the same artwork, so the system can render it in the light, dark, tinted and clear appearances.
 

@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Uploads the released version of the app to TestFlight, for iOS and for macOS.
+
+Usage: scripts/testflight
+
+    scripts/testflight
+
+The upload is made from a clean checkout of a release, such as one scripts/release has just
+made: HEAD must be tagged with a version, such as v1.1. For each platform, the app is archived
+with the Release configuration and uploaded to App Store Connect, keeping the project's version
+and build number. Once App Store Connect has processed the builds, they can be installed from the
+TestFlight app on iPhone, iPad and Mac.
+
+Signing and uploading use the developer account added in Xcode's Accounts settings, and App Store
+Connect must already have an app record with the app's bundle identifier. The archives are kept
+in build/TestFlight, which Git ignores.
+"""
+
+# The Python that comes with macOS is older, so annotations are left unevaluated.
+from __future__ import annotations
+
+import plistlib
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+PROJECT_DIR = ROOT / "Player" / "ConnaughtSquare"
+PROJECT = PROJECT_DIR / "ConnaughtSquare.xcodeproj"
+SCHEME = "ConnaughtSquare"
+TEAM_ID = "953887MQL5"
+BUILD_DIR = ROOT / "build" / "TestFlight"
+
+# Each platform's name in the archive's file name, and its xcodebuild destination.
+PLATFORMS = {
+    "iOS": "generic/platform=iOS",
+    "macOS": "generic/platform=macOS",
+}
+
+
+def fail(message: str) -> None:
+    sys.exit(f"testflight: {message}")
+
+
+def git(*args: str) -> str:
+    result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def released_version() -> str:
+    """The version HEAD is tagged with, from a clean working tree."""
+    if git("status", "--porcelain"):
+        fail("the working tree has uncommitted changes")
+    tags = git("tag", "--points-at", "HEAD").splitlines()
+    versions = [tag[1:] for tag in tags if re.fullmatch(r"v\d+\.\d+(\.\d+)?", tag)]
+    if not versions:
+        fail("HEAD isn't a release; make one with scripts/release VERSION")
+    return versions[0]
+
+
+def xcodebuild(*args: str) -> None:
+    result = subprocess.run(["xcodebuild", "-quiet", "-allowProvisioningUpdates", *args], cwd=PROJECT_DIR)
+    if result.returncode != 0:
+        fail(f"xcodebuild {args[0]} failed")
+
+
+def export_options(path: Path) -> None:
+    """Writes the options that upload an archive to App Store Connect, keeping its build number."""
+    with path.open("wb") as file:
+        plistlib.dump({
+            "method": "app-store-connect",
+            "destination": "upload",
+            "teamID": TEAM_ID,
+            "signingStyle": "automatic",
+            "manageAppVersionAndBuildNumber": False,
+        }, file)
+
+
+def upload(platform: str, destination: str, version: str, options: Path) -> None:
+    """Archives the app for the platform, then uploads the archive to App Store Connect."""
+    archive = BUILD_DIR / f"ConnaughtSquare-{version}-{platform}.xcarchive"
+    if archive.exists():
+        shutil.rmtree(archive)
+    print(f"testflight: archiving {version} for {platform}…", flush=True)
+    xcodebuild("archive",
+               "-project", str(PROJECT),
+               "-scheme", SCHEME,
+               "-configuration", "Release",
+               "-destination", destination,
+               "-archivePath", str(archive))
+    print(f"testflight: uploading {version} for {platform}…", flush=True)
+    xcodebuild("-exportArchive",
+               "-archivePath", str(archive),
+               "-exportOptionsPlist", str(options),
+               "-exportPath", str(BUILD_DIR / f"Export-{platform}"))
+
+
+def main() -> None:
+    if sys.argv[1:]:
+        fail("usage: scripts/testflight")
+    version = released_version()
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    options = BUILD_DIR / "ExportOptions.plist"
+    export_options(options)
+    for platform, destination in PLATFORMS.items():
+        upload(platform, destination, version, options)
+    print(f"testflight: uploaded {version} for {', '.join(PLATFORMS)}. It can be installed from "
+          "TestFlight once App Store Connect has processed it.")
+
+
+if __name__ == "__main__":
+    main()

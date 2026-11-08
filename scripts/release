@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Releases a version of the app: dates its changelog entries, sets its version, commits and tags it.
 
-Usage: scripts/release VERSION [--skip-tests]
+Usage: scripts/release VERSION [--skip-tests] [--skip-upload]
 
     scripts/release 1.0
 
@@ -14,6 +14,9 @@ unit tests are run on this Mac first, unless --skip-tests is given. Then:
   by one, in every target.
 - The changes are committed as "Release VERSION" and tagged vVERSION, with the version's
   changelog entries as the tag's message.
+- The release is uploaded to TestFlight for iOS and macOS by scripts/testflight, unless
+  --skip-upload is given. If the upload fails, the release stays committed and tagged, and
+  scripts/testflight can be run again on its own.
 
 Nothing is pushed; the script prints the command to push the release.
 """
@@ -32,6 +35,7 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 PROJECT_DIR = ROOT / "Player" / "ConnaughtSquare"
 PROJECT_FILE = PROJECT_DIR / "ConnaughtSquare.xcodeproj" / "project.xcproj"
 SCHEME = "ConnaughtSquare"
+TESTFLIGHT = ROOT / "scripts" / "testflight"
 TEST_TARGET = "ConnaughtSquareTests"
 UNRELEASED = "## [Unreleased]"
 
@@ -133,9 +137,10 @@ def run_tests() -> None:
 def main() -> None:
     args = sys.argv[1:]
     skip_tests = "--skip-tests" in args
-    versions = [arg for arg in args if arg != "--skip-tests"]
+    skip_upload = "--skip-upload" in args
+    versions = [arg for arg in args if arg not in ("--skip-tests", "--skip-upload")]
     if len(versions) != 1 or any(arg.startswith("-") for arg in versions):
-        fail("usage: scripts/release VERSION [--skip-tests]")
+        fail("usage: scripts/release VERSION [--skip-tests] [--skip-upload]")
     version = versions[0]
     if not re.fullmatch(r"\d+\.\d+(\.\d+)?", version):
         fail(f"\"{version}\" isn't a version such as 1.0 or 1.0.1")
@@ -160,6 +165,8 @@ def main() -> None:
     # Verbatim, so that the "###" headings aren't taken for comments and dropped.
     git("tag", "--annotate", "--cleanup=verbatim", f"v{version}", "--message", f"Release {version}\n\n{notes}\n")
     print(f"release: released {version}, build {build}, as v{version}.")
+    if not skip_upload and subprocess.run([str(TESTFLIGHT)], cwd=ROOT).returncode != 0:
+        print("release: the upload to TestFlight failed; to try again, run: scripts/testflight")
     print("release: to publish it, run: git push origin main --follow-tags")
 
 
