@@ -155,6 +155,20 @@ struct EventsSequenceTests {
         #expect(names == [first.name, second.name, first.name])
     }
 
+    /// The speakers stand where their roles stand, so in the standard score they alternate from
+    /// left to right.
+    @Test func testSpeakersStandOnAlternateSides() throws {
+        let speakers = Speakers()
+        let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
+        var sequence = EventsSequence(performance: performance)
+        var pans: [Float] = []
+        for _ in 1...3 {
+            pans.append(try nextCue(of: &sequence).pan)
+        }
+        #expect(pans == [speakers.pan(forRole: 0), speakers.pan(forRole: 1), speakers.pan(forRole: 0)])
+        #expect(pans[0] < pans[1])
+    }
+
     /// Each sequence starts the turns afresh, so a performance stopped after an odd number of
     /// parts still starts the next one with the first speaker.
     @Test func testEachSequenceStartsTheTurnsAfresh() throws {

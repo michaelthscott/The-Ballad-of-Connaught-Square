@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- On stereo output the voices recite from either side, the first role on the left and the second on the right, three-quarters of the way to each edge. More roles are spread evenly between them, and a single role stands in the centre. The speech is played through an audio engine of its own, made with the first line spoken, and carries on when the output changes, such as headphones being plugged in or out.
+
+### Changed
+
+- Pausing and stopping silence the voice at once, rather than at the end of the word being spoken.
+
 ## [1.1] - 2026-11-08
 
 ### Added

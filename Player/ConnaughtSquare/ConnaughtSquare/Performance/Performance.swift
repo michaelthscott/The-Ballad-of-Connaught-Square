@@ -204,12 +204,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
         let part = cue.part
         let speaker = cue.speaker
+        let pan = cue.pan
         let recitationStart = cue.recitationStart
         let recitation = Task {
             try? await soundBank.pauseGate.sleep(for: recitationStart)
             await soundBank.pauseGate.wait()
             guard !Task.isCancelled else { return }
-            await self.recite(part, as: speaker)
+            await self.recite(part, as: speaker, at: pan)
         }
         // The events are `Sendable`, so they play off the main actor while the part — which isn't —
         // is recited on it. Take them out of the cue first, so the child task doesn't capture its part.
@@ -223,13 +224,13 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         return await melodies
     }
 
-    /// Recites the part in the speaker's voice.
+    /// Recites the part in the speaker's voice, from where the speaker stands in stereo.
     ///
     /// The part is marked as recited before speech begins so that the text appears as it is spoken.
-    private func recite(_ part: Part, as speaker: Speaker) async {
+    private func recite(_ part: Part, as speaker: Speaker, at pan: Float) async {
         part.isRecited = true
         spokenPartCount += 1
-        await speech.speak(part.nsAttributedString, in: speaker.voice)
+        await speech.speak(part.nsAttributedString, in: speaker.voice, pan: pan)
     }
 
     /// Plays an intermission's events together, returning once they've finished and its length has

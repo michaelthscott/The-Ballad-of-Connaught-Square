@@ -14,6 +14,11 @@ import AVFoundation
 /// another has only [Daniel, Eddy, Flo, Grandma, Grandpa, Reed, Rocko, Sandy, Shelley], and a
 /// device may have just [Daniel]. These check how the speakers are selected from whatever is
 /// installed rather than naming individual voices.
+///
+/// Listing the voices blocks on the accessibility framework, so the tests run on the main actor,
+/// one at a time. Run in parallel, a dozen of them block every thread in the concurrency pool, and
+/// the run hangs.
+@MainActor
 struct SpeakersTests {
     let speakers = Speakers()
 
@@ -63,6 +68,33 @@ struct SpeakersTests {
         let speakers = Speakers(roles: [])
         #expect(speakers.voices.isEmpty)
         #expect(speakers.speaker(forRole: 3) == (try #require(speakers.availableSpeakers.first)))
+    }
+
+    /// The standard roles stand at either side, the first on the left.
+    @Test func testStandardRolesStandEitherSide() {
+        #expect(speakers.pan(forRole: 0) == -Speakers.stereoWidth)
+        #expect(speakers.pan(forRole: 1) == Speakers.stereoWidth)
+        #expect(Speakers.stereoWidth > 0 && Speakers.stereoWidth <= 1)
+    }
+
+    /// More roles are spread evenly from left to right, the outermost at the stereo width.
+    @Test func testRolesAreSpreadEvenly() {
+        let speakers = Speakers(roles: ["A", "B", "C"])
+        #expect(speakers.pan(forRole: 0) == -Speakers.stereoWidth)
+        #expect(speakers.pan(forRole: 1) == 0)
+        #expect(speakers.pan(forRole: 2) == Speakers.stereoWidth)
+    }
+
+    /// A single role, or none, stands in the centre.
+    @Test func testASingleRoleStandsInTheCentre() {
+        #expect(Speakers(roles: ["Only"]).pan(forRole: 0) == 0)
+        #expect(Speakers(roles: []).pan(forRole: 3) == 0)
+    }
+
+    /// A role outside the roles stands where the role it wraps around to stands.
+    @Test func testPansWrap() {
+        #expect(speakers.pan(forRole: 2) == speakers.pan(forRole: 0))
+        #expect(speakers.pan(forRole: -1) == speakers.pan(forRole: 1))
     }
 
     /// Choosing a voice for a role changes who speaks for it.

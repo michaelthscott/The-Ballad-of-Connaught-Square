@@ -48,4 +48,17 @@ import AVFoundation
         guard !voices.isEmpty else { return availableSpeakers[0] }
         return voices[(role % voices.count + voices.count) % voices.count]
     }
+
+    /// How far to either side the outermost roles stand, from 0 in the centre to 1 at the edge.
+    /// Short of the edge, so a little of each voice reaches the other ear, which is less tiring on headphones.
+    static let stereoWidth: Float = 0.75
+
+    /// Where the role stands in stereo, from -1 on the left to 1 on the right. The roles are spread
+    /// evenly from left to right in order, a single role stands in the centre, and a role outside
+    /// the roles wraps around them.
+    func pan(forRole role: Int) -> Float {
+        guard roles.count > 1 else { return 0 }
+        let position = (role % roles.count + roles.count) % roles.count
+        return Self.stereoWidth * (2 * Float(position) / Float(roles.count - 1) - 1)
+    }
 }

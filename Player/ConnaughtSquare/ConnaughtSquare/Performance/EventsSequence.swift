@@ -42,6 +42,7 @@ struct EventsSequence {
                                               continuing: intermission == nil ? melodies : [:]),
                       part: part,
                       speaker: performance.speakers.speaker(forRole: role),
+                      pan: performance.speakers.pan(forRole: role),
                       beginsBallad: isStartOfBallad,
                       balladTitleRest: isStartOfBallad ? .seconds(performance.score.balladTitleRest) : .zero,
                       cantoIndex: isStartOfCanto ? balladCursorSequence.cursor?.cantoIndex : nil,

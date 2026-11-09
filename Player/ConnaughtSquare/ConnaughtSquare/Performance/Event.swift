@@ -35,6 +35,8 @@ struct Cue {
     let events: [Event]
     let part: Part
     let speaker: Speaker
+    /// Where the speaker stands in stereo, from -1 on the left to 1 on the right.
+    var pan: Float = 0
     /// Whether the part begins the ballad, so its title appears before anything else, even the intermission.
     var beginsBallad = false
     /// The rest after the ballad's title appears, before the intermission.
@@ -47,6 +49,6 @@ struct Cue {
 
 extension Cue: CustomStringConvertible {
     var description: String {
-        "intermission(\(intermissionLength)): \(intermission.map(\.description).joined(separator: "; ")); \(events.map(\.description).joined(separator: "; ")); speak(\(speaker.name) at \(recitationStart): \(part.string))"
+        "intermission(\(intermissionLength)): \(intermission.map(\.description).joined(separator: "; ")); \(events.map(\.description).joined(separator: "; ")); speak(\(speaker.name) at \(recitationStart), pan \(pan):\(part.string))"
     }
 }
