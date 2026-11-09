@@ -1,5 +1,5 @@
 //
-//  SettingsView.swift
+//  SettingsTab.swift
 //  ConnaughtSquare
 //
 //  Created by Michael Scott on 18/12/2023.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsView: View {
+struct SettingsTab: View {
 	@Environment(Ballad.self) var ballad
 	@State private var isShowingSheet = false
 	
@@ -43,5 +43,5 @@ struct SettingsView: View {
 }
 
 #Preview("Settings", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers())) {
-	SettingsView()
+	SettingsTab()
 }

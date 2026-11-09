@@ -1,5 +1,5 @@
 //
-//  PerformanceView.swift
+//  PerformanceTab.swift
 //  ConnaughtSquare
 //
 //  Created by Michael Scott on 28/03/2025.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PerformanceView: View {
+struct PerformanceTab: View {
     @Environment(Ballad.self) var ballad
     @Environment(Speakers.self) var speakers
     @Environment(Performance.self) var performance
@@ -61,5 +61,5 @@ struct PerformanceView: View {
 }
 
 #Preview("Performance", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers()), .modifier(PreviewPerformance())) {
-    PerformanceView()
+    PerformanceTab()
 }

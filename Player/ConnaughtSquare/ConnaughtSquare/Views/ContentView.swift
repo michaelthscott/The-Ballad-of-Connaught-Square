@@ -11,9 +11,9 @@ struct ContentView: View {
     var body: some View {
         VStack {
             TabView {
-                PerformanceView()
+                PerformanceTab()
                     .tabItem { Label("Performance", systemImage: "theatermasks") }
-				SettingsView()
+				SettingsTab()
 					.tabItem { Label("Settings", systemImage: "gear") }
             }
         }
