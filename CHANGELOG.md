@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2] - 2026-11-09
+
 ### Added
 
 - On stereo output the voices recite from either side, the first role on the left and the second on the right, three-quarters of the way to each edge. More roles are spread evenly between them, and a single role stands in the centre. The speech is played through an audio engine of its own, made with the first line spoken, and carries on when the output changes, such as headphones being plugged in or out.
@@ -199,6 +201,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.1...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...HEAD
+[1.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.1...v1.2
 [1.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.0...v1.1
 [1.0]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/releases/tag/v1.0
