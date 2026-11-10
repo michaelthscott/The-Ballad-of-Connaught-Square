@@ -38,7 +38,7 @@ actor SoundBank {
     let url: URL
     /// Notes wait at this gate before sounding, and time their lengths against it, so pausing it
     /// holds a sounding note until it is resumed and stops further notes from starting.
-    nonisolated let pauseGate = PauseGate()
+    nonisolated let pauseGate: PauseGate
     /// Core Audio aborts when samplers in different sound banks load presets at the same time, so
     /// presets are loaded one at a time across every sound bank, not just within this actor.
     private static let presetLoadingLock = NSLock()
@@ -56,16 +56,17 @@ actor SoundBank {
         Set(samplers.keys)
     }
 
-    /// Creates a sound bank from a SoundFont in the main bundle.
+    /// Creates a sound bank from a SoundFont in the main bundle, timing its notes against the clock.
     ///
     /// The SoundFont is in the main bundle rather than the asset catalogue because we can't get an asset's URL.
-    init(resource: String = "GeneralUser GS MuseScore v1.442", suffix: String = "sf2") throws {
+    init(resource: String = "GeneralUser GS MuseScore v1.442", suffix: String = "sf2", clock: some Clock<Duration> = ContinuousClock()) throws {
         guard let url = Bundle.main.url(forResource: resource, withExtension: suffix) else {
             throw SoundBankError.failedToFindSoundBank
         }
         self.resource = resource
         self.suffix = suffix
         self.url = url
+        pauseGate = PauseGate(clock: clock)
 
         // Build the graph locally, then adopt it, so the initialiser never touches isolated state.
         // The samplers are connected to the mixer as their instruments are loaded.

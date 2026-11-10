@@ -9,8 +9,6 @@ import Testing
 @testable import ConnaughtSquare
 
 struct PauseGateTests {
-    let clock = ContinuousClock()
-
     @Test func testWaitWhenOpen() async throws {
         let gate = PauseGate()
         #expect(gate.isPaused == false)
@@ -62,31 +60,31 @@ struct PauseGateTests {
     }
 
     @Test func testSleepWhenOpen() async throws {
-        let gate = PauseGate()
-        let elapsed = try await clock.measure {
-            try await gate.sleep(for: .milliseconds(100))
+        let clock = ManualClock()
+        let gate = PauseGate(clock: clock)
+        let elapsed = await clock.measure {
+            try? await gate.sleep(for: .milliseconds(100))
         }
-        #expect(elapsed >= .milliseconds(100))
-        // Only guards against hanging: sleeps can wake late while other tests run in parallel.
-        #expect(elapsed < .seconds(1))
+        #expect(elapsed == .milliseconds(100))
     }
 
     @Test func testSleepExcludesTimePaused() async throws {
-        let gate = PauseGate()
-        let start = clock.now
-        let sleeping = Task { try await gate.sleep(for: .milliseconds(200)) }
+        let clock = ManualClock()
+        let gate = PauseGate(clock: clock)
+        let sleeping = Task {
+            try await gate.sleep(for: .milliseconds(200))
+            return clock.now
+        }
         // Pause part-way through the sleep, for longer than the sleep has left.
-        try await Task.sleep(for: .milliseconds(100))
+        await clock.advance(by: .milliseconds(100))
         gate.pause()
-        try await Task.sleep(for: .seconds(1))
+        await clock.advance(by: .seconds(1))
         gate.resume()
-        try await sleeping.value
-        let elapsed = clock.now - start
+        _ = await clock.measure {
+            _ = try? await sleeping.value
+        }
         // 100 ms before the pause, 1 s paused, then the 100 ms left.
-        #expect(elapsed >= .milliseconds(1200))
-        // Counting the pause twice would take about 2.2 s. The long pause leaves room below that for
-        // sleeps that wake late while other tests run in parallel.
-        #expect(elapsed < .seconds(2))
+        #expect(try await sleeping.value.offset == .milliseconds(1200))
     }
 
     @Test func testSleepThrowsWhenCancelled() async throws {
