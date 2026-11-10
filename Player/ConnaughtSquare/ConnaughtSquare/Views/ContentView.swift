@@ -9,6 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
+        #if os(macOS)
+        // On macOS the settings are in the Settings window instead.
+        PerformanceTab()
+        #else
         VStack {
             TabView {
                 PerformanceTab()
@@ -17,6 +21,7 @@ struct ContentView: View {
 					.tabItem { Label("Settings", systemImage: "gear") }
             }
         }
+        #endif
     }
 }
 

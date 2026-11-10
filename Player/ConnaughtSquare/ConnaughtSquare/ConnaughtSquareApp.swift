@@ -18,5 +18,13 @@ struct ConnaughtSquareApp: App {
                 .environment(performance.speakers)
                 .environment(performance)
         }
+        #if os(macOS)
+        Settings {
+            SettingsWindow()
+                .environment(performance.ballad)
+                .environment(performance.speakers)
+                .environment(performance)
+        }
+        #endif
     }
 }
