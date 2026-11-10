@@ -30,21 +30,31 @@ struct Arranger {
     ///   - interlude: An interlude of the score.
     ///   - partDuration: The expected length of the part recited in the interlude.
     ///   - melodies: Where each instrument's melody stopped in the part before.
-    func events(for interlude: Interlude, partDuration: Duration, continuing melodies: [InstrumentName: Cycle<Note>] = [:]) -> [Event] {
+    ///   - generator: The random number generator the melodies are composed with.
+    func events<T: RandomNumberGenerator>(for interlude: Interlude, partDuration: Duration, continuing melodies: [InstrumentName: Cycle<Note>] = [:], using generator: inout T) -> [Event] {
         let recitationEnd = .seconds(interlude.recitationStart) + partDuration
-        return interlude.tracks.flatMap { track in
+        var events: [Event] = []
+        for track in interlude.tracks {
             let duration = track.stretches.reduce(Duration.zero) { total, stretch in
                 total + max(stretch.end.expected(recitationEnd: recitationEnd) - stretch.start.expected(recitationEnd: recitationEnd), .zero)
             }
-            return track.instruments.map { name in
+            for name in track.instruments {
                 let instrument = Instrument(name: name)
                 if track.continues, let melody = melodies[name] {
-                    return Event(instrument: instrument, notes: melody, stretches: track.stretches)
+                    events.append(Event(instrument: instrument, notes: melody, stretches: track.stretches))
+                    continue
                 }
-                let assignment = composer(for: track.notes).composeAssignment(instrument: instrument, duration: duration)
-                return Event(instrument: instrument, notes: assignment.notes, stretches: track.stretches)
+                let assignment = composer(for: track.notes).composeAssignment(instrument: instrument, duration: duration, using: &generator)
+                events.append(Event(instrument: instrument, notes: assignment.notes, stretches: track.stretches))
             }
         }
+        return events
+    }
+
+    /// The events that play the interlude, composed with the system's random number generator.
+    func events(for interlude: Interlude, partDuration: Duration, continuing melodies: [InstrumentName: Cycle<Note>] = [:]) -> [Event] {
+        var generator = SystemRandomNumberGenerator()
+        return events(for: interlude, partDuration: partDuration, continuing: melodies, using: &generator)
     }
 
     private func composer(for selection: NoteSelection) -> Composer {

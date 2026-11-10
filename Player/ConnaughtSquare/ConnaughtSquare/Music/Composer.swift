@@ -113,8 +113,9 @@ struct Composer {
     /// Selects a random note duration vector.
     ///
     /// A set is chosen uniformly, then a vector is chosen from it in proportion to its weight, so vectors that occur more often in the tunes are more likely.
-    var randomDurationVector: NoteDurationVector {
-        guard let randomDurations = durations.randomElement(), let durationVector = randomDurations.weightedRandomElement() else {
+    /// - Parameter generator: The random number generator to use.
+    func randomDurationVector<T: RandomNumberGenerator>(using generator: inout T) -> NoteDurationVector {
+        guard let randomDurations = durations.randomElement(using: &generator), let durationVector = randomDurations.weightedRandomElement(using: &generator) else {
             fatalError("Failed to get random duration vector")
         }
         return durationVector
@@ -123,8 +124,9 @@ struct Composer {
     /// Selects a random note interval vector.
     ///
     /// A set is chosen uniformly, then a vector is chosen from it in proportion to its weight, so vectors that occur more often in the tunes are more likely.
-    var randomIntervalVector: NoteIntervalVector {
-        guard let randomIntervals = intervals.randomElement(), let intervalVector = randomIntervals.weightedRandomElement() else {
+    /// - Parameter generator: The random number generator to use.
+    func randomIntervalVector<T: RandomNumberGenerator>(using generator: inout T) -> NoteIntervalVector {
+        guard let randomIntervals = intervals.randomElement(using: &generator), let intervalVector = randomIntervals.weightedRandomElement(using: &generator) else {
             fatalError("Failed to get random interval vector")
         }
         return intervalVector
@@ -145,16 +147,17 @@ struct Composer {
     /// - Parameters:
     ///   - instrument: An instrument.
     ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned.
+    ///   - generator: The random number generator the patterns and dynamics are chosen with.
     /// - Returns: The assignment.
-    func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
-        let openingDuration = randomDurationVector.first ?? initialNote.duration
-        let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(), duration: openingDuration)
+    func composeAssignment<T: RandomNumberGenerator>(instrument: Instrument, duration: Duration, using generator: inout T) -> Assignment {
+        let openingDuration = randomDurationVector(using: &generator).first ?? initialNote.duration
+        let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(using: &generator), duration: openingDuration)
         var previousNote = opening
         var notes: [Note] = [opening]
         var currentDuration: Duration = openingDuration.microseconds
         while currentDuration < duration {
-            for (interval, noteDuration) in zip(randomIntervalVector, randomDurationVector) {
-                let note = previousNote.nextNote(interval: interval, duration: noteDuration, ceiling: ceilingNote, floor: floorNote)
+            for (interval, noteDuration) in zip(randomIntervalVector(using: &generator), randomDurationVector(using: &generator)) {
+                let note = previousNote.nextNote(interval: interval, duration: noteDuration, ceiling: ceilingNote, floor: floorNote, using: &generator)
                 notes.append(note)
                 previousNote = note
                 currentDuration += noteDuration.microseconds
@@ -162,5 +165,11 @@ struct Composer {
         }
         precondition(notes.count > 0, "No notes assigned to \(instrument)")
         return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes))
+    }
+
+    /// Composes an assignment for the specified instrument and duration, chosen with the system's random number generator.
+    func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
+        var generator = SystemRandomNumberGenerator()
+        return composeAssignment(instrument: instrument, duration: duration, using: &generator)
     }
 }

@@ -19,9 +19,10 @@ struct PerformanceTimelineTests {
 
     init() throws {
         let soundBank = try SoundBank(clock: clock)
-        // Long enough for the music opening a line to finish while its part is recited, whatever notes it plays.
-        speech = RecordingSpeech(clock: clock, gate: soundBank.pauseGate, length: .seconds(10))
-        performance = Performance(score: .timeline, ballad: .test(), speakers: Speakers.cached(), soundBank: soundBank, speech: speech)
+        speech = RecordingSpeech(clock: clock, gate: soundBank.pauseGate)
+        // Seeded, so that the test's own sequence of cues composes the music the performance plays.
+        performance = Performance(score: .timeline, ballad: .test(), speakers: Speakers.cached(), soundBank: soundBank, speech: speech,
+                                  randomNumberGenerator: SeededRandomNumberGenerator(seed: 1))
     }
 
     /// The cue for each part, in the order the performance recites them.
@@ -34,21 +35,54 @@ struct PerformanceTimelineTests {
         return cues
     }
 
-    /// When each part should start being recited, from the start of the performance.
-    ///
-    /// Each cue rests as the score says, plays any intermission, then waits for its recitation to
-    /// start. The timeline score leaves room for its longest notes, so the intermission lasts its
-    /// length and each line's music stops before its part has been recited, and the next cue follows
-    /// straight on from the end of the recitation.
-    private func expectedStarts() -> [Duration] {
-        var time = Duration.zero
+    /// When things should happen in the performance, from its start.
+    struct Timeline {
+        /// When each canto's title shows.
+        var cantoTitles: [Duration] = []
+        /// When each part starts being recited.
         var starts: [Duration] = []
+        /// When the performance finishes.
+        var end: Duration = .zero
+    }
+
+    /// When things should happen in the performance, worked out from its cues.
+    ///
+    /// Each cue rests as the score says, then plays any intermission, which lasts its length or until
+    /// its music finishes, whichever is later. The canto's title shows and it rests again. Then the
+    /// cue's music starts, the part is recited when the score says, and the next cue follows once
+    /// both have finished.
+    private func timeline() -> Timeline {
+        var timeline = Timeline()
+        var time = Duration.zero
         for cue in cues() {
-            time += cue.balladTitleRest + cue.intermissionLength + cue.cantoTitleRest + cue.recitationStart
-            starts.append(time)
-            time += speech.length
+            time += cue.balladTitleRest
+            time += max(cue.intermissionLength, cue.intermission.map(Self.end(of:)).max() ?? .zero)
+            if cue.cantoIndex != nil {
+                timeline.cantoTitles.append(time)
+            }
+            time += cue.cantoTitleRest
+            let start = time + cue.recitationStart
+            timeline.starts.append(start)
+            time += max(cue.recitationStart + speech.length, cue.events.map(Self.end(of:)).max() ?? .zero)
         }
-        return starts
+        timeline.end = time
+        return timeline
+    }
+
+    /// How long after it starts an event playing one stretch from the start finishes. Each note
+    /// sounds in full, so the event plays on until the first note to end at or after the stretch's end.
+    private static func end(of event: Event) -> Duration {
+        guard event.stretches.count == 1, let stretch = event.stretches.first,
+              case .seconds(0) = stretch.start, case .seconds(let seconds) = stretch.end else {
+            Issue.record("The timeline only works out events playing one stretch from the start")
+            return .zero
+        }
+        var notes = event.notes
+        var played = Duration.zero
+        while played < .seconds(seconds) {
+            played += notes.next().duration.duration
+        }
+        return played
     }
 
     /// Runs the clock until the performance stops by itself.
@@ -87,13 +121,13 @@ struct PerformanceTimelineTests {
     }
 
     @Test func testRecitationsStartOnTime() async throws {
-        let expected = expectedStarts()
-        // The ballad's title rest, the introduction and the canto's title rest come before the first part.
+        let timeline = timeline()
+        // With this seed, the introduction's last note runs on past its length, which the first part waits for.
         let score = Score.timeline
-        #expect(expected.first == .seconds(score.balladTitleRest + score.introduction.seconds + score.cantoTitleRest))
+        #expect(try #require(timeline.cantoTitles.first) > .seconds(score.balladTitleRest + score.introduction.seconds))
         performance.play()
         _ = await finish()
-        #expect(speech.recitations.map(\.start.offset) == expected)
+        #expect(speech.recitations.map(\.start.offset) == timeline.starts)
     }
 
     /// The ballad's title shows before the introduction, and the canto's after it, both before anything is recited.
@@ -102,8 +136,8 @@ struct PerformanceTimelineTests {
         #expect(try await waitUntil { performance.isTitleAnnounced })
         #expect(performance.announcedCantoCount == 0)
         // Past the title rest and the introduction, into the canto's title rest.
-        let score = Score.timeline
-        await clock.advance(by: .seconds(score.balladTitleRest + score.introduction.seconds + score.cantoTitleRest / 2))
+        let cantoTitle = try #require(timeline().cantoTitles.first)
+        await clock.advance(by: cantoTitle + .seconds(Score.timeline.cantoTitleRest / 2))
         #expect(performance.announcedCantoCount == 1)
         #expect(speech.recitations.isEmpty)
         await clock.advance(by: .seconds(1))
@@ -113,7 +147,7 @@ struct PerformanceTimelineTests {
 
     /// Pausing during a part holds it, and every later part starts that much later.
     @Test func testPauseHoldsTheRecitation() async throws {
-        let expected = expectedStarts()
+        let expected = timeline().starts
         let pause = Duration.seconds(10)
         performance.play()
         #expect(try await waitUntil { performance.isTitleAnnounced })
@@ -131,7 +165,7 @@ struct PerformanceTimelineTests {
 
     /// Stopping during a part ends it, and nothing more is recited.
     @Test func testStopEndsTheRecitation() async throws {
-        let expected = expectedStarts()
+        let expected = timeline().starts
         performance.play()
         #expect(try await waitUntil { performance.isTitleAnnounced })
         await clock.advance(by: expected[0] + .seconds(1))
@@ -144,34 +178,28 @@ struct PerformanceTimelineTests {
 
     /// The performance stops by itself as the last part finishes.
     @Test func testFinishesAfterTheLastPart() async throws {
-        let expected = try #require(expectedStarts().last)
+        let expected = timeline().end
         performance.play()
         let elapsed = await finish()
-        #expect(elapsed == expected + speech.length)
+        #expect(elapsed == expected)
         #expect(performance.state == .stopped)
     }
 }
 
 private extension Score {
-    /// A short score: a second's rest after the ballad's title, an introduction of half a second of
-    /// viola, and a second's rest after the canto's title. Later lines open with half a second of
-    /// viola, recited a second in, and later parts with half a second's silence.
-    ///
-    /// The composer chooses the notes' lengths, and a note sounds in full even past the end of its
-    /// stretch, so the introduction leaves room after its viola for the longest note.
+    /// A short score: a second's rest after the ballad's title, an introduction of two seconds of
+    /// viola, and a second's rest after the canto's title. Later lines open with a second of viola,
+    /// recited a second in, and later parts with half a second's silence.
     static let timeline = Score(title: "Timeline",
                                 balladTitleRest: 1,
-                                introduction: Intermission(tracks: [.viola(seconds: 0.5)], seconds: 0.5 + longestNote),
+                                introduction: Intermission(tracks: [.viola(seconds: 2)]),
                                 canto: Intermission(),
                                 cantoTitleRest: 1,
                                 stanza: Intermission(),
                                 firstLine: Interlude(),
-                                line: Interlude(recitationStart: 1, tracks: [.viola(seconds: 0.5)]),
+                                line: Interlude(recitationStart: 1, tracks: [.viola(seconds: 1)]),
                                 part: Interlude(recitationStart: 0.5))
 }
-
-/// The length of the longest note in seconds.
-private let longestNote = NoteDuration.allCases.max().map { Double($0.rawValue) / 1_000_000 } ?? 0
 
 private extension Track {
     /// The viola plays from the start for the seconds.

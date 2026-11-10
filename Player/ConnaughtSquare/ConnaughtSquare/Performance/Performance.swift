@@ -39,6 +39,9 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     let speakers: Speakers
     let score: Score
     let arranger: Arranger
+    /// What the melodies are composed with. Each performance of the ballad starts from a copy of
+    /// it, so a seeded generator composes the same music every time.
+    let randomNumberGenerator: any RandomNumberGenerator
     private(set) var state: PlaybackState = .stopped
 
     private let speech: any SpeechSynthesizing
@@ -55,17 +58,20 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     ///   - speakers: The voices for the roles. By default, a voice is chosen for each of the standard roles.
     ///   - soundBank: The sound bank to play on.
     ///   - speech: What recites the parts. By default, a speech synthesizer.
+    ///   - randomNumberGenerator: What the melodies are composed with. By default, the system's.
     init(score: Score = .bundled,
          ballad: Ballad = Ballad(),
          speakers: Speakers? = nil,
          soundBank: SoundBank = .shared,
-         speech: (any SpeechSynthesizing)? = nil) {
+         speech: (any SpeechSynthesizing)? = nil,
+         randomNumberGenerator: any RandomNumberGenerator = SystemRandomNumberGenerator()) {
         self.score = score
         arranger = Arranger(score: score)
         self.ballad = ballad
         self.speakers = speakers ?? Speakers()
         self.soundBank = soundBank
         self.speech = speech ?? SpeechSynthesizer()
+        self.randomNumberGenerator = randomNumberGenerator
     }
 
     /// Starts performing the ballad from the beginning, or resumes a paused performance.

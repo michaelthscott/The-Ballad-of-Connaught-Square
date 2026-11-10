@@ -28,6 +28,16 @@ struct ComposerTests {
         }
     }
 
+    /// The same seed composes the same assignment, dynamics and all.
+    @Test func testSeededAssignmentsRepeat() {
+        var first = SeededRandomNumberGenerator(seed: 42)
+        var second = SeededRandomNumberGenerator(seed: 42)
+        let instrument = Instrument(name: .viola)
+        let assignment = composer.composeAssignment(instrument: instrument, duration: .seconds(10), using: &first)
+        let repeated = composer.composeAssignment(instrument: instrument, duration: .seconds(10), using: &second)
+        #expect(assignment.notes.elements == repeated.notes.elements)
+    }
+
     @Test func testRangeSpansAllTunes() {
         let low = Tune("Low", [Note(value: .d2, duration: .crotchet), Note(value: .g2, duration: .crotchet), Note(value: .g2, duration: .crotchet)])
         let high = Tune("High", [Note(value: .g2, duration: .crotchet), Note(value: .b3, duration: .crotchet), Note(value: .g2, duration: .crotchet)])

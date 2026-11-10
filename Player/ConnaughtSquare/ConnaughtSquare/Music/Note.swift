@@ -22,7 +22,8 @@ struct Note: Sendable {
         self.duration = duration
     }
     
-    func nextNote(interval nextInterval: NoteInterval, duration nextDuration: NoteDuration, ceiling: Note, floor: Note) -> Note {
+    /// The note the interval moves to, kept between the floor and the ceiling, with a dynamic chosen with the generator.
+    func nextNote<T: RandomNumberGenerator>(interval nextInterval: NoteInterval, duration nextDuration: NoteDuration, ceiling: Note, floor: Note, using generator: inout T) -> Note {
         var nextValue = 0
         switch nextInterval {
         case .rising(let by):
@@ -35,7 +36,7 @@ struct Note: Sendable {
         guard let nextNoteValue = NoteValue(rawValue: UInt8(nextValue)) else {
             fatalError("Undefined note value: \(nextValue)")
         }
-        return Note(value: nextNoteValue, on: NoteVelocity.gaussianRandom(), duration: nextDuration)
+        return Note(value: nextNoteValue, on: NoteVelocity.gaussianRandom(using: &generator), duration: nextDuration)
     }
 }
 

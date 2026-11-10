@@ -17,11 +17,15 @@ struct EventsSequence {
     var balladCursorSequence: BalladCursorSequence
     /// The voices' turns start afresh with each sequence, and so with each performance.
     private var voiceTurns: VoiceTurns
+    /// The melodies are composed with a copy of the performance's random number generator, so a
+    /// seeded generator composes the same music for every sequence of the performance.
+    private var generator: AnyRandomNumberGenerator
 
     init(performance: Performance) {
         self.performance = performance
         balladCursorSequence = BalladCursorSequence(ballad: performance.ballad)
         voiceTurns = VoiceTurns(notation: VoiceNotation(roles: performance.speakers.roles))
+        generator = AnyRandomNumberGenerator(performance.randomNumberGenerator)
     }
 
     /// The cue for the next part of the ballad, or `nil` once every part has been recited.
@@ -35,11 +39,16 @@ struct EventsSequence {
         let role = voiceTurns.nextRole()
         let isStartOfBallad = balladCursorSequence.isStartOfBallad
         let isStartOfCanto = balladCursorSequence.isStartOfCanto
-        let cue = Cue(intermission: intermission.map { arranger.events(for: $0.interlude, partDuration: .zero) } ?? [],
+        var intermissionEvents: [Event] = []
+        if let intermission {
+            intermissionEvents = arranger.events(for: intermission.interlude, partDuration: .zero, using: &generator)
+        }
+        let events = arranger.events(for: interlude, partDuration: part.duration,
+                                     continuing: intermission == nil ? melodies : [:], using: &generator)
+        let cue = Cue(intermission: intermissionEvents,
                       intermissionLength: .seconds(intermission?.seconds ?? 0),
                       recitationStart: .seconds(interlude.recitationStart),
-                      events: arranger.events(for: interlude, partDuration: part.duration,
-                                              continuing: intermission == nil ? melodies : [:]),
+                      events: events,
                       part: part,
                       speaker: performance.speakers.speaker(forRole: role),
                       pan: performance.speakers.pan(forRole: role),

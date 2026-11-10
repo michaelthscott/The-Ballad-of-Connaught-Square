@@ -265,4 +265,19 @@ struct EventsSequenceTests {
         var sequence = EventsSequence(performance: Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers.cached()))
         #expect(sequence.next() == nil)
     }
+
+    /// Every sequence of a performance with a seeded generator composes the same music, so a test
+    /// can find out what the performance will play.
+    @Test func testSeededPerformanceComposesTheSameMusic() throws {
+        let performance = Performance(score: .standard, ballad: makeBallad(), speakers: Speakers.cached(),
+                                      randomNumberGenerator: SeededRandomNumberGenerator(seed: 7))
+        var first = EventsSequence(performance: performance)
+        var second = EventsSequence(performance: performance)
+        while let cue = first.next() {
+            let repeated = try nextCue(of: &second)
+            #expect(cue.intermission.map(\.notes.elements) == repeated.intermission.map(\.notes.elements))
+            #expect(cue.events.map(\.notes.elements) == repeated.events.map(\.notes.elements))
+        }
+    }
+
 }
