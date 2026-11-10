@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Parts that trail off or break off now end in an ellipsis rather than a full stop, and hesitations are marked with one where a comma would be wrong, so the voices speak them less finally. The words are as they were.
+
 ## [1.3.1] - 2026-11-10
 
 ### Changed
