@@ -31,4 +31,13 @@ final class LinesTests {
         }
         #expect(freeStanding.map { $0.string } == [])
     }
+
+    /// Breaking off, trailing off and hesitating are all marked with the single ellipsis character,
+    /// which the voices respond to. Three full stops and dashes sound much like a full stop.
+    @Test func testEllipsisIsTheOnlyMarkForBreakingOff() {
+        let otherMarks = lines.flatMap { $0.parts }.filter { part in
+            ["...", "—", "–"].contains { part.string.contains($0) }
+        }
+        #expect(otherMarks.map { $0.string } == [])
+    }
 }
