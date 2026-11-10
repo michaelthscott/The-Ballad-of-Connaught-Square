@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3] - 2026-11-10
+
 ### Changed
 
 - On macOS the settings have moved from a tab of their own to the Settings window, opened from the app menu or with ⌘,, where Voices and Tag Order are chosen from a sidebar.
@@ -205,7 +207,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...HEAD
+[1.3]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...v1.3
 [1.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.1...v1.2
 [1.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.0...v1.1
 [1.0]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/releases/tag/v1.0
