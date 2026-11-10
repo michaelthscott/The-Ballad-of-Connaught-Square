@@ -41,7 +41,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     let arranger: Arranger
     private(set) var state: PlaybackState = .stopped
 
-    private let speech = SpeechSynthesizer()
+    private let speech: any SpeechSynthesizing
     private let soundBank: SoundBank
     private var performanceTask: Task<Void, Never>?
     /// The most recent change to the audio engine. Each change waits for the previous one, so the
@@ -54,15 +54,18 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     ///   - ballad: The ballad.
     ///   - speakers: The voices for the roles. By default, a voice is chosen for each of the standard roles.
     ///   - soundBank: The sound bank to play on.
+    ///   - speech: What recites the parts. By default, a speech synthesizer.
     init(score: Score = .bundled,
          ballad: Ballad = Ballad(),
          speakers: Speakers? = nil,
-         soundBank: SoundBank = .shared) {
+         soundBank: SoundBank = .shared,
+         speech: (any SpeechSynthesizing)? = nil) {
         self.score = score
         arranger = Arranger(score: score)
         self.ballad = ballad
         self.speakers = speakers ?? Speakers()
         self.soundBank = soundBank
+        self.speech = speech ?? SpeechSynthesizer()
     }
 
     /// Starts performing the ballad from the beginning, or resumes a paused performance.

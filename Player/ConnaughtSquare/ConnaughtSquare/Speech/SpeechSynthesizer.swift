@@ -11,6 +11,22 @@ import os
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ConnaughtSquare", category: "SpeechSynthesizer")
 
+/// What a performance needs to recite its parts, so that tests can stand in for the synthesizer.
+@MainActor
+protocol SpeechSynthesizing: AnyObject {
+    /// Speaks the attributed string in the voice, from where it stands in stereo, returning once
+    /// speech has finished. Cancelling the surrounding task stops the speech.
+    func speak(_ attributedString: NSAttributedString, in voice: AVSpeechSynthesisVoice, pan: Float) async
+    /// Readies the voices before their first utterances.
+    func warmUp(_ voices: [AVSpeechSynthesisVoice])
+    /// Pauses any speech in progress, which waits until resumed or stopped.
+    func pause()
+    /// Continues speech from where it was paused.
+    func resume()
+    /// Stops any speech in progress at once.
+    func stop()
+}
+
 /// Speaks utterances through an audio engine, so that each voice can stand to one side in stereo.
 ///
 /// `AVSpeechSynthesizer` can't pan the speech it plays, so instead its speech is written to audio
@@ -24,7 +40,7 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
 /// Speech is paused and stopped at once, rather than at the next word, because the buffers already
 /// given to a player can't be stopped at a word.
 @MainActor
-final class SpeechSynthesizer {
+final class SpeechSynthesizer: SpeechSynthesizing {
     /// The synthesizer for each voice that has spoken, by the voice's identifier.
     private var synthesizers: [String: AVSpeechSynthesizer] = [:]
     /// The player for each voice that has spoken, by the voice's identifier.
