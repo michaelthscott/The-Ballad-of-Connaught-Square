@@ -105,84 +105,89 @@ struct PerformanceTests {
         performance.stop()
     }
 
-    /// The viola playing quavers through the stretches.
-    private func viola(_ stretches: [Stretch]) -> Event {
-        Event(instrument: Instrument(name: .viola),
-              notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver)]),
-              stretches: stretches)
-    }
+    /// The tests that time playing on the sound bank, one at a time, so that their notes aren't
+    /// held up by each other's.
+    @Suite(.serialized) @MainActor struct Playback {
 
-    /// How long the viola takes to play alongside a recitation of the given length, on a sound bank
-    /// of its own. The viola is loaded first, so the time doesn't include loading it.
-    private func timePlaying(_ stretches: [Stretch], recitation length: Duration = .zero) async throws -> Duration {
-        let soundBank = try SoundBank()
-        try await soundBank.loadInstrument(.viola)
-        try await soundBank.startEngine()
-        let elapsed = await ContinuousClock().measure {
-            let recitation = Task<Void, Never> {
-                try? await Task.sleep(for: length)
+        /// The viola playing quavers through the stretches.
+        private func viola(_ stretches: [Stretch]) -> Event {
+            Event(instrument: Instrument(name: .viola),
+                  notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver)]),
+                  stretches: stretches)
+        }
+
+        /// How long the viola takes to play alongside a recitation of the given length, on a sound bank
+        /// of its own. The viola is loaded first, so the time doesn't include loading it.
+        private func timePlaying(_ stretches: [Stretch], recitation length: Duration = .zero) async throws -> Duration {
+            let soundBank = try SoundBank()
+            try await soundBank.loadInstrument(.viola)
+            try await soundBank.startEngine()
+            let elapsed = await ContinuousClock().measure {
+                let recitation = Task<Void, Never> {
+                    try? await Task.sleep(for: length)
+                }
+                _ = await Performance.play([viola(stretches)], on: soundBank, alongside: recitation)
             }
-            _ = await Performance.play([viola(stretches)], on: soundBank, alongside: recitation)
+            await soundBank.stopEngine()
+            return elapsed
         }
-        await soundBank.stopEngine()
-        return elapsed
-    }
 
-    /// An instrument playing until after the recitation plays through it, then on for the time given.
-    @Test func testInstrumentPlaysOnAfterTheRecitation() async throws {
-        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .afterRecitation(seconds: 0.5))], recitation: .milliseconds(500))
-        // It plays through the recitation and half a second more, each within a note.
-        #expect(elapsed >= .seconds(1))
-        #expect(elapsed < .milliseconds(2500))
-    }
-
-    /// An instrument playing until a time from the start stops then, within a note.
-    @Test func testInstrumentStopsOnTime() async throws {
-        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(1))])
-        #expect(elapsed >= .seconds(1))
-        #expect(elapsed < .seconds(2))
-    }
-
-    /// An instrument rests in a gap between its stretches.
-    @Test func testInstrumentRestsBetweenStretches() async throws {
-        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(0.5)), Stretch(start: .seconds(1), end: .seconds(1.5))])
-        #expect(elapsed >= .milliseconds(1500))
-        #expect(elapsed < .milliseconds(2500))
-    }
-
-    /// Playing the events gives back where each instrument's melody stopped, for the next part to carry on.
-    @Test func testPlayingGivesBackTheMelodies() async throws {
-        let soundBank = try SoundBank()
-        try await soundBank.loadInstrument(.viola)
-        try await soundBank.startEngine()
-        let event = Event(instrument: Instrument(name: .viola),
-                          notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver), Note(value: .e3, duration: .quaver)]),
-                          stretches: [Stretch(start: .seconds(0), end: .seconds(1))])
-        let recitation = Task<Void, Never> {}
-        var melodies = await Performance.play([event], on: soundBank, alongside: recitation)
-        await soundBank.stopEngine()
-        // A second of quavers is two notes, so the melody carries on from the third.
-        #expect(melodies[.viola]?.next().value == .e3)
-    }
-
-    /// An instrument playing until the end of a recitation that has already finished doesn't hold the performance up.
-    @Test func testInstrumentAfterTheRecitation() async throws {
-        let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .endOfRecitation)])
-        // A note can start before the instrument sees that the recitation has finished, but no more.
-        #expect(elapsed < .milliseconds(1500))
-    }
-
-    /// An intermission lasts for its length, even after its instruments have stopped.
-    @Test func testIntermissionLastsItsLength() async throws {
-        let soundBank = try SoundBank()
-        try await soundBank.loadInstrument(.viola)
-        try await soundBank.startEngine()
-        let elapsed = await ContinuousClock().measure {
-            await Performance.playIntermission([viola([Stretch(start: .seconds(0), end: .seconds(0.5))])], lasting: .milliseconds(1500), on: soundBank)
+        /// An instrument playing until after the recitation plays through it, then on for the time given.
+        @Test func testInstrumentPlaysOnAfterTheRecitation() async throws {
+            let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .afterRecitation(seconds: 0.5))], recitation: .milliseconds(500))
+            // It plays through the recitation and half a second more, each within a note.
+            #expect(elapsed >= .seconds(1))
+            #expect(elapsed < .milliseconds(2500))
         }
-        await soundBank.stopEngine()
-        #expect(elapsed >= .milliseconds(1500))
-        #expect(elapsed < .milliseconds(2500))
+
+        /// An instrument playing until a time from the start stops then, within a note.
+        @Test func testInstrumentStopsOnTime() async throws {
+            let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(1))])
+            #expect(elapsed >= .seconds(1))
+            #expect(elapsed < .seconds(2))
+        }
+
+        /// An instrument rests in a gap between its stretches.
+        @Test func testInstrumentRestsBetweenStretches() async throws {
+            let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .seconds(0.5)), Stretch(start: .seconds(1), end: .seconds(1.5))])
+            #expect(elapsed >= .milliseconds(1500))
+            #expect(elapsed < .milliseconds(2500))
+        }
+
+        /// Playing the events gives back where each instrument's melody stopped, for the next part to carry on.
+        @Test func testPlayingGivesBackTheMelodies() async throws {
+            let soundBank = try SoundBank()
+            try await soundBank.loadInstrument(.viola)
+            try await soundBank.startEngine()
+            let event = Event(instrument: Instrument(name: .viola),
+                              notes: Cycle(elements: [Note(value: .a2, duration: .quaver), Note(value: .c3, duration: .quaver), Note(value: .e3, duration: .quaver)]),
+                              stretches: [Stretch(start: .seconds(0), end: .seconds(1))])
+            let recitation = Task<Void, Never> {}
+            var melodies = await Performance.play([event], on: soundBank, alongside: recitation)
+            await soundBank.stopEngine()
+            // A second of quavers is two notes, so the melody carries on from the third.
+            #expect(melodies[.viola]?.next().value == .e3)
+        }
+
+        /// An instrument playing until the end of a recitation that has already finished doesn't hold the performance up.
+        @Test func testInstrumentAfterTheRecitation() async throws {
+            let elapsed = try await timePlaying([Stretch(start: .seconds(0), end: .endOfRecitation)])
+            // A note can start before the instrument sees that the recitation has finished, but no more.
+            #expect(elapsed < .milliseconds(1500))
+        }
+
+        /// An intermission lasts for its length, even after its instruments have stopped.
+        @Test func testIntermissionLastsItsLength() async throws {
+            let soundBank = try SoundBank()
+            try await soundBank.loadInstrument(.viola)
+            try await soundBank.startEngine()
+            let elapsed = await ContinuousClock().measure {
+                await Performance.playIntermission([viola([Stretch(start: .seconds(0), end: .seconds(0.5))])], lasting: .milliseconds(1500), on: soundBank)
+            }
+            await soundBank.stopEngine()
+            #expect(elapsed >= .milliseconds(1500))
+            #expect(elapsed < .milliseconds(2500))
+        }
     }
 
     /// A performance stops by itself once it has recited every part.
