@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The tests time pauses, playback and whole performances on a manual clock, with a stand-in for the speech and a seeded composer, so they check exact timings and run in moments rather than in real time. The app plays and sounds as before.
+
 ## [1.3] - 2026-11-10
 
 ### Changed
