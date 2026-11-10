@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- On macOS the settings have moved from a tab of their own to the Settings window, opened from the app menu or with ⌘,, which has a Voices pane and a Tag Order pane.
+- On macOS the settings have moved from a tab of their own to the Settings window, opened from the app menu or with ⌘,, where Voices and Tag Order are chosen from a sidebar.
 
 ## [1.2] - 2026-11-09
 

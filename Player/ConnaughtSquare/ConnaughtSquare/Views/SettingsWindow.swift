@@ -10,23 +10,50 @@ import SwiftUI
 
 /// The macOS Settings window, opened from the app menu or with ⌘,; on iOS the settings are a tab of their own.
 struct SettingsWindow: View {
-	var body: some View {
-		TabView {
-			Tab("Voices", systemImage: "person.wave.2") {
-				Form {
-					SpeakersView()
-				}
-				.frame(width: 450)
-			}
-			Tab("Tag Order", systemImage: "list.number") {
-				VStack {
-					TagOrderView()
-					TagListView()
-				}
-				.padding()
-				.frame(width: 450, height: 500)
+	/// The panes listed in the sidebar.
+	enum Pane: String, CaseIterable, Identifiable {
+		case voices = "Voices"
+		case tagOrder = "Tag Order"
+
+		var id: Self { self }
+
+		var systemImage: String {
+			switch self {
+			case .voices: "person.wave.2"
+			case .tagOrder: "list.number"
 			}
 		}
+	}
+
+	@State private var selectedPane: Pane? = .voices
+
+	var body: some View {
+		NavigationSplitView {
+			List(Pane.allCases, selection: $selectedPane) { pane in
+				Label(pane.rawValue, systemImage: pane.systemImage)
+			}
+			.navigationSplitViewColumnWidth(170)
+			.toolbar(removing: .sidebarToggle)
+		} detail: {
+			Group {
+				switch selectedPane {
+				case .voices:
+					Form {
+						SpeakersView()
+					}
+				case .tagOrder:
+					VStack {
+						TagOrderView()
+						TagListView()
+					}
+					.padding()
+				case nil:
+					EmptyView()
+				}
+			}
+			.navigationTitle(selectedPane?.rawValue ?? "Settings")
+		}
+		.frame(width: 650, height: 500)
 	}
 }
 
