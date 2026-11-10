@@ -33,7 +33,7 @@ struct BalladCursorTests {
     @Test func testCurrentPart() async throws {
         var sequence = BalladCursorSequence(ballad: Ballad())
         var string = sequence.currentPart?.string
-        #expect(string == "Had intended doing ah Christmas on the beat.")
+        #expect(string == "Had intended doing ah… Christmas on the beat.")
         while sequence.next() != nil {
             string = sequence.currentPart?.string
         }
