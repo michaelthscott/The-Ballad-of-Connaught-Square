@@ -31,7 +31,7 @@ struct EventsSequenceTests {
     func makeSequence(partsInFirstLine: Int = 2, score: Score = .standard) -> EventsSequence {
         let performance = Performance(score: score,
                                       ballad: makeBallad(partsInFirstLine: partsInFirstLine),
-                                      speakers: Speakers())
+                                      speakers: Speakers.cached())
         return EventsSequence(performance: performance)
     }
 
@@ -45,7 +45,7 @@ struct EventsSequenceTests {
     /// by the part they recite rather than by position.
     func cues(partsInFirstLine: Int, score: Score = .standard) throws -> [Cue] {
         let ballad = makeBallad(partsInFirstLine: partsInFirstLine)
-        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers.cached()))
         var cues: [Cue] = []
         for _ in 0..<ballad.parts.count {
             cues.append(try nextCue(of: &sequence))
@@ -133,7 +133,7 @@ struct EventsSequenceTests {
     /// Each part of the ballad is recited once, in order.
     @Test func testEachPartIsRecitedInOrder() throws {
         let ballad = makeBallad()
-        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers.cached()))
         var recited: [String] = []
         for _ in 1...ballad.parts.count {
             recited.append(try nextCue(of: &sequence).part.string)
@@ -143,7 +143,7 @@ struct EventsSequenceTests {
 
     /// In the standard score the speakers take turns, starting with the first speaker.
     @Test func testSpeakersAlternate() throws {
-        let speakers = Speakers()
+        let speakers = Speakers.cached()
         let first = speakers.speaker(forRole: 0)
         let second = speakers.speaker(forRole: 1)
         let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
@@ -158,7 +158,7 @@ struct EventsSequenceTests {
     /// The speakers stand where their roles stand, so in the standard score they alternate from
     /// left to right.
     @Test func testSpeakersStandOnAlternateSides() throws {
-        let speakers = Speakers()
+        let speakers = Speakers.cached()
         let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
         var sequence = EventsSequence(performance: performance)
         var pans: [Float] = []
@@ -172,7 +172,7 @@ struct EventsSequenceTests {
     /// Each sequence starts the turns afresh, so a performance stopped after an odd number of
     /// parts still starts the next one with the first speaker.
     @Test func testEachSequenceStartsTheTurnsAfresh() throws {
-        let speakers = Speakers()
+        let speakers = Speakers.cached()
         let performance = Performance(score: .standard, ballad: makeBallad(), speakers: speakers)
         var first = EventsSequence(performance: performance)
         _ = try nextCue(of: &first)
@@ -202,7 +202,7 @@ struct EventsSequenceTests {
         score.firstLine = Interlude(recitationStart: 2,
                                        tracks: [Track(instruments: [.viola], stretches: [Stretch(start: .seconds(1), end: .endOfRecitation)])])
         let ballad = makeBallad()
-        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: score, ballad: ballad, speakers: Speakers.cached()))
         let cue = try nextCue(of: &sequence)
         let event = try #require(cue.events.first)
         let length = event.notes.elements.reduce(Duration.zero) { $0 + $1.duration.duration }
@@ -263,7 +263,7 @@ struct EventsSequenceTests {
     /// Once the last part has been recited the sequence finishes rather than starting the ballad over.
     @Test func testSequenceFinishesAfterTheLastPart() throws {
         let ballad = makeBallad()
-        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers.cached()))
         for _ in 1...ballad.parts.count {
             _ = try nextCue(of: &sequence)
         }
@@ -274,7 +274,7 @@ struct EventsSequenceTests {
 
     /// A ballad with no parts has no cues.
     @Test func testEmptyBalladHasNoCues() {
-        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers()))
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers.cached()))
         #expect(sequence.next() == nil)
     }
 }

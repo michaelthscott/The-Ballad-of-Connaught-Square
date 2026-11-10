@@ -12,7 +12,7 @@ import Testing
 struct PerformanceTests {
 
     @Test func testPerformance() async throws {
-        let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers())
+        let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers.cached())
         var events = EventsSequence(performance: performance)
         let firstCue = events.next()
         let cue = try #require(firstCue)
@@ -27,14 +27,14 @@ struct PerformanceTests {
     }
 
     @Test func testEvents() async throws {
-        let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers())
+        let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers.cached())
         let events = performance.arranger.events(for: Score.standard.line, partDuration: .seconds(1))
         #expect(events.map(\.instrument.name) == [.violin, .viola, .cello])
     }
 
     /// A performance on a sound bank of its own, so pausing it doesn't pause other tests' notes.
     private func makePerformance() throws -> Performance {
-        Performance(score: .standard, ballad: Ballad(), speakers: Speakers(), soundBank: try SoundBank())
+        Performance(score: .standard, ballad: Ballad(), speakers: Speakers.cached(), soundBank: try SoundBank())
     }
 
     @Test func testInitialState() async throws {
@@ -192,7 +192,7 @@ struct PerformanceTests {
 
     /// A performance stops by itself once it has recited every part.
     @Test func testPerformanceFinishes() async throws {
-        let performance = Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers(), soundBank: try SoundBank())
+        let performance = Performance(score: .standard, ballad: Ballad(lines: []), speakers: Speakers.cached(), soundBank: try SoundBank())
         performance.play()
         #expect(performance.state == .playing)
         for _ in 0..<100 where performance.state == .playing {

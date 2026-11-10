@@ -9,6 +9,17 @@ import Testing
 @testable import ConnaughtSquare
 import AVFoundation
 
+extension Speakers {
+    /// The installed voices, listed once for all the tests. Each listing queries the system's voice
+    /// database, which on the simulator logs a burst of errors every time.
+    private static let installedVoices = AVSpeechSynthesisVoice.speechVoices()
+
+    /// Speakers for the roles, from the installed voices listed once for all the tests.
+    static func cached(roles: [String] = VoiceNotation.standard.roles) -> Speakers {
+        Speakers(roles: roles, installedVoices: installedVoices)
+    }
+}
+
 /// The installed voices differ between machines, devices and OS versions: one Mac has
 /// [Arthur, Daniel, Eddy, Flo, Grandma, Grandpa, Martha, Reed, Rocko, Sandy, Shelley] while
 /// another has only [Daniel, Eddy, Flo, Grandma, Grandpa, Reed, Rocko, Sandy, Shelley], and a
@@ -20,10 +31,12 @@ import AVFoundation
 /// the run hangs.
 @MainActor
 struct SpeakersTests {
-    let speakers = Speakers()
+    let speakers = Speakers.cached()
 
-    /// The available speakers are the British English voices, ordered by name.
+    /// The available speakers are the British English voices, ordered by name. Created without the
+    /// cache, as the app creates them.
     @Test func testAvailableSpeakers() {
+        let speakers = Speakers()
         let expected = AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language == Speakers.language }
             .map { $0.name }
@@ -52,7 +65,7 @@ struct SpeakersTests {
 
     /// The available voices are given to the roles in turn, and shared when there are more roles than voices.
     @Test func testVoicesAreGivenToTheRolesInTurn() {
-        let speakers = Speakers(roles: ["A", "B", "C", "D", "E"])
+        let speakers = Speakers.cached(roles: ["A", "B", "C", "D", "E"])
         let available = speakers.availableSpeakers
         #expect(speakers.voices == speakers.roles.indices.map { available[$0 % available.count] })
     }
@@ -65,7 +78,7 @@ struct SpeakersTests {
 
     /// Without any roles, the first available voice speaks.
     @Test func testNoRoles() throws {
-        let speakers = Speakers(roles: [])
+        let speakers = Speakers.cached(roles: [])
         #expect(speakers.voices.isEmpty)
         #expect(speakers.speaker(forRole: 3) == (try #require(speakers.availableSpeakers.first)))
     }
@@ -79,7 +92,7 @@ struct SpeakersTests {
 
     /// More roles are spread evenly from left to right, the outermost at the stereo width.
     @Test func testRolesAreSpreadEvenly() {
-        let speakers = Speakers(roles: ["A", "B", "C"])
+        let speakers = Speakers.cached(roles: ["A", "B", "C"])
         #expect(speakers.pan(forRole: 0) == -Speakers.stereoWidth)
         #expect(speakers.pan(forRole: 1) == 0)
         #expect(speakers.pan(forRole: 2) == Speakers.stereoWidth)
@@ -87,8 +100,8 @@ struct SpeakersTests {
 
     /// A single role, or none, stands in the centre.
     @Test func testASingleRoleStandsInTheCentre() {
-        #expect(Speakers(roles: ["Only"]).pan(forRole: 0) == 0)
-        #expect(Speakers(roles: []).pan(forRole: 3) == 0)
+        #expect(Speakers.cached(roles: ["Only"]).pan(forRole: 0) == 0)
+        #expect(Speakers.cached(roles: []).pan(forRole: 3) == 0)
     }
 
     /// A role outside the roles stands where the role it wraps around to stands.

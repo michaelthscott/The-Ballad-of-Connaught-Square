@@ -21,13 +21,14 @@ import AVFoundation
     var voices: [Speaker]
 
     /// Creates speakers for the standard roles.
-    convenience init() {
-        self.init(roles: VoiceNotation.standard.roles)
+    convenience init(installedVoices: [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices()) {
+        self.init(roles: VoiceNotation.standard.roles, installedVoices: installedVoices)
     }
 
-    /// Creates speakers for the roles, giving them the available voices in turn.
-    init(roles: [String]) {
-        var availableSpeakers = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == Self.language }.map { Speaker(voice: $0) }.sorted()
+    /// Creates speakers for the roles, giving them the available voices in turn. The available
+    /// voices are chosen from the installed voices, which are listed afresh unless given.
+    init(roles: [String], installedVoices: [AVSpeechSynthesisVoice] = AVSpeechSynthesisVoice.speechVoices()) {
+        var availableSpeakers = installedVoices.filter { $0.language == Self.language }.map { Speaker(voice: $0) }.sorted()
         // Without a British English voice, fall back to the default voice for the user's language.
         if availableSpeakers.isEmpty, let voice = AVSpeechSynthesisVoice(language: nil) {
             availableSpeakers = [Speaker(voice: voice)]
