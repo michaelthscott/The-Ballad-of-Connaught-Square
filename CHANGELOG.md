@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-10
+
 ### Changed
 
 - Parts that trail off or break off now end in an ellipsis rather than a full stop, and hesitations are marked with one where a comma would be wrong, so the voices speak them less finally. The words are as they were.
@@ -217,7 +219,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...v1.3.1
 [1.3]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...v1.3
 [1.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.1...v1.2
