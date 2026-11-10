@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-10
+
 ### Changed
 
 - The tests time pauses, playback and whole performances on a manual clock, with a stand-in for the speech and a seeded composer, so they check exact timings and run in moments rather than in real time. The app plays and sounds as before.
@@ -211,7 +213,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...v1.3.1
 [1.3]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...v1.3
 [1.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.1...v1.2
 [1.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.0...v1.1
