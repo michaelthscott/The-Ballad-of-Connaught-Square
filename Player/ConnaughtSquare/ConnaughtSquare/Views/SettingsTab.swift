@@ -36,7 +36,9 @@ struct SettingsTab: View {
 					Text("Reorder Tags")
 						.font(.largeTitle)
 				}
-
+				Section {
+					VersionView()
+				}
 			}
 		}
 	}

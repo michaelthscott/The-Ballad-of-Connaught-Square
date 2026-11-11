@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The settings show the app's version and build number, at the foot of the Settings tab on iOS and visionOS and below the sidebar of the Settings window on macOS.
+
 ## [1.3.2] - 2026-11-10
 
 ### Changed

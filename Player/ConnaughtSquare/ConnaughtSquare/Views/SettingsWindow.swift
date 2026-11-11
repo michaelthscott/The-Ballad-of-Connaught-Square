@@ -32,6 +32,12 @@ struct SettingsWindow: View {
 			List(Pane.allCases, selection: $selectedPane) { pane in
 				Label(pane.rawValue, systemImage: pane.systemImage)
 			}
+			.safeAreaInset(edge: .bottom) {
+				VersionView()
+					.font(.caption)
+					.foregroundStyle(.secondary)
+					.padding()
+			}
 			.navigationSplitViewColumnWidth(170)
 			.toolbar(removing: .sidebarToggle)
 		} detail: {
