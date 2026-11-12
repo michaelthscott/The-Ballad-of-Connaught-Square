@@ -46,7 +46,10 @@ struct SettingsWindow: View {
 				case .voices:
 					Form {
 						SpeakersView()
+						MusicSettingsView()
+						RecitationSettingsView()
 					}
+					.formStyle(.grouped)
 				case .tagOrder:
 					VStack {
 						TagOrderView()
@@ -63,7 +66,7 @@ struct SettingsWindow: View {
 	}
 }
 
-#Preview("SettingsWindow", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers())) {
+#Preview("SettingsWindow", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers()), .modifier(PreviewPerformance())) {
 	SettingsWindow()
 }
 #endif

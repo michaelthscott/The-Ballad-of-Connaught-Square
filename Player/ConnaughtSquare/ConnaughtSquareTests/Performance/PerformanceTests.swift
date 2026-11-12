@@ -40,6 +40,20 @@ struct PerformanceTests {
     @Test func testInitialState() async throws {
         let performance = try makePerformance()
         #expect(performance.state == .stopped)
+        #expect(performance.musicVolume == 1)
+    }
+
+    /// The music's volume is set on the sound bank, the last change winning when several are made at once.
+    @Test func testMusicVolumeIsSetOnTheSoundBank() async throws {
+        let soundBank = try SoundBank()
+        let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers.cached(), soundBank: soundBank)
+        performance.musicVolume = 0.2
+        performance.musicVolume = 0.6
+        performance.musicVolume = 0.45
+        for _ in 0..<100 where await soundBank.volume != 0.45 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(await soundBank.volume == 0.45)
     }
 
     @Test func testPlayPauseResumeStop() async throws {

@@ -42,6 +42,17 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
     /// What the melodies are composed with. Each performance of the ballad starts from a copy of
     /// it, so a seeded generator composes the same music every time.
     let randomNumberGenerator: any RandomNumberGenerator
+    /// How the parts are declaimed. Each part is shaped as its cue is made, so a change takes
+    /// effect from the next part.
+    var style = DeclamationStyle.standard
+    /// How loud the music is played, from 0 to 1, against the voices. It's heard at once, even
+    /// mid-performance. Changes are made in order with the engine's, so the last one set is heard.
+    var musicVolume: Float = 1 {
+        didSet {
+            let volume = musicVolume
+            controlEngine { await $0.setVolume(volume) }
+        }
+    }
     private(set) var state: PlaybackState = .stopped
 
     private let speech: any SpeechSynthesizing
@@ -212,14 +223,16 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         // The recitation is a task of its own, so that instruments playing until it finishes can wait
         // for it. It runs on the main actor, as this does. Time paused doesn't count towards its start.
         let part = cue.part
+        let declamation = cue.declamation
         let speaker = cue.speaker
         let pan = cue.pan
+        let volume = cue.volume
         let recitationStart = cue.recitationStart
         let recitation = Task {
             try? await soundBank.pauseGate.sleep(for: recitationStart)
             await soundBank.pauseGate.wait()
             guard !Task.isCancelled else { return }
-            await self.recite(part, as: speaker, at: pan)
+            await self.recite(part, as: declamation, by: speaker, at: pan, volume: volume)
         }
         // The events are `Sendable`, so they play off the main actor while the part — which isn't —
         // is recited on it. Take them out of the cue first, so the child task doesn't capture its part.
@@ -233,13 +246,14 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
         return await melodies
     }
 
-    /// Recites the part in the speaker's voice, from where the speaker stands in stereo.
+    /// Recites the part as its declamation shapes it, in the speaker's voice, from where the speaker
+    /// stands in stereo and as loud as the speaker's role is played.
     ///
     /// The part is marked as recited before speech begins so that the text appears as it is spoken.
-    private func recite(_ part: Part, as speaker: Speaker, at pan: Float) async {
+    private func recite(_ part: Part, as declamation: Declamation, by speaker: Speaker, at pan: Float, volume: Float) async {
         part.isRecited = true
         spokenPartCount += 1
-        await speech.speak(part.nsAttributedString, in: speaker.voice, pan: pan)
+        await speech.speak(declamation, in: speaker.voice, pan: pan, volume: volume)
     }
 
     /// Plays an intermission's events together, returning once they've finished and its length has

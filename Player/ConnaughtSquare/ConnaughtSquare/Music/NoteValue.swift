@@ -31,6 +31,9 @@ enum NoteValue: UInt8 {
     case b3
 }
 
+/// Stored by its raw value, the MIDI note number.
+extension NoteValue: Codable {}
+
 extension NoteValue: CaseIterable {
     static var randomValue: NoteValue {
         Self.allCases.randomElement()!

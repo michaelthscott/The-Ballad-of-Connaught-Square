@@ -35,6 +35,26 @@ struct SoundBankTests {
         await soundBank.stopEngine()
     }
 
+    /// The music plays at full volume until set otherwise, and its volume is kept within 0 to 1.
+    @Test func testVolume() async throws {
+        let soundBank = try SoundBank()
+        #expect(await soundBank.volume == 1)
+        await soundBank.setVolume(0.4)
+        #expect(await soundBank.volume == 0.4)
+        await soundBank.setVolume(1.5)
+        #expect(await soundBank.volume == 1)
+        await soundBank.setVolume(-1)
+        #expect(await soundBank.volume == 0)
+    }
+
+    /// The volume holds through stopping the engine, which releases the instruments.
+    @Test func testVolumeHoldsThroughStoppingTheEngine() async throws {
+        let soundBank = try SoundBank()
+        await soundBank.setVolume(0.3)
+        await soundBank.stopEngine()
+        #expect(await soundBank.volume == 0.3)
+    }
+
     /// Stopping the engine empties the samplers' presets, so it releases the instruments, and
     /// playing again loads them afresh rather than playing the sampler's default sound.
     @Test func testStopEngineReleasesInstruments() async throws {

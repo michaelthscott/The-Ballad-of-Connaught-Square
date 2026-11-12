@@ -33,16 +33,92 @@ extension Speakers {
 struct SpeakersTests {
     let speakers = Speakers.cached()
 
-    /// The available speakers are the British English voices, ordered by name. Created without the
-    /// cache, as the app creates them.
+    /// The voices installed here, chosen as the app chooses them.
+    private var selection: VoiceSelection<AVSpeechSynthesisVoice> {
+        VoiceSelection(installed: AVSpeechSynthesisVoice.speechVoices(), preferredNames: Speakers.preferredVoiceNames, language: Speakers.language)
+    }
+
+    /// The available speakers are the preferred voices installed, followed by any standing in for
+    /// those that aren't. Created without the cache, as the app creates them.
     @Test func testAvailableSpeakers() {
         let speakers = Speakers()
-        let expected = AVSpeechSynthesisVoice.speechVoices()
-            .filter { $0.language == Speakers.language }
-            .map { $0.name }
-            .sorted()
-        #expect(speakers.availableSpeakers.map { $0.name } == expected)
+        let selection = selection
+        if !selection.available.isEmpty {
+            #expect(speakers.availableSpeakers.map(\.id) == selection.available.map(\.identifier))
+        }
+        #expect(speakers.missingVoiceNames == selection.missing)
         #expect(speakers.availableSpeakers.isEmpty == false)
+    }
+
+    /// The preferred voices are the enhanced Daniel and Arthur.
+    @Test func testPreferredVoices() {
+        #expect(Speakers.preferredVoiceNames == ["Daniel", "Arthur"])
+    }
+
+    /// Each preferred voice has a standard volume, none above full, since a player can't play louder.
+    @Test func testVolumesMatchTheVoicesWithoutBoostingAny() {
+        for name in Speakers.preferredVoiceNames {
+            let volume = Speakers.standardVolumes[name]
+            #expect(volume != nil, "\(name) has no volume")
+            #expect((volume ?? 0) > 0 && (volume ?? 2) <= 1)
+        }
+    }
+
+    /// A role without a volume of its own plays at its voice's standard volume.
+    @Test func testRolesStartAtTheirVoicesStandardVolumes() {
+        let speakers = Speakers.cached()
+        for role in speakers.roles.indices {
+            #expect(speakers.volume(forRole: role) == Speakers.standardVolume(of: speakers.speaker(forRole: role).voice))
+        }
+    }
+
+    /// Two roles in the same voice can be played at different volumes.
+    @Test func testEachRolesVolumeIsItsOwn() {
+        let speakers = Speakers.cached()
+        speakers.voices[1] = speakers.voices[0]
+        speakers.volumes[speakers.roles[0]] = 0.25
+        #expect(speakers.volume(forRole: 0) == 0.25)
+        #expect(speakers.volume(forRole: 1) == Speakers.standardVolume(of: speakers.voices[1].voice))
+    }
+
+    /// Clearing a role's volume returns it to its voice's standard volume.
+    @Test func testClearingARolesVolumeRestoresItsVoicesStandardVolume() {
+        let speakers = Speakers.cached()
+        speakers.volumes[speakers.roles[0]] = 0.1
+        speakers.volumes[speakers.roles[0]] = nil
+        #expect(speakers.volume(forRole: 0) == Speakers.standardVolume(of: speakers.speaker(forRole: 0).voice))
+    }
+
+    /// A role outside the roles wraps around them for its volume, as for its voice.
+    @Test func testVolumesWrap() {
+        let speakers = Speakers.cached()
+        speakers.volumes[speakers.roles[0]] = 0.3
+        #expect(speakers.volume(forRole: 2) == 0.3)
+    }
+
+    /// Defaults of their own, so that the tests leave the app's saved volumes alone.
+    private func testDefaults() throws -> UserDefaults {
+        let name = "SpeakersTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    @Test func testSavesAndRestoresTheRolesVolumes() throws {
+        let defaults = try testDefaults()
+        let speakers = Speakers.cached()
+        speakers.volumes["First"] = 0.4
+        speakers.saveVolumes(in: defaults)
+        #expect(Speakers.savedVolumes(in: defaults) == ["First": 0.4])
+    }
+
+    /// Without saved volumes the roles play at their voices' standard volumes, and a saved volume
+    /// out of range is brought back within it.
+    @Test func testRestoresNoVolumesWhenNoneAreSavedAndClampsThemWhenTheyAre() throws {
+        let defaults = try testDefaults()
+        #expect(Speakers.savedVolumes(in: defaults).isEmpty)
+        defaults.set(["Second": 1.5, "First": -1], forKey: Speakers.volumesDefaultsKey)
+        #expect(Speakers.savedVolumes(in: defaults) == ["Second": 1, "First": 0])
     }
 
     /// The standard score has two roles.
@@ -51,23 +127,29 @@ struct SpeakersTests {
         #expect(speakers.voices.count == 2)
     }
 
-    @Test func testFirstRoleHasTheFirstAvailableVoice() throws {
-        let first = try #require(speakers.availableSpeakers.first)
-        #expect(speakers.speaker(forRole: 0) == first)
+    /// Each role has its voice from the selection.
+    @Test func testRolesHaveTheirVoices() throws {
+        let selection = selection
+        try #require(!selection.available.isEmpty)
+        for role in speakers.roles.indices {
+            #expect(speakers.speaker(forRole: role).id == selection.voice(forRole: role)?.identifier)
+        }
     }
 
-    /// The second role has the next available voice, or the only voice when there is just one.
-    @Test func testSecondRoleHasTheNextAvailableVoice() throws {
-        let available = speakers.availableSpeakers
-        let expected = try #require(available.count > 1 ? available[1] : available.first)
-        #expect(speakers.speaker(forRole: 1) == expected)
-    }
-
-    /// The available voices are given to the roles in turn, and shared when there are more roles than voices.
-    @Test func testVoicesAreGivenToTheRolesInTurn() {
+    /// More roles than preferred voices take them in turn.
+    @Test func testVoicesAreGivenToTheRolesInTurn() throws {
         let speakers = Speakers.cached(roles: ["A", "B", "C", "D", "E"])
-        let available = speakers.availableSpeakers
-        #expect(speakers.voices == speakers.roles.indices.map { available[$0 % available.count] })
+        let selection = selection
+        try #require(!selection.available.isEmpty)
+        #expect(speakers.voices.map(\.id) == speakers.roles.indices.map { selection.voice(forRole: $0)?.identifier })
+    }
+
+    /// Refreshing keeps the voices when nothing has been installed or removed.
+    @Test func testRefreshingWithTheSameVoicesKeepsThem() {
+        let speakers = Speakers.cached()
+        let before = speakers.voices
+        speakers.refresh()
+        #expect(speakers.voices == before)
     }
 
     /// A role outside the roles wraps around them.

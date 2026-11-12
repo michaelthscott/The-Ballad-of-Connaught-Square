@@ -16,9 +16,13 @@ import AVFoundation
 @MainActor
 final class RecordingSpeech: SpeechSynthesizing {
     struct Recitation: Equatable {
+        /// The words recited, as the part's string.
         let string: String
+        /// The part as it was to be recited.
+        let declamation: Declamation
         let voice: String
         let pan: Float
+        let volume: Float
         /// When the recitation started, on the clock.
         let start: ManualClock.Instant
     }
@@ -38,8 +42,9 @@ final class RecordingSpeech: SpeechSynthesizing {
         self.length = length
     }
 
-    func speak(_ attributedString: NSAttributedString, in voice: AVSpeechSynthesisVoice, pan: Float) async {
-        recitations.append(Recitation(string: attributedString.string, voice: voice.identifier, pan: pan, start: clock.now))
+    func speak(_ declamation: Declamation, in voice: AVSpeechSynthesisVoice, pan: Float, volume: Float) async {
+        recitations.append(Recitation(string: declamation.words.map(\.text).joined(separator: " "),
+                                      declamation: declamation, voice: voice.identifier, pan: pan, volume: volume, start: clock.now))
         try? await gate.sleep(for: length)
     }
 

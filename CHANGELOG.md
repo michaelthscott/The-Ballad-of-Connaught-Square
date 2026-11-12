@@ -9,6 +9,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - The settings show the app's version and build number, at the foot of the Settings tab on iOS and visionOS and below the sidebar of the Settings window on macOS.
+- The recitation can be tuned beside the voices, in the Voices pane on macOS and below the speakers on iOS: the contour of each part, the speaking rates, and the length of each pause. The values are kept between launches, a change is heard from the next part, and clicking a tunable's name restores its standard value.
+- Each role has a volume slider below its voice in the voice settings, so that two roles in the same voice can be played at different volumes. The volumes are kept between launches, a change is heard from the role's next part, and clicking a slider's name returns the role to the volume that matches its voice to the others.
+- The music has a volume slider of its own, below the voices, for balancing it against them. It's heard at once, even mid-performance, it's kept between launches, and clicking its name returns the music to full volume.
+
+### Changed
+
+- The ballad is recited as recitative rather than plainly spoken: stressed words stand out, the voices pause at commas, at `…` and between parts, the pitch rises to the first stress of a part and falls at the end of a line, a part that trails off is left hanging, and questions to be answered yes or no rise at the end. Each part is pitched towards the register of the music it's recited over, and the music is composed to last as long as the slower recitation.
+- The ballad is recited by the enhanced Daniel and Arthur voices, Daniel for the first role and Arthur for the second, and only they are offered in the voice settings, the premium downloads being preferred where installed. Until both are installed, the Performance tab and the voice settings say which to download and where, other British English voices stand in, and the app takes up a voice as soon as it has been downloaded. Daniel is played a little quieter, to sound as loud as Arthur.
+
+### Fixed
+
+- Stopping a performance no longer holds up the interface while the voice's audio stops.
 
 ## [1.3.2] - 2026-11-10
 

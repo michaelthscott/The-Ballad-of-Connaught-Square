@@ -24,6 +24,8 @@ struct SettingsTab: View {
 					Text("Speakers")
 						.font(.largeTitle)
 				}
+				MusicSettingsView()
+				RecitationSettingsView()
 				Section {
 					TagOrderView()
 				} header: {
@@ -44,6 +46,6 @@ struct SettingsTab: View {
 	}
 }
 
-#Preview("Settings", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers())) {
+#Preview("Settings", traits: .modifier(PreviewBallad()), .modifier(PreviewSpeakers()), .modifier(PreviewPerformance())) {
 	SettingsTab()
 }

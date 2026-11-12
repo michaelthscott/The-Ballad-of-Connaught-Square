@@ -88,6 +88,17 @@ actor SoundBank {
         self.reverb = reverb
     }
 
+    /// How loud the music is played, from 0 to 1. Every instrument is mixed at this volume before
+    /// the reverb, so it holds through stopping and restarting the engine.
+    var volume: Float {
+        mixer.outputVolume
+    }
+
+    /// Sets how loud the music is played, kept within 0 to 1. It's heard at once, even mid-note.
+    func setVolume(_ volume: Float) {
+        mixer.outputVolume = min(max(volume, 0), 1)
+    }
+
     /// Loads the instrument's preset into a sampler of its own.
     ///
     /// Does nothing if the instrument has already been loaded.

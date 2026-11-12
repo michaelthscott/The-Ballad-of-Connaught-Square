@@ -43,15 +43,24 @@ struct EventsSequence {
         if let intermission {
             intermissionEvents = arranger.events(for: intermission.interlude, partDuration: .zero, using: &generator)
         }
-        let events = arranger.events(for: interlude, partDuration: part.duration,
+        // The music is composed to last about as long as the part is expected to take to recite, and
+        // the recitation's pitch then centres on the note the music plays most often.
+        var declamation = Declamation(string: part.string,
+                                      pronunciations: part.pronunciations,
+                                      position: balladCursorSequence.remainingParts == 0 ? .lineEnd : .caesura,
+                                      style: performance.style)
+        let events = arranger.events(for: interlude, partDuration: declamation.expectedDuration,
                                      continuing: intermission == nil ? melodies : [:], using: &generator)
+        declamation.baseline = Declamation.baseline(for: events)
         let cue = Cue(intermission: intermissionEvents,
                       intermissionLength: .seconds(intermission?.seconds ?? 0),
                       recitationStart: .seconds(interlude.recitationStart),
                       events: events,
                       part: part,
+                      declamation: declamation,
                       speaker: performance.speakers.speaker(forRole: role),
                       pan: performance.speakers.pan(forRole: role),
+                      volume: performance.speakers.volume(forRole: role),
                       beginsBallad: isStartOfBallad,
                       balladTitleRest: isStartOfBallad ? .seconds(performance.score.balladTitleRest) : .zero,
                       cantoIndex: isStartOfCanto ? balladCursorSequence.cursor?.cantoIndex : nil,

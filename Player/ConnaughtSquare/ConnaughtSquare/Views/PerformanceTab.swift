@@ -36,6 +36,8 @@ struct PerformanceTab: View {
                      proxy.scrollTo(scrollPosition, anchor: .bottom)
                 }
             }
+            VoiceDownloadNotice()
+                .frame(maxWidth: 350)
             HStack {
                 if performance.state == .playing {
                     Button("Pause Performance", systemImage: "pause.fill") {

@@ -14,9 +14,9 @@ private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "Connaugh
 /// What a performance needs to recite its parts, so that tests can stand in for the synthesizer.
 @MainActor
 protocol SpeechSynthesizing: AnyObject {
-    /// Speaks the attributed string in the voice, from where it stands in stereo, returning once
-    /// speech has finished. Cancelling the surrounding task stops the speech.
-    func speak(_ attributedString: NSAttributedString, in voice: AVSpeechSynthesisVoice, pan: Float) async
+    /// Recites the declamation in the voice, from where it stands in stereo and as loud as given,
+    /// returning once speech has finished. Cancelling the surrounding task stops the speech.
+    func speak(_ declamation: Declamation, in voice: AVSpeechSynthesisVoice, pan: Float, volume: Float) async
     /// Readies the voices before their first utterances.
     func warmUp(_ voices: [AVSpeechSynthesisVoice])
     /// Pauses any speech in progress, which waits until resumed or stopped.
@@ -45,6 +45,9 @@ final class SpeechSynthesizer: SpeechSynthesizing {
     private var synthesizers: [String: AVSpeechSynthesizer] = [:]
     /// The player for each voice that has spoken, by the voice's identifier.
     private var players: [String: AVAudioPlayerNode] = [:]
+    /// Each player's stop still under way, by the voice's identifier. The voice's next utterance
+    /// waits for it, so that the stop can't clear buffers scheduled after it.
+    private var stopping: [String: Task<Void, Never>] = [:]
     /// The utterance being spoken, which pausing, resuming and stopping act on.
     private var current: Recitation?
     /// Whether speech is paused, so that speech starting or restarting stays paused until resumed.
@@ -101,15 +104,40 @@ final class SpeechSynthesizer: SpeechSynthesizing {
         return player
     }
 
-    /// Speaks the attributed string in the given voice, returning once speech has finished.
+    /// Recites the declamation in the given voice, returning once speech has finished.
     ///
+    /// The declamation is spoken as SSML, at the voice's pace, so that its pitches, rates and
+    /// pauses are heard. Should the SSML not be accepted, the part is spoken plainly instead.
     /// Cancelling the surrounding task stops the speech at once.
     /// - Parameters:
-    ///   - attributedString: The text to speak, including any IPA pronunciation attributes.
+    ///   - declamation: The part as it's to be recited.
     ///   - voice: The voice to speak in.
     ///   - pan: Where the voice stands in stereo, from -1 on the left to 1 on the right. It stands in
     ///     the centre when the output isn't stereo.
-    func speak(_ attributedString: NSAttributedString, in voice: AVSpeechSynthesisVoice, pan: Float) async {
+    ///   - volume: How loud the voice is played, from 0 to 1.
+    func speak(_ declamation: Declamation, in voice: AVSpeechSynthesisVoice, pan: Float, volume: Float) async {
+        let ssml = SSMLRenderer.ssml(for: declamation, pace: Speakers.pace(of: voice))
+        let utterance: AVSpeechUtterance
+        if let recited = AVSpeechUtterance(ssmlRepresentation: ssml) {
+            utterance = recited
+        } else {
+            logger.error("The SSML wasn't accepted, so the part is spoken plainly: \(ssml)")
+            utterance = Self.plainUtterance(declamation.attributedString)
+        }
+        await speak(utterance, in: voice, pan: pan, volume: volume)
+    }
+
+    /// An utterance of the attributed string at the voice's own pitch and rate.
+    private static func plainUtterance(_ attributedString: NSAttributedString) -> AVSpeechUtterance {
+        let utterance = AVSpeechUtterance(attributedString: attributedString)
+        utterance.pitchMultiplier = 1
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        utterance.volume = 1
+        return utterance
+    }
+
+    /// Speaks the utterance in the voice, returning once speech has finished or been stopped.
+    private func speak(_ utterance: AVSpeechUtterance, in voice: AVSpeechSynthesisVoice, pan: Float, volume: Float) async {
         if let current {
             stop(current)
         }
@@ -119,14 +147,10 @@ final class SpeechSynthesizer: SpeechSynthesizing {
         if synthesizer.isSpeaking {
             synthesizer.stopSpeaking(at: .immediate)
         }
-        let utterance = AVSpeechUtterance(attributedString: attributedString)
         utterance.voice = voice
-        utterance.pitchMultiplier = 1
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        utterance.volume = 1
 
         let (buffers, continuation) = AsyncStream.makeStream(of: SpeechBuffer.self)
-        let recitation = Recitation(synthesizer: synthesizer, pan: pan, buffers: continuation)
+        let recitation = Recitation(synthesizer: synthesizer, voiceID: voice.identifier, pan: pan, volume: volume, buffers: continuation)
         current = recitation
         // The buffers arrive off the main actor, so the callback mustn't be isolated to it. A buffer
         // without any audio marks the end of the utterance.
@@ -157,11 +181,15 @@ final class SpeechSynthesizer: SpeechSynthesizing {
         for await next in buffers {
             guard current === recitation else { return }
             if recitation.player == nil {
+                await stopping[voice.identifier]?.value
+                guard current === recitation else { return }
                 do {
                     let player = try player(for: voice, format: next.buffer.format)
                     recitation.player = player
                     player.pan = isStereo ? recitation.pan : 0
-                    try startEngine()                } catch {
+                    player.volume = recitation.volume
+                    try startEngine()
+                } catch {
                     logger.error("Couldn't play \(voice.name): \(String(describing: error))")
                     stop(recitation)
                     return
@@ -244,7 +272,21 @@ final class SpeechSynthesizer: SpeechSynthesizing {
         current = nil
         recitation.synthesizer.stopSpeaking(at: .immediate)
         recitation.buffers.finish()
-        recitation.player?.stop()
+        if let player = recitation.player {
+            stopPlayer(player, of: recitation.voiceID)
+        }
+    }
+
+    /// Stops the player off the main actor, after any stop of it still under way. Stopping a player
+    /// waits for the audio thread, which runs at a lower priority than the main thread, so the main
+    /// thread mustn't wait on it. Stopping ends the recitation's wait for its last buffer.
+    private func stopPlayer(_ player: AVAudioPlayerNode, of voiceID: String) {
+        let previous = stopping[voiceID]
+        let node = SendablePlayer(player)
+        stopping[voiceID] = Task {
+            await previous?.value
+            await Task.detached(priority: .userInitiated) { node.node.stop() }.value
+        }
     }
 
     /// Pauses any speech in progress at once.
@@ -269,16 +311,32 @@ final class SpeechSynthesizer: SpeechSynthesizing {
 @MainActor
 private final class Recitation {
     let synthesizer: AVSpeechSynthesizer
+    /// The identifier of the voice it's spoken in, whose player plays it.
+    let voiceID: String
     let pan: Float
+    /// How loud the player plays it, from 0 to 1.
+    let volume: Float
     /// Finishing the buffers ends the wait for any more.
     let buffers: AsyncStream<SpeechBuffer>.Continuation
     /// The voice's player, once the first buffer has arrived.
     var player: AVAudioPlayerNode?
 
-    init(synthesizer: AVSpeechSynthesizer, pan: Float, buffers: AsyncStream<SpeechBuffer>.Continuation) {
+    init(synthesizer: AVSpeechSynthesizer, voiceID: String, pan: Float, volume: Float, buffers: AsyncStream<SpeechBuffer>.Continuation) {
         self.synthesizer = synthesizer
+        self.voiceID = voiceID
         self.pan = pan
+        self.volume = volume
         self.buffers = buffers
+    }
+}
+
+/// A player, handed off the main actor to be stopped. Nothing schedules on it meanwhile, as the
+/// voice's next utterance waits for the stop.
+private struct SendablePlayer: @unchecked Sendable {
+    let node: AVAudioPlayerNode
+
+    init(_ node: AVAudioPlayerNode) {
+        self.node = node
     }
 }
 

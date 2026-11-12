@@ -129,6 +129,49 @@ struct EventsSequenceTests {
         #expect(recited == ballad.parts.map { $0.string })
     }
 
+    /// Each cue declaims its own part, ending its line only for the line's last part.
+    @Test func testEachCueDeclaimsItsPart() throws {
+        let ballad = makeBallad(partsInFirstLine: 3)
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: ballad, speakers: Speakers.cached()))
+        let lines = ballad.cantos.flatMap(\.stanzas).flatMap(\.lines)
+        for line in lines {
+            for part in line.parts {
+                let cue = try nextCue(of: &sequence)
+                #expect(cue.declamation.words.map(\.text) == part.string.split(whereSeparator: \.isWhitespace).map(String.init))
+                #expect(cue.declamation.position == (line.parts.last === part ? .lineEnd : .caesura))
+            }
+        }
+    }
+
+    /// The declamation's pitch centres on the note the cue's music plays most often, and a part
+    /// without music of its own has no baseline.
+    @Test func testDeclamationCentresOnTheCuesMusic() throws {
+        for cue in try cues(partsInFirstLine: 3) {
+            #expect(cue.declamation.baseline == Declamation.baseline(for: cue.events))
+            if cue.events.isEmpty {
+                #expect(cue.declamation.baseline == nil)
+            }
+        }
+    }
+
+    /// Each cue is played as loud as its speaker's role, as the volume is when the cue is made.
+    @Test func testEachCueIsAsLoudAsItsRole() throws {
+        let speakers = Speakers.cached()
+        speakers.volumes[speakers.roles[1]] = 0.3
+        var sequence = EventsSequence(performance: Performance(score: .standard, ballad: makeBallad(), speakers: speakers))
+        #expect(try nextCue(of: &sequence).volume == speakers.volume(forRole: 0))
+        #expect(try nextCue(of: &sequence).volume == 0.3)
+    }
+
+    /// The parts are declaimed in the performance's style, as it is when each cue is made.
+    @Test func testDeclaimsInThePerformancesStyle() throws {
+        let performance = Performance(score: .standard, ballad: makeBallad(), speakers: Speakers.cached())
+        var sequence = EventsSequence(performance: performance)
+        #expect(try nextCue(of: &sequence).declamation.style == .standard)
+        performance.style.baseRate = 0.5
+        #expect(try nextCue(of: &sequence).declamation.style.baseRate == 0.5)
+    }
+
     /// In the standard score the speakers take turns, starting with the first speaker.
     @Test func testSpeakersAlternate() throws {
         let speakers = Speakers.cached()

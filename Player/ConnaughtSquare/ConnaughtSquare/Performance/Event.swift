@@ -34,9 +34,13 @@ struct Cue {
     let recitationStart: Duration
     let events: [Event]
     let part: Part
+    /// The part as it's to be recited, its pitch centred on the note its music plays most often.
+    let declamation: Declamation
     let speaker: Speaker
     /// Where the speaker stands in stereo, from -1 on the left to 1 on the right.
     var pan: Float = 0
+    /// How loud the speaker's role is played, from 0 to 1.
+    var volume: Float = 1
     /// Whether the part begins the ballad, so its title appears before anything else, even the intermission.
     var beginsBallad = false
     /// The rest after the ballad's title appears, before the intermission.
