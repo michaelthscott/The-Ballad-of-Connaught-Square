@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4] - 2026-11-12
+
 ### Added
 
 - The settings show the app's version and build number, at the foot of the Settings tab on iOS and visionOS and below the sidebar of the Settings window on macOS.
@@ -235,7 +237,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.4...HEAD
+[1.4]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.2...v1.4
 [1.3.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...v1.3.1
 [1.3]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.2...v1.3
