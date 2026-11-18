@@ -22,6 +22,18 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
 		self.elements = elements
 		currentIndex = elements.startIndex
 	}
+
+    /// A cycle of elements that starts from the specified element.
+    /// - Parameters:
+    ///   - elements: Throws a fatal error if the array is empty.
+    ///   - index: The index of the element that `next()` returns first. Throws a fatal error if it isn't an index of the elements.
+    init(elements: [Element], startingAt index: [Element].Index) {
+        self.init(elements: elements)
+        guard elements.indices.contains(index) else {
+            fatalError("Cycle cannot start at \(index), outside \(elements.indices).")
+        }
+        currentIndex = index
+    }
     
     /// Finds the minimum element.
     /// - Returns: The minimum element.
@@ -66,7 +78,20 @@ struct Cycle<Element: Comparable & Hashable & Sendable>: Sendable {
         }
         return element
 	}
-    
+
+    /// The distinct elements, from the most to the least frequent.
+    ///
+    /// Equally frequent elements are ordered from the greatest down, so that the first is `mostFrequent`.
+    var elementsByFrequency: [Element] {
+        var frequencies: [Element: Int] = [:]
+        for element in elements {
+            frequencies[element, default: 0] += 1
+        }
+        return frequencies.sorted { lhs, rhs in
+            lhs.value != rhs.value ? lhs.value > rhs.value : lhs.key > rhs.key
+        }.map(\.key)
+    }
+
     /// Partitions the elements into a sequence of slices of the specified width.
     /// - Parameter width: The number of elements to include in a slice.
     /// - Returns: The sequence of slices.

@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The melodies no longer all open on the same note. Each instrument works through the pitches of the tunes, from the most to the least frequent, starting at a random pitch of its own, and opens each new melody on the next, so the instruments start on different notes and the openings vary through the performance.
+
 ## [1.4] - 2026-11-12
 
 ### Added

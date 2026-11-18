@@ -28,7 +28,8 @@ struct PerformanceTests {
 
     @Test func testEvents() async throws {
         let performance = Performance(score: .standard, ballad: Ballad(), speakers: Speakers.cached())
-        let events = performance.arranger.events(for: Score.standard.line, partDuration: .seconds(1))
+        var arranger = performance.arranger
+        let events = arranger.events(for: Score.standard.line, partDuration: .seconds(1))
         #expect(events.map(\.instrument.name) == [.violin, .viola, .cello])
     }
 

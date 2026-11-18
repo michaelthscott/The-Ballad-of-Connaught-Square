@@ -92,16 +92,13 @@ struct Composer {
         // A score can ask for a combination with nothing in it, so say so now rather than when a note is first composed.
         precondition(!durations.isEmpty && !intervals.isEmpty, "No note patterns from \(tunes.map(\.title)) \(vectorWidth) wide using \(operations)")
         // These are fixed by the tunes, so work them out once rather than for every note composed.
-        guard let initial = tunes.map(\.mostFrequentNote).max() else {
-            fatalError("Failed to find inital note")
-        }
-        guard let ceiling = tunes.map(\.highestNote).max(), initial <= ceiling else {
+        initialNotes = Self.initialNotes(from: tunes)
+        guard let ceiling = tunes.map(\.highestNote).max() else {
             fatalError("Failed to find highest note")
         }
-        guard let floor = tunes.map(\.lowestNote).min(), floor <= initial else {
+        guard let floor = tunes.map(\.lowestNote).min() else {
             fatalError("Failed to find lowest note")
         }
-        initialNote = initial
         ceilingNote = ceiling
         floorNote = floor
     }
@@ -132,8 +129,21 @@ struct Composer {
         return intervalVector
     }
 
-	/// The note each assignment starts from: the highest of the tunes' most frequent notes.
-	let initialNote: Note
+	/// The notes the assignments start from, one for each pitch in the tunes, from the most to the least frequent.
+	let initialNotes: Cycle<Note>
+
+	/// Each instrument's own copy of the initial notes, started at a random position the first time the instrument is composed for.
+	///
+	/// Each of an instrument's assignments opens on the next note of its copy, so successive melodies start on different pitches
+	/// and the instruments don't move through the pitches in step.
+	private(set) var instrumentInitialNotes: [InstrumentName: Cycle<Note>] = [:]
+
+	/// One note for each pitch in the tunes, the first played at that pitch, from the most to the least frequent pitch across all the tunes.
+	static func initialNotes(from tunes: [Tune]) -> Cycle<Note> {
+		let notes = tunes.flatMap(\.notes.elements)
+		let values = Cycle<NoteValue>(elements: notes.map(\.value)).elementsByFrequency
+		return Cycle(elements: values.compactMap { value in notes.first { $0.value == value } })
+	}
 
 	/// The highest note across all the tunes.
 	let ceilingNote: Note
@@ -143,13 +153,14 @@ struct Composer {
 
     /// Composes an assignment for the specified instrument and duration.
     ///
-    /// The assignment opens on the pitch of the initial note, so every instrument begins in unison, then moves by intervals drawn from the tunes.
+    /// The assignment opens on the pitch of the next initial note, then moves by intervals drawn from the tunes.
     /// - Parameters:
     ///   - instrument: An instrument.
     ///   - duration: A duration. Note that this should be sufficiently long to ensure that some notes are assigned.
     ///   - generator: The random number generator the patterns and dynamics are chosen with.
     /// - Returns: The assignment.
-    func composeAssignment<T: RandomNumberGenerator>(instrument: Instrument, duration: Duration, using generator: inout T) -> Assignment {
+    mutating func composeAssignment<T: RandomNumberGenerator>(instrument: Instrument, duration: Duration, using generator: inout T) -> Assignment {
+        let initialNote = nextInitialNote(for: instrument, using: &generator)
         let openingDuration = randomDurationVector(using: &generator).first ?? initialNote.duration
         let opening = Note(value: initialNote.value, on: NoteVelocity.gaussianRandom(using: &generator), duration: openingDuration)
         var previousNote = opening
@@ -167,8 +178,17 @@ struct Composer {
         return Assignment(instrument: instrument, notes: Cycle<Note>(elements: notes))
     }
 
+    /// The note the instrument's next assignment opens on, from its own copy of the initial notes.
+    private mutating func nextInitialNote<T: RandomNumberGenerator>(for instrument: Instrument, using generator: inout T) -> Note {
+        if instrumentInitialNotes[instrument.name] == nil {
+            let start = Int.random(in: initialNotes.elements.indices, using: &generator)
+            instrumentInitialNotes[instrument.name] = Cycle(elements: initialNotes.elements, startingAt: start)
+        }
+        return instrumentInitialNotes[instrument.name, default: initialNotes].next()
+    }
+
     /// Composes an assignment for the specified instrument and duration, chosen with the system's random number generator.
-    func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
+    mutating func composeAssignment(instrument: Instrument, duration: Duration) -> Assignment {
         var generator = SystemRandomNumberGenerator()
         return composeAssignment(instrument: instrument, duration: duration, using: &generator)
     }

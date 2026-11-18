@@ -20,12 +20,16 @@ struct EventsSequence {
     /// The melodies are composed with a copy of the performance's random number generator, so a
     /// seeded generator composes the same music for every sequence of the performance.
     private var generator: AnyRandomNumberGenerator
+    /// The melodies are arranged with a copy of the performance's arranger, so the composers' initial
+    /// notes start afresh with each sequence too.
+    private var arranger: Arranger
 
     init(performance: Performance) {
         self.performance = performance
         balladCursorSequence = BalladCursorSequence(ballad: performance.ballad)
         voiceTurns = VoiceTurns(notation: VoiceNotation(roles: performance.speakers.roles))
         generator = AnyRandomNumberGenerator(performance.randomNumberGenerator)
+        arranger = performance.arranger
     }
 
     /// The cue for the next part of the ballad, or `nil` once every part has been recited.
@@ -35,7 +39,6 @@ struct EventsSequence {
         guard let part = balladCursorSequence.currentPart else { return nil }
         let intermission = currentIntermission
         let interlude = currentInterlude
-        let arranger = performance.arranger
         let role = voiceTurns.nextRole()
         let isStartOfBallad = balladCursorSequence.isStartOfBallad
         let isStartOfCanto = balladCursorSequence.isStartOfCanto

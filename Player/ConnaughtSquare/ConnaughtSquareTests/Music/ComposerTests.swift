@@ -15,17 +15,52 @@ struct ComposerTests {
         composer = Composer() //(tunes: [Tune.randomTune(title: "A", length: 5), Tune.randomTune(title: "B", length: 5), Tune.randomTune(title: "C", length: 5)], vectorWidth: 2)
     }
     
-    @Test func testInitialNote() async throws {
-        #expect(composer.floorNote <= composer.initialNote)
-        #expect(composer.initialNote <= composer.ceilingNote)
+    @Test func testInitialNotes() async throws {
+        let notes = composer.initialNotes.elements
+        #expect(notes.allSatisfy { composer.floorNote <= $0 && $0 <= composer.ceilingNote })
+        #expect(Set(notes.map(\.value)).count == notes.count)
     }
 
-    @Test func testAssignmentsOpenOnTheInitialNote() throws {
-        for name in [InstrumentName.violin, .viola, .cello] {
-            let assignment = composer.composeAssignment(instrument: Instrument(name: name), duration: .seconds(10))
-            let first = try #require(assignment.notes.elements.first)
-            #expect(first.value == composer.initialNote.value)
+    /// The initial notes run from the most to the least frequent pitch across all the tunes.
+    @Test func testInitialNotesRunFromMostToLeastFrequent() {
+        let values = composer.tunes.flatMap { $0.notes.elements.map(\.value) }
+        let counts = composer.initialNotes.elements.map { note in values.filter { $0 == note.value }.count }
+        #expect(counts == counts.sorted(by: >))
+        #expect(Set(composer.initialNotes.elements.map(\.value)) == Set(values))
+    }
+
+    /// Each of an instrument's assignments opens on the next initial note in its own copy, starting again after the least frequent,
+    /// whatever the other instruments are composed in between.
+    @Test func testEachInstrumentOpensOnSuccessiveInitialNotes() throws {
+        var composer = composer
+        let values = composer.initialNotes.elements.map(\.value)
+        let instruments = [InstrumentName.violin, .viola, .cello].map { Instrument(name: $0) }
+        var openings: [InstrumentName: [NoteValue]] = [:]
+        for _ in 0...values.count {
+            for instrument in instruments {
+                let assignment = composer.composeAssignment(instrument: instrument, duration: .seconds(10))
+                let first = try #require(assignment.notes.elements.first)
+                openings[instrument.name, default: []].append(first.value)
+            }
         }
+        for instrument in instruments {
+            let opened = try #require(openings[instrument.name])
+            let start = try #require(values.firstIndex(of: opened[0]))
+            let expected = (0..<opened.count).map { values[(start + $0) % values.count] }
+            #expect(opened == expected, "\(instrument.name)")
+        }
+    }
+
+    /// Each instrument's copy of the initial notes starts at a random position.
+    @Test func testInitialNotesStartAtRandomPositions() throws {
+        var starts: Set<NoteValue> = []
+        for seed in 0..<20 {
+            var composer = composer
+            var generator = SeededRandomNumberGenerator(seed: UInt64(seed))
+            let assignment = composer.composeAssignment(instrument: Instrument(name: .viola), duration: .seconds(10), using: &generator)
+            starts.insert(try #require(assignment.notes.elements.first).value)
+        }
+        #expect(starts.count > 1)
     }
 
     /// The same seed composes the same assignment, dynamics and all.
@@ -33,8 +68,10 @@ struct ComposerTests {
         var first = SeededRandomNumberGenerator(seed: 42)
         var second = SeededRandomNumberGenerator(seed: 42)
         let instrument = Instrument(name: .viola)
+        var composer = composer
+        var copy = composer
         let assignment = composer.composeAssignment(instrument: instrument, duration: .seconds(10), using: &first)
-        let repeated = composer.composeAssignment(instrument: instrument, duration: .seconds(10), using: &second)
+        let repeated = copy.composeAssignment(instrument: instrument, duration: .seconds(10), using: &second)
         #expect(assignment.notes.elements == repeated.notes.elements)
     }
 
