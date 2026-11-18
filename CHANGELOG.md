@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-18
+
 ### Changed
 
 - The melodies no longer all open on the same note. Each instrument works through the pitches of the tunes, from the most to the least frequent, starting at a random pitch of its own, and opens each new melody on the next, so the instruments start on different notes and the openings vary through the performance.
@@ -241,7 +243,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - As a result, `Composer.initialNote` is the most frequent pitch across the tunes rather than the highest, so compositions no longer begin at the ceiling of their range.
 - `TuneTests.testMostFrequentNoteNumber` was missing its `@Test` attribute and never ran.
 
-[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.4...HEAD
+[Unreleased]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.4...v1.4.1
 [1.4]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.2...v1.4
 [1.3.2]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/michaelthscott/The-Ballad-of-Connaught-Square/compare/v1.3...v1.3.1
